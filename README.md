@@ -1,6 +1,6 @@
 # DevExtreme
 
-**DevExtreme with Persian Date Picker Support and localized persian content**
+**DevExtreme with Persian Date Picker Support and localized persian content.**
 **You only must set to 'fa-IR' locale**
 
 [![Build Status](https://devextreme-ci.devexpress.com/api/badges/DevExpress/DevExtreme/status.svg?branch=21_1)](https://devextreme-ci.devexpress.com/DevExpress/DevExtreme)
