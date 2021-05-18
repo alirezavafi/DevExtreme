@@ -1,5 +1,8 @@
 # DevExtreme
 
+**DevExtreme with Persian Date Picker Support and localized persian content**
+**You only must set to 'fa-IR' locale**
+
 [![Build Status](https://devextreme-ci.devexpress.com/api/badges/DevExpress/DevExtreme/status.svg?branch=21_1)](https://devextreme-ci.devexpress.com/DevExpress/DevExtreme)
 
 DevExtreme is a set of enterprise-ready UI component suites for Angular, React, Vue, and jQuery. It is everything you need to create responsive web apps for touch devices and traditional desktops: data grid, interactive charts, data editors, navigation and multi-purpose widgets. These controls are designed to look great and to provide powerful functionality in any browser.
