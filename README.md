@@ -1,4 +1,4 @@
-# DevExtreme
+# DevExtreme (With Persian Support)
 
 **DevExtreme with Persian Date Picker Support and localized persian content.**
 **You only must set to 'fa-IR' locale**
