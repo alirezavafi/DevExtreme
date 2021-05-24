@@ -21,6 +21,7 @@ import { Icon } from './common/icon';
 import { InkRipple, InkRippleConfig } from './common/ink_ripple';
 import { Widget } from './common/widget';
 import { BaseWidgetProps } from './common/base_props';
+// eslint-disable-next-line import/no-cycle
 import BaseComponent from '../component_wrapper/button';
 import { EffectReturn } from '../utils/effect_return.d';
 
@@ -229,7 +230,7 @@ export class Button extends JSXComponent(ButtonProps) {
 
     return {
       role: 'button',
-      ...(label ? { label } : {}),
+      ...label ? { label } : {},
     };
   }
 
@@ -240,12 +241,12 @@ export class Button extends JSXComponent(ButtonProps) {
   get iconSource(): string {
     const { icon, type } = this.props;
 
-    return (icon || type === 'back') ? (icon || 'back') : '';
+    return icon || type === 'back' ? icon || 'back' : '';
   }
 
   get inkRippleConfig(): InkRippleConfig {
     const { text, icon, type } = this.props;
-    return ((!text && icon) || (type === 'back')) ? {
+    return (!text && icon) || (type === 'back') ? {
       isCentered: true,
       useHoldAnimation: false,
       waveSizeCoefficient: 1,
