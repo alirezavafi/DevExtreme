@@ -1,6 +1,6 @@
 # DevExtreme (Persian Support)
 
-This project has minimal changes to original DevExtreme version to add following features:
+This project has minimal modifications to original DevExtreme version with following features:
 
 - Persian Date Picker
 - Localized Persian Messages
