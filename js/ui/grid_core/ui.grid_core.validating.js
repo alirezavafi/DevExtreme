@@ -13,7 +13,7 @@ import Button from '../button';
 import pointerEvents from '../../events/pointer';
 import ValidationEngine from '../validation_engine';
 import Validator from '../validator';
-import Overlay from '../overlay';
+import Overlay from '../overlay/ui.overlay';
 import errors from '../widget/ui.errors';
 import { Deferred, when, fromPromise } from '../../core/utils/deferred';
 import LoadIndicator from '../load_indicator';
@@ -54,6 +54,7 @@ const VALIDATION_STATUS = {
 const EDIT_DATA_INSERT_TYPE = 'insert';
 const EDIT_DATA_REMOVE_TYPE = 'remove';
 const VALIDATION_CANCELLED = 'cancel';
+const NEW_SCROLLING_MODE = 'scrolling.newMode';
 
 const validationResultIsValid = function(result) {
     return isDefined(result) && result !== VALIDATION_CANCELLED;
@@ -342,6 +343,17 @@ const ValidatingController = modules.Controller.inherit((function() {
             }
         },
 
+        _syncInternalEditingData: function(parameters) {
+            const editingController = this._editingController;
+            const change = editingController.getChangeByKey(parameters.key);
+            const oldDataFromState = editingController._getOldData(parameters.key);
+            const oldData = parameters.row?.oldData;
+
+            if(change && oldData && !oldDataFromState) {
+                editingController._addInternalData({ key: parameters.key, oldData });
+            }
+        },
+
         createValidator: function(parameters, $container) {
             const editingController = this._editingController;
             const column = parameters.column;
@@ -365,7 +377,7 @@ const ValidatingController = modules.Controller.inherit((function() {
                 needCreateValidator = isEditRow || isCellOrBatchEditingAllowed && showEditorAlways;
 
                 if(isCellOrBatchEditingAllowed && showEditorAlways) {
-                    editingController._addInternalData({ key: parameters.key, oldData: parameters.data });
+                    editingController._addInternalData({ key: parameters.key, oldData: parameters.row?.oldData ?? parameters.data });
                 }
             }
 
@@ -375,6 +387,7 @@ const ValidatingController = modules.Controller.inherit((function() {
                     return;
                 }
 
+                this._syncInternalEditingData(parameters);
                 const validationData = this._getValidationData(parameters.key, true);
 
                 const getValue = () => {
@@ -635,8 +648,11 @@ export const validatingModule = {
                     let result = this.callBase.apply(this, arguments);
                     const { key, pageIndex } = change;
                     const validationData = this.getController('validating')._getValidationData(key);
+                    const scrollingMode = this.option('scrolling.mode');
+                    const virtualMode = scrollingMode === 'virtual';
+                    const appendMode = scrollingMode === 'infinite';
 
-                    if(result && !validationData?.isValid && this.option('scrolling.mode') !== 'virtual') {
+                    if(result && !validationData?.isValid && !virtualMode && !(appendMode && this.option(NEW_SCROLLING_MODE))) {
                         result = pageIndex === this._pageIndex;
                     }
 
@@ -655,9 +671,8 @@ export const validatingModule = {
                 },
 
                 processItems: function(items, changeType) {
-                    const that = this;
-                    const changes = that.getChanges();
-                    const dataController = that.getController('data');
+                    const changes = this.getChanges();
+                    const dataController = this.getController('data');
                     const validatingController = this.getController('validating');
                     const getIndexByChange = function(change, items) {
                         let index = -1;
@@ -665,7 +680,7 @@ export const validatingModule = {
                         const key = change.key;
 
                         each(items, function(i, item) {
-                            if(equalByValue(key, isInsert ? item : dataController.keyOf(item))) {
+                            if(equalByValue(key, isInsert ? item.key : dataController.keyOf(item))) {
                                 index = i;
                                 return false;
                             }
@@ -674,7 +689,7 @@ export const validatingModule = {
                         return index;
                     };
 
-                    items = that.callBase(items, changeType);
+                    items = this.callBase(items, changeType);
                     const itemsCount = items.length;
 
                     const addInValidItem = function(change, validationData) {
@@ -692,11 +707,11 @@ export const validatingModule = {
                         items.splice(rowIndex, 0, data);
                     };
 
-                    if(that.getEditMode() === EDIT_MODE_BATCH && changeType !== 'prepend' && changeType !== 'append') {
+                    if(this.getEditMode() === EDIT_MODE_BATCH && changeType !== 'prepend' && changeType !== 'append') {
                         changes.forEach(change => {
                             const key = change.key;
                             const validationData = validatingController._getValidationData(key);
-                            if(validationData && change.type && validationData.pageIndex === that._pageIndex && change?.pageIndex !== that._pageIndex) {
+                            if(validationData && change.type && validationData.pageIndex === this._pageIndex && change?.pageIndex !== this._pageIndex) {
                                 addInValidItem(change, validationData);
                             }
                         });
@@ -834,6 +849,8 @@ export const validatingModule = {
 
                 _afterSaveEditData: function(cancel) {
                     let $firstErrorRow;
+                    const isCellEditMode = this.getEditMode() === EDIT_MODE_CELL;
+
                     each(this.getChanges(), (_, change) => {
                         const $errorRow = this._showErrorRow(change);
                         $firstErrorRow = $firstErrorRow || $errorRow;
@@ -846,7 +863,7 @@ export const validatingModule = {
                         }
                     }
 
-                    if(cancel && this.getEditMode() === EDIT_MODE_CELL && this._needUpdateRow()) {
+                    if(cancel && isCellEditMode && this._needUpdateRow()) {
                         const editRowIndex = this.getEditRowIndex();
 
                         this._dataController.updateItems({
@@ -855,7 +872,18 @@ export const validatingModule = {
                         });
                         this._focusEditingCell();
                     } else if(!cancel) {
-                        this.getController('validating')._validationState = [];
+                        let shouldResetValidationState = true;
+
+                        if(isCellEditMode) {
+                            const columns = this.getController('columns').getColumns();
+                            const columnsWithValidatingEditors = columns.filter(col => col.showEditorAlways && col.validationRules?.length > 0).length > 0;
+
+                            shouldResetValidationState = !columnsWithValidatingEditors;
+                        }
+
+                        if(shouldResetValidationState) {
+                            this.getController('validating')._validationState = [];
+                        }
                     }
                 },
 
@@ -1281,7 +1309,7 @@ export const validatingModule = {
             })(),
             data: {
                 _isCellChanged: function(oldRow, newRow, visibleRowIndex, columnIndex, isLiveUpdate) {
-                    const cell = oldRow.cells[columnIndex];
+                    const cell = oldRow.cells?.[columnIndex];
                     const oldValidationStatus = cell && cell.validationStatus;
                     const validatingController = this.getController('validating');
                     const validationResult = validatingController.getCellValidationResult({

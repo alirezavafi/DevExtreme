@@ -11,6 +11,8 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
+
 import {
     EventInfo,
     NativeEventInfo,
@@ -24,7 +26,7 @@ import Editor, {
 } from './editor/editor';
 
 import {
-    dxToolbarItem
+    Item as dxToolbarItem
 } from './toolbar';
 
 /** @public */
@@ -77,6 +79,12 @@ export interface dxHtmlEditorOptions extends EditorOptions<dxHtmlEditor> {
      * @public
      */
     mediaResizing?: dxHtmlEditorMediaResizing;
+    /**
+     * @docid
+     * @default null
+     * @hidden
+     */
+    tableResizing?: dxHtmlEditorTableResizing;
     /**
      * @docid
      * @default null
@@ -385,13 +393,39 @@ export interface dxHtmlEditorMediaResizing {
  * @type object
  * @namespace DevExpress.ui
  */
+ export interface dxHtmlEditorTableResizing {
+  /**
+   * @docid
+   * @default 40
+   * @hidden
+   */
+   minColumnWidth?: number;
+  /**
+   * @docid
+   * @default 24
+   * @hidden
+   */
+  minRowHeight?: number;
+  /**
+   * @docid
+   * @default false
+   * @hidden
+   */
+  enabled?: boolean;
+}
+
+/**
+ * @docid
+ * @type object
+ * @namespace DevExpress.ui
+ */
 export interface dxHtmlEditorMention {
     /**
      * @docid
      * @default null
      * @public
      */
-    dataSource?: Array<string> | DataSource | DataSourceOptions;
+    dataSource?: Array<string> | Store | DataSource | DataSourceOptions;
     /**
      * @docid
      * @default "this"
@@ -471,7 +505,7 @@ export interface dxHtmlEditorToolbar {
      * @type Array<dxHtmlEditorToolbarItem,Enums.HtmlEditorToolbarItem>
      * @public
      */
-    items?: Array<dxHtmlEditorToolbarItem | 'background' | 'bold' | 'color' | 'font' | 'italic' | 'link' | 'image' | 'size' | 'strike' | 'subscript' | 'superscript' | 'underline' | 'blockquote' | 'header' | 'increaseIndent' | 'decreaseIndent' | 'orderedList' | 'bulletList' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'alignJustify' | 'codeBlock' | 'variable' | 'separator' | 'undo' | 'redo' | 'clear' | 'insertTable' | 'insertRowAbove' | 'insertRowBelow' | 'insertColumnLeft' | 'insertColumnRight' | 'deleteColumn' | 'deleteRow' | 'deleteTable'>;
+    items?: Array<ToolbarItem | 'background' | 'bold' | 'color' | 'font' | 'italic' | 'link' | 'image' | 'size' | 'strike' | 'subscript' | 'superscript' | 'underline' | 'blockquote' | 'header' | 'increaseIndent' | 'decreaseIndent' | 'orderedList' | 'bulletList' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'alignJustify' | 'codeBlock' | 'variable' | 'separator' | 'undo' | 'redo' | 'clear' | 'insertTable' | 'insertRowAbove' | 'insertRowBelow' | 'insertColumnLeft' | 'insertColumnRight' | 'deleteColumn' | 'deleteRow' | 'deleteTable'>;
     /**
      * @docid
      * @default true
@@ -481,8 +515,13 @@ export interface dxHtmlEditorToolbar {
 }
 
 /**
- * @docid
- * @inherits dxToolbarItem
+ * @public
+ * @namespace DevExpress.ui.dxHtmlEditor
+ */
+export type ToolbarItem = dxHtmlEditorToolbarItem;
+
+/**
+ * @deprecated Use ToolbarItem instead
  * @namespace DevExpress.ui
  */
 export interface dxHtmlEditorToolbarItem extends dxToolbarItem {
@@ -528,7 +567,7 @@ export interface dxHtmlEditorVariables {
      * @default null
      * @public
      */
-    dataSource?: string | Array<string> | DataSource | DataSourceOptions;
+    dataSource?: string | Array<string> | Store | DataSource | DataSourceOptions;
     /**
      * @docid
      * @default ""

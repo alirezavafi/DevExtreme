@@ -15,6 +15,8 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
+
 import {
     DxEvent,
     Cancelable,
@@ -93,15 +95,17 @@ export interface dxContextMenuOptions extends dxMenuBaseOptions<dxContextMenu> {
     closeOnOutsideClick?: boolean | ((event: DxEvent) => boolean);
     /**
      * @docid
+     * @type string | Array<dxContextMenuItem> | Store | DataSource | DataSourceOptions
      * @default null
      * @public
      */
-    dataSource?: string | Array<dxContextMenuItem> | DataSource | DataSourceOptions;
+    dataSource?: string | Array<Item> | Store | DataSource | DataSourceOptions;
     /**
      * @docid
+     * @type Array<dxContextMenuItem>
      * @public
      */
-    items?: Array<dxContextMenuItem>;
+    items?: Array<Item>;
     /**
      * @docid
      * @default null
@@ -242,17 +246,22 @@ export default class dxContextMenu extends dxMenuBase {
 }
 
 /**
- * @docid
- * @inherits dxMenuBaseItem
+ * @public
+ * @namespace DevExpress.ui.dxContextMenu
+ */
+export type Item = dxContextMenuItem;
+
+/**
+ * @deprecated Use Item instead
  * @namespace DevExpress.ui
- * @type object
  */
 export interface dxContextMenuItem extends dxMenuBaseItem {
     /**
      * @docid
      * @public
+     * @type Array<dxContextMenuItem>
      */
-    items?: Array<dxContextMenuItem>;
+    items?: Array<Item>;
 }
 
 /** @public */

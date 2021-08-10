@@ -9,6 +9,7 @@ import { each } from '../../core/utils/iterator';
 import browser from '../../core/utils/browser';
 import { getBoundingRect } from '../../core/utils/position';
 import { move } from '../../animation/translator';
+import Scrollable from '../scroll_view/ui.scrollable';
 
 const CONTENT_CLASS = 'content';
 const CONTENT_FIXED_CLASS = 'content-fixed';
@@ -600,8 +601,18 @@ const RowsViewFixedColumnsExtender = extend({}, baseFixedColumns, {
                 });
                 eventsEngine.on($content, wheelEventName, function(e) {
                     const $nearestScrollable = $(e.target).closest('.dx-scrollable');
+                    let shouldScroll = false;
 
                     if(scrollable && scrollable.$element().is($nearestScrollable)) {
+                        shouldScroll = true;
+                    } else {
+                        const nearestScrollableInstance = $nearestScrollable.length && Scrollable.getInstance($nearestScrollable.get(0));
+                        const nearestScrollableHasVerticalScrollbar = nearestScrollableInstance && (nearestScrollableInstance.scrollHeight() - nearestScrollableInstance.clientHeight() > 0);
+
+                        shouldScroll = nearestScrollableInstance && !nearestScrollableHasVerticalScrollbar;
+                    }
+
+                    if(shouldScroll) {
                         scrollTop = scrollable.scrollTop();
                         scrollable.scrollTo({ y: scrollTop - e.delta });
 
@@ -668,7 +679,7 @@ const RowsViewFixedColumnsExtender = extend({}, baseFixedColumns, {
             return column.fixed && (result || column.fixedPosition === 'right');
         }
 
-        return result && !column.fixed;
+        return result && (!this._isFixedColumns || !column.fixed);
     },
 
     _renderGroupSummaryCellsCore: function($groupCell, options, groupCellColSpan, alignByColumnCellCount) {
@@ -806,8 +817,8 @@ const RowsViewFixedColumnsExtender = extend({}, baseFixedColumns, {
             elasticScrollTop = -e.scrollOffset.top;
         } else if(e.reachedBottom) {
             const scrollableContent = this._findContentElement();
-            const scrollableContainer = e.component._container();
-            const maxScrollTop = Math.max(scrollableContent.height() + scrollbarWidth - scrollableContainer.height(), 0);
+            const $scrollableContainer = $(e.component.container());
+            const maxScrollTop = Math.max(scrollableContent.height() + scrollbarWidth - $scrollableContainer.height(), 0);
             elasticScrollTop = maxScrollTop - e.scrollOffset.top;
         }
 

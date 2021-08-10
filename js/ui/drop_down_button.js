@@ -48,7 +48,7 @@ const DropDownButton = Widget.inherit({
 
             keyExpr: 'this',
 
-            displayExpr: 'this',
+            displayExpr: undefined,
 
             selectedItem: null,
 
@@ -195,6 +195,7 @@ const DropDownButton = Widget.inherit({
     },
 
     _loadSelectedItem() {
+        this._loadSingleDeferred?.reject();
         const d = new Deferred();
 
         if(this._list && this._lastSelectedItemData !== undefined) {
@@ -210,6 +211,7 @@ const DropDownButton = Widget.inherit({
                 d.resolve(null);
             });
 
+        this._loadSingleDeferred = d;
         return d.promise();
     },
 
@@ -694,3 +696,9 @@ const DropDownButton = Widget.inherit({
 
 registerComponent('dxDropDownButton', DropDownButton);
 export default DropDownButton;
+
+/**
+ * @name dxDropDownButtonItem
+ * @inherits dxListItem
+ * @type object
+ */

@@ -6,6 +6,8 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
+
 import {
   EventInfo,
   NativeEventInfo,
@@ -77,10 +79,11 @@ export interface dxResponsiveBoxOptions extends CollectionWidgetOptions<dxRespon
     }>;
     /**
      * @docid
+     * @type string | Array<string | dxResponsiveBoxItem | any> | Store | DataSource | DataSourceOptions
      * @default null
      * @public
      */
-    dataSource?: string | Array<string | dxResponsiveBoxItem | any> | DataSource | DataSourceOptions;
+    dataSource?: string | Array<string | Item | any> | Store | DataSource | DataSourceOptions;
     /**
      * @docid
      * @type_function_return number|string
@@ -90,10 +93,11 @@ export interface dxResponsiveBoxOptions extends CollectionWidgetOptions<dxRespon
     height?: number | string | (() => number | string);
     /**
      * @docid
+     * @type Array<string | dxResponsiveBoxItem | any>
      * @fires dxResponsiveBoxOptions.onOptionChanged
      * @public
      */
-    items?: Array<string | dxResponsiveBoxItem | any>;
+    items?: Array<string | Item | any>;
     /**
      * @docid
      * @public
@@ -154,9 +158,13 @@ export default class dxResponsiveBox extends CollectionWidget {
 }
 
 /**
- * @docid
- * @inherits CollectionWidgetItem
- * @type object
+ * @public
+ * @namespace DevExpress.ui.dxResponsiveBox
+ */
+export type Item = dxResponsiveBoxItem;
+
+/**
+ * @deprecated Use Item instead
  * @namespace DevExpress.ui
  */
 export interface dxResponsiveBoxItem extends CollectionWidgetItem {

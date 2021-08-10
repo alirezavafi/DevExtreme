@@ -28,7 +28,7 @@ import {
 } from '../events/index';
 
 import {
-    ExcelDataGridCell
+    DataGridCell as ExcelCell
 } from '../excel_exporter';
 
 import {
@@ -518,10 +518,11 @@ export interface GridBaseOptions<T extends GridBase> extends WidgetOptions<T> {
     columnResizingMode?: 'nextColumn' | 'widget';
     /**
      * @docid
+     * @type number|Enums.Mode
      * @default undefined
      * @public
      */
-    columnWidth?: number;
+    columnWidth?: number | 'auto';
     /**
      * @docid
      * @type Array<GridBaseColumn|string>
@@ -535,7 +536,7 @@ export interface GridBaseOptions<T extends GridBase> extends WidgetOptions<T> {
      * @default null
      * @public
      */
-    dataSource?: string | Array<any> | DataSource | DataSourceOptions;
+    dataSource?: string | Array<any> | Store | DataSource | DataSourceOptions;
     /**
      * @docid
      * @public
@@ -2665,7 +2666,7 @@ export interface ColumnHeaderFilter {
    * @type_function_param1_field2 dataSource:DataSourceOptions
    * @default undefined
    */
-  dataSource?: Array<any> | ((options: { component?: any, dataSource?: DataSourceOptions }) => any) | DataSourceOptions,
+  dataSource?: Array<any> | Store | ((options: { component?: any, dataSource?: DataSourceOptions }) => any) | DataSourceOptions,
   /**
    * @docid GridBaseColumn.headerFilter.groupInterval
    * @type Enums.HeaderFilterGroupInterval|number
@@ -2717,6 +2718,13 @@ export interface ColumnLookup {
    * @default undefined
    */
   valueExpr?: string
+  /**
+   * @docid GridBaseColumn.lookup.calculateCellValue
+   * @type_function_param1 rowData:object
+   * @type_function_return any
+   * @public
+   */
+  calculateCellValue?: ((rowData: any) => any);
 }
 
 /**
@@ -3678,7 +3686,7 @@ export interface ExcelCellInfo {
   font?: ExcelFont;
   readonly value?: string | number | Date;
   numberFormat?: string;
-  gridCell?: ExcelDataGridCell;
+  gridCell?: ExcelCell;
 }
 
 export interface Export {
@@ -3892,6 +3900,7 @@ export interface CustomSummaryInfo {
   readonly groupIndex?: number;
 }
 
+/** @public */
 export interface Summary {
   /**
    * @docid dxDataGridOptions.summary.calculateCustomSummary
@@ -4393,17 +4402,14 @@ declare class dxDataGrid extends Widget implements GridBase {
 
 /**
  * @public
- * @namespace DevExpress.ui
- * @deprecated
  */
-export type dxDataGridColumn = Column;
+export type Column = dxDataGridColumn;
 
 /**
- * @docid dxDataGridColumn
- * @inherits GridBaseColumn
- * @type object
+ * @namespace DevExpress.ui
+ * @deprecated Use the Column type instead
  */
-export interface Column extends ColumnBase {
+export interface dxDataGridColumn extends ColumnBase {
     /**
      * @docid dxDataGridColumn.allowExporting
      * @default true
@@ -4533,17 +4539,13 @@ export interface Column extends ColumnBase {
 
 /**
  * @public
- * @namespace DevExpress.ui
- * @deprecated
  */
-export type dxDataGridColumnButton = ColumnButton;
+export type ColumnButton = dxDataGridColumnButton;
 /**
- * @docid dxDataGridColumnButton
- * @inherits GridBaseColumnButton
- * @prevFileNamespace DevExpress.ui
- * @type object
+ * @namespace DevExpress.ui
+ * @deprecated Use the DataGrid's ColumnButton type instead
  */
-export interface ColumnButton extends ColumnButtonBase {
+export interface dxDataGridColumnButton extends ColumnButtonBase {
     /**
      * @docid dxDataGridColumnButton.name
      * @type Enums.GridColumnButtonName|string

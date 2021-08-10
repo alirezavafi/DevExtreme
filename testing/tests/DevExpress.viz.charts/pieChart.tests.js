@@ -449,7 +449,7 @@ const overlappingEnvironment = $.extend({}, environment, {
 
         renderSpy.lastCall.args[0].onRendered();
 
-        const templateGroup = chart._renderer.g.returnValues[14];
+        const templateGroup = chart._renderer.g.returnValues[15];
         assert.strictEqual(templateGroup.stub('move').callCount, 1);
     });
 
@@ -467,6 +467,24 @@ const overlappingEnvironment = $.extend({}, environment, {
         assert.strictEqual(centerTemplate.callCount, 1);
     });
 
+    // T1014761
+    QUnit.test('Change centerTemplate on chart created without series', function(assert) {
+        chartMocks.seriesMockData.series.push(new MockSeries({ range: { val: { min: 0, max: 10 } } }));
+        const centerTemplate = sinon.spy();
+
+        const chart = this.createPieChart({
+            type: 'doughnut',
+            dataSource: [{
+                arg: 'Asia',
+                val: 4119626293
+            }]
+        });
+
+        chart.option({ centerTemplate, series: [{}] });
+
+        assert.strictEqual(centerTemplate.callCount, 1);
+    });
+
     QUnit.test('Async tempaltes rendering. called group visibilty', function(assert) {
         chartMocks.seriesMockData.series.push(new MockSeries({ range: { val: { min: 0, max: 10 } } }));
         const renderSpy = sinon.spy();
@@ -479,7 +497,7 @@ const overlappingEnvironment = $.extend({}, environment, {
             centerTemplate: $.noop
         });
 
-        const templateGroup = chart._renderer.g.returnValues[14];
+        const templateGroup = chart._renderer.g.returnValues[15];
         assert.strictEqual(templateGroup.stub('attr').callCount, 2);
         assert.deepEqual(templateGroup.stub('attr').getCall(1).args[0], { visibility: 'hidden' });
 
@@ -498,7 +516,7 @@ const overlappingEnvironment = $.extend({}, environment, {
             centerTemplate: centerTemplateSpy
         });
 
-        const templateGroup = chart._renderer.g.returnValues[14];
+        const templateGroup = chart._renderer.g.returnValues[15];
 
         assert.deepEqual(templateGroup.attr.getCall(0).args, [{ class: 'dxc-hole-template' }]);
         assert.strictEqual(centerTemplateSpy.callCount, 1);
@@ -515,7 +533,7 @@ const overlappingEnvironment = $.extend({}, environment, {
             series: [{}],
             centerTemplate: centerTemplateSpy
         });
-        const templateGroup = chart._renderer.g.returnValues[14];
+        const templateGroup = chart._renderer.g.returnValues[15];
 
         chart.render({ force: true });
 

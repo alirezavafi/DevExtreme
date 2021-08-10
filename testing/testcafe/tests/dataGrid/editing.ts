@@ -3,6 +3,8 @@ import url from '../../helpers/getPageUrl';
 import createWidget, { disposeWidgets } from '../../helpers/createWidget';
 import DataGrid from '../../model/dataGrid';
 import SelectBox from '../../model/selectBox';
+import { createScreenshotsComparer } from '../../helpers/screenshot-comparer';
+import changeTheme from '../../helpers/changeTheme';
 
 fixture.disablePageReloads`Editing`
   .page(url(__dirname, '../container.html'))
@@ -19,7 +21,7 @@ const getGridConfig = (config): Record<string, unknown> => {
     legacyRendering: false,
   };
 
-  return config ? ({ ...defaultConfig, ...config }) : defaultConfig;
+  return config ? { ...defaultConfig, ...config } : defaultConfig;
 };
 
 const getElementCount = (gridInstance: DataGrid, elementSelector: string): Promise<number> => {
@@ -1630,69 +1632,46 @@ test('Batch - Redundant validation messages should not be rendered in a detail g
   },
 }));
 
-test('Batch - Redundant validation messages should not be rendered in a detail grid when focused row is enabled (T950174)', async (t) => {
+test('Checkbox has ink ripple in material theme inside editing popup (T977287)', async (t) => {
   const dataGrid = new DataGrid('#container');
-  const detailGrid = new DataGrid('#detailContainer');
+  const { takeScreenshot, compareResults } = createScreenshotsComparer(t);
 
   // act
   await t
-    .click(dataGrid.getDataRow(0).getCommandCell(0).element)
-    .click(detailGrid.getHeaderPanel().getAddRowButton())
-    .click(detailGrid.getHeaderPanel().getSaveButton())
-    .click(detailGrid.getDataCell(0, 0).element);
+    .click(dataGrid.getDataRow(0).getCommandCell(1).getButton(0))
+    .wait(1000)
+    .click('.dx-overlay-content .dx-checkbox');
 
   // assert
   await t
-    .expect(await getElementCount(dataGrid, '.dx-overlay-wrapper.dx-invalid-message')).eql(1);
-
-  // act
-  await t
-    .click(detailGrid.getDataCell(0, 1).element);
-
-  // assert
-  await t
-    .expect(await getElementCount(dataGrid, '.dx-overlay-wrapper.dx-invalid-message')).eql(1);
-
-  // act
-  await t
-    .click(detailGrid.getDataCell(0, 0).element);
-
-  // assert
-  await t
-    .expect(await getElementCount(dataGrid, '.dx-overlay-wrapper.dx-invalid-message')).eql(1);
-}).before(() => createWidget('dxDataGrid', {
-  dataSource: [{ id: 1, field: 'field' }],
-  keyExpr: 'id',
-  loadingTimeout: undefined,
-  masterDetail: {
-    enabled: true,
-    template(): any {
-      return ($('<div id="detailContainer">') as any).dxDataGrid({
-        dataSource: [],
-        keyExpr: 'id',
-        focusedRowEnabled: true,
-        columns: [
-          {
-            dataField: 'id',
-            validationRules: [
-              { type: 'required' },
-            ],
-          },
-          {
-            dataField: 'field',
-            validationRules: [
-              { type: 'required' },
-            ],
-          }],
-        editing: {
-          mode: 'batch',
-          allowAdding: true,
-          allowUpdating: true,
-        },
-      });
+    .expect(await takeScreenshot('grid-popup-editing-checkbox.png', '.dx-overlay-content'))
+    .ok()
+    .expect(compareResults.isValid())
+    .ok(compareResults.errorMessages());
+}).before(async () => {
+  await changeTheme('material.blue.light');
+  return createWidget('dxDataGrid', {
+    dataSource: [{
+      ID: 1,
+      LastName: 'Heart',
+    }],
+    keyExpr: 'ID',
+    editing: {
+      allowUpdating: true,
+      mode: 'popup',
+      form: {
+        items: [{
+          dataField: 'checkbox',
+          editorType: 'dxCheckBox',
+        }],
+      },
     },
-  },
-}));
+    columns: ['LastName'],
+  });
+}).after(async () => {
+  await disposeWidgets();
+  await changeTheme('generic.light');
+});
 
 test('The "Cannot read property "brokenRules" of undefined" error occurs T978286', async (t) => {
   const dataGrid = new DataGrid('#container');

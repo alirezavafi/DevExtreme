@@ -445,8 +445,8 @@ const KeyboardNavigationController = core.ViewController.inherit({
                 this._dataController.pageIndex(pageIndex + pageStep);
                 eventArgs.originalEvent.preventDefault();
             }
-        } else if(scrollable && scrollable._container().height() < scrollable.$content().height()) {
-            this._scrollBy(0, scrollable._container().height() * pageStep);
+        } else if(scrollable && $(scrollable.container()).height() < scrollable.$content().height()) {
+            this._scrollBy(0, $(scrollable.container()).height() * pageStep);
             eventArgs.originalEvent.preventDefault();
         }
     },
@@ -1066,7 +1066,9 @@ const KeyboardNavigationController = core.ViewController.inherit({
 
         this._isHiddenFocus = disableFocus;
 
-        if(isGroupRow($row) || this.isRowFocusType()) {
+        const isRowFocus = isGroupRow($row) || this.isRowFocusType();
+
+        if(isRowFocus) {
             $focusElement = $row;
             if(focusedView) {
                 this.setFocusedRowIndex(this._getRowIndex($row));
@@ -1095,6 +1097,9 @@ const KeyboardNavigationController = core.ViewController.inherit({
             }
             if(disableFocus) {
                 $focusElement.addClass(CELL_FOCUS_DISABLED_CLASS);
+                if(isRowFocus) {
+                    $cell.addClass(CELL_FOCUS_DISABLED_CLASS);
+                }
             } else {
                 this._editorFactory.focus($focusElement);
             }
@@ -1106,7 +1111,7 @@ const KeyboardNavigationController = core.ViewController.inherit({
             const editingController = this._editingController;
             const isCellEditMode = editingController.getEditMode() === EDIT_MODE_CELL;
 
-            if(!this.option('repaintChangesOnly') && isCellEditMode && editingController.hasChanges()) {
+            if(isCellEditMode && editingController.hasChanges()) {
                 editingController._focusEditingCell();
                 return;
             }
@@ -1364,10 +1369,12 @@ const KeyboardNavigationController = core.ViewController.inherit({
         return this._isCellValid($cell);
     },
     _isLastRow: function(rowIndex) {
+        const dataController = this._dataController;
+
         if(this._isVirtualRowRender()) {
-            return rowIndex >= this._dataController.totalItemsCount() - 1;
+            return rowIndex >= dataController.getMaxRowIndex();
         }
-        return rowIndex === this._dataController.items().length - 1;
+        return rowIndex === dataController.items().length - 1;
     },
     _isFirstValidCell: function(cellPosition) {
         let isFirstValidCell = false;
@@ -1578,13 +1585,23 @@ const KeyboardNavigationController = core.ViewController.inherit({
         const keyPressEvent = createEvent(eventArgs, { type: 'keypress', target: $input.get(0) });
         const inputEvent = createEvent(eventArgs, { type: 'input', target: $input.get(0) });
 
+        $input.get(0).select();
         eventsEngine.trigger($input, keyDownEvent);
+
         if(!keyDownEvent.isDefaultPrevented()) {
             eventsEngine.trigger($input, keyPressEvent);
             if(!keyPressEvent.isDefaultPrevented()) {
                 const timeout = browser.mozilla ? 25 : 0; // T882996
+
                 setTimeout(() => {
                     $input.val(editorValue);
+
+                    if(browser.msie) {
+                        gridCoreUtils.setSelectionRange($input.get(0), {
+                            selectionStart: editorValue.length,
+                            selectionEnd: editorValue.length
+                        });
+                    }
 
                     const $widgetContainer = $input.closest(`.${WIDGET_CLASS}`);
                     eventsEngine.off($widgetContainer, 'focusout'); // for NumberBox to save entered symbol
@@ -2164,6 +2181,16 @@ export const keyboardNavigationModule = {
                             editorFactory.refocus();
                         }
                     }
+                },
+                getMaxRowIndex: function() {
+                    let result = this.items().length - 1;
+                    const virtualItemsCount = this.virtualItemsCount();
+
+                    if(virtualItemsCount) {
+                        result += (virtualItemsCount.begin + virtualItemsCount.end);
+                    }
+
+                    return result;
                 }
             },
             adaptiveColumns: {

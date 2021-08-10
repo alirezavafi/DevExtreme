@@ -2501,3 +2501,223 @@ test('Grid should get focus when the focus method is called (T955678)', async (t
     $('#mycontainer').remove();
   })();
 });
+
+test('New mode. A cell should be focused when the PageDow/Up key is pressed (T898324)', async (t) => {
+  const dataGrid = new DataGrid('#container');
+
+  // act
+  await t
+    .click(dataGrid.getDataCell(0, 0).element);
+
+  // assert
+  await t
+    .expect(dataGrid.getDataCell(0, 0).isFocused)
+    .ok()
+    .expect(dataGrid.apiOption('focusedRowIndex'))
+    .eql(0)
+    .expect(dataGrid.apiOption('focusedColumnIndex'))
+    .eql(0);
+
+  // act
+  await t
+    .pressKey('pagedown');
+
+  // assert
+  await t
+    .expect(dataGrid.getDataCell(8, 0).isFocused)
+    .ok()
+    .expect(dataGrid.apiOption('focusedRowIndex'))
+    .eql(8)
+    .expect(dataGrid.apiOption('focusedColumnIndex'))
+    .eql(0);
+
+  // act
+  await t
+    .pressKey('pageup');
+
+  // assert
+  await t
+    .expect(dataGrid.getDataCell(0, 0).isFocused)
+    .ok()
+    .expect(dataGrid.apiOption('focusedRowIndex'))
+    .eql(0)
+    .expect(dataGrid.apiOption('focusedColumnIndex'))
+    .eql(0);
+}).before(async () => {
+  const getData = function (): Record<string, unknown>[] {
+    const items: Record<string, unknown>[] = [];
+    for (let i = 0; i < 100; i += 1) {
+      items.push({
+        ID: i + 1,
+        Name: `Name ${i + 1}`,
+        Description: `Description ${i + 1}`,
+      });
+    }
+    return items;
+  };
+  await createWidget('dxDataGrid', {
+    dataSource: getData(),
+    keyExpr: 'ID',
+    remoteOperations: true,
+    height: 300,
+    scrolling: {
+      mode: 'virtual',
+      rowRenderingMode: 'virtual',
+      newMode: true,
+    },
+    columns: ['Name', 'Description'],
+    onFocusedCellChanging(e) {
+      e.isHighlighted = true;
+    },
+  });
+});
+
+test('Focus next cell using tab after adding row if some another row is focused and repaintChangesOnly is enabled (T1004913)', async (t) => {
+  const dataGrid = new DataGrid('#container');
+
+  const addRowButton = dataGrid.getHeaderPanel().getAddRowButton();
+  const cell00 = dataGrid.getDataCell(0, 0);
+  const editor00 = cell00.getEditor();
+  const cell01 = dataGrid.getDataCell(0, 1);
+  const editor01 = cell01.getEditor();
+
+  await t
+    .click(addRowButton)
+
+    .expect(cell00.isFocused)
+    .ok()
+    .expect(editor00.element.focused)
+    .ok()
+
+    .pressKey('tab')
+
+    .expect(cell01.isFocused)
+    .ok()
+    .expect(editor01.element.focused)
+    .ok();
+}).before(async () => createWidget('dxDataGrid', {
+  dataSource: [{ ID: 1, FirstName: 'John' }],
+  keyExpr: 'ID',
+  repaintChangesOnly: true,
+  editing: {
+    mode: 'cell',
+    allowUpdating: true,
+    allowAdding: true,
+  },
+  focusedRowEnabled: true,
+  focusedRowKey: 1,
+  columns: ['ID', 'FirstName'],
+}));
+
+test('All rows should be focused on arrow-up/down when virtual scrolling enabled with group summary (T1014612)', async (t) => {
+  const dataGrid = new DataGrid('#container');
+
+  // act (forward)
+  await t
+    .pressKey('tab');
+
+  // assert
+  await t
+    .expect(dataGrid.getHeaders().getHeaderRow(0).getHeaderCell(1).element.focused)
+    .ok();
+
+  // act
+  await t
+    .pressKey('tab');
+
+  // assert
+  await t
+    .expect(dataGrid.getGroupRow(0).element.focused)
+    .ok()
+    .expect(dataGrid.getGroupRow(0).isFocused)
+    .ok();
+
+  // act
+  await t
+    .pressKey('down');
+
+  // assert
+  await t
+    .expect(dataGrid.getDataCell(1, 1).element.focused)
+    .ok()
+    .expect(dataGrid.getDataCell(1, 1).isFocused)
+    .ok();
+
+  // act
+  await t
+    .pressKey('down');
+
+  // assert
+  await t
+    .expect(dataGrid.getGroupRow(1).element.focused)
+    .ok()
+    .expect(dataGrid.getGroupRow(1).isFocused)
+    .ok();
+
+  // act
+  await t
+    .pressKey('down');
+
+  // assert
+  await t
+    .expect(dataGrid.getDataCell(4, 1).element.focused)
+    .ok()
+    .expect(dataGrid.getDataCell(4, 1).isFocused)
+    .ok();
+
+  // act (backward)
+  await t
+    .pressKey('up');
+
+  // assert
+  await t
+    .expect(dataGrid.getGroupRow(1).element.focused)
+    .ok()
+    .expect(dataGrid.getGroupRow(1).isFocused)
+    .ok();
+
+  // act
+  await t
+    .pressKey('up');
+
+  // assert
+  await t
+    .expect(dataGrid.getDataCell(1, 1).element.focused)
+    .ok()
+    .expect(dataGrid.getDataCell(1, 1).isFocused)
+    .ok();
+
+  // act
+  await t
+    .pressKey('up');
+
+  // assert
+  await t
+    .expect(dataGrid.getGroupRow(0).element.focused)
+    .ok()
+    .expect(dataGrid.getGroupRow(0).isFocused)
+    .ok();
+}).before(async () => createWidget('dxDataGrid', {
+  dataSource: [
+    { id: 1, name: 'test1' },
+    { id: 2, name: 'test2' },
+  ],
+  keyExpr: 'id',
+  grouping: {
+    autoExpandAll: true,
+  },
+  scrolling: {
+    mode: 'virtual',
+  },
+  summary: {
+    groupItems: [{
+      column: 'id',
+      summaryType: 'count',
+      showInGroupFooter: true,
+    }],
+  },
+  columns: ['id', {
+    dataField: 'name',
+    groupIndex: 0,
+  }],
+}));

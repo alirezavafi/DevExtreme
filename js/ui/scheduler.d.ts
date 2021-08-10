@@ -13,6 +13,8 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
+
 import {
     DxEvent,
     EventInfo,
@@ -366,8 +368,9 @@ export interface dxSchedulerOptions extends WidgetOptions<dxScheduler> {
      * @docid
      * @default null
      * @public
+     * @type string|Array<dxSchedulerAppointment>|Store|DataSource|DataSourceOptions
      */
-    dataSource?: string | Array<dxSchedulerAppointment> | DataSource | DataSourceOptions;
+    dataSource?: string | Array<Appointment> | Store | DataSource | DataSourceOptions;
     /**
      * @docid
      * @extends DateCellTemplate
@@ -751,7 +754,7 @@ export interface dxSchedulerOptions extends WidgetOptions<dxScheduler> {
        * @docid
        * @default null
        */
-      dataSource?: string | Array<any> | DataSource | DataSourceOptions,
+      dataSource?: string | Array<any> | Store | DataSource | DataSourceOptions,
       /**
        * @docid
        * @type_function_param1 resource:object
@@ -1082,10 +1085,13 @@ export default class dxScheduler extends Widget {
 }
 
 /**
- * @docid
- * @inherits CollectionWidgetItem
- * @type object
+ * @public
+ */
+export type Appointment = dxSchedulerAppointment;
+
+/**
  * @namespace DevExpress.ui
+ * @deprecated Use the Scheduler's Appointment type instead
  */
 export interface dxSchedulerAppointment extends CollectionWidgetItem {
     /**

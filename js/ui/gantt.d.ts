@@ -16,8 +16,10 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
+
 import {
-    dxTreeListColumn
+    Column
 } from './tree_list';
 
 import Widget, {
@@ -25,11 +27,11 @@ import Widget, {
 } from './widget/ui.widget';
 
 import {
-    dxToolbarItem
+    Item as dxToolbarItem
 } from './toolbar';
 
 import {
-    dxContextMenuItem
+    Item as dxContextMenuItem
 } from './context_menu';
 
 import {
@@ -247,10 +249,11 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
     allowSelection?: boolean;
     /**
      * @docid
+     * @type Array<dxTreeListColumn|string>
      * @default undefined
      * @public
      */
-    columns?: Array<dxTreeListColumn | string>;
+    columns?: Array<Column | string>;
     /**
      * @docid
      * @default null
@@ -261,7 +264,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
        * @docid
        * @default null
        */
-      dataSource?: Array<any> | DataSource | DataSourceOptions,
+      dataSource?: Array<any> | Store | DataSource | DataSourceOptions,
       /**
        * @docid
        * @default "id"
@@ -353,7 +356,12 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
        * @docid
        * @default false
        */
-      autoUpdateParentTasks?: boolean
+      autoUpdateParentTasks?: boolean,
+      /**
+       * @docid
+       * @default false
+       */
+       enablePredecessorGap?: boolean
     };
     /**
      * @docid
@@ -716,7 +724,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
        * @docid
        * @default null
        */
-      dataSource?: Array<any> | DataSource | DataSourceOptions,
+      dataSource?: Array<any> | Store | DataSource | DataSourceOptions,
       /**
        * @docid
        * @default "id"
@@ -748,7 +756,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
        * @docid
        * @default null
        */
-      dataSource?: Array<any> | DataSource | DataSourceOptions,
+      dataSource?: Array<any> | Store | DataSource | DataSourceOptions,
       /**
        * @docid
        * @default "id"
@@ -820,7 +828,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
        * @docid
        * @default null
        */
-      dataSource?: Array<any> | DataSource | DataSourceOptions,
+      dataSource?: Array<any> | Store | DataSource | DataSourceOptions,
       /**
        * @docid
        * @default "end"
@@ -908,7 +916,6 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @type_function_param2_field6 taskResources:Array<object>
      * @type_function_param2_field7 taskSize:object
      * @type_function_return string|Element|jQuery
-     * @return void
      * @public
      */
     taskContentTemplate?: template | ((container: DxElement, item: TaskContentTemplateData) => string | UserDefinedElement);
@@ -1104,7 +1111,7 @@ export interface dxGanttToolbar {
      * @type Array<dxGanttToolbarItem,Enums.GanttToolbarItem>
      * @public
      */
-    items?: Array<dxGanttToolbarItem | 'separator' | 'undo' | 'redo' | 'expandAll' | 'collapseAll' | 'addTask' | 'deleteTask' | 'zoomIn' | 'zoomOut' | 'taskDetails' | 'fullScreen' | 'resourceManager'>;
+    items?: Array<ToolbarItem | 'separator' | 'undo' | 'redo' | 'expandAll' | 'collapseAll' | 'addTask' | 'deleteTask' | 'zoomIn' | 'zoomOut' | 'taskDetails' | 'fullScreen' | 'resourceManager'>;
 }
 
 /**
@@ -1124,12 +1131,17 @@ export interface dxGanttContextMenu {
      * @type Array<dxGanttContextMenuItem,Enums.GanttContextMenuItem>
      * @public
      */
-    items?: Array<dxGanttContextMenuItem | 'undo' | 'redo' | 'expandAll' | 'collapseAll' | 'addTask' | 'deleteTask' | 'zoomIn' | 'zoomOut' | 'deleteDependency' | 'taskDetails' | 'resourceManager'>;
+    items?: Array<ContextMenuItem | 'undo' | 'redo' | 'expandAll' | 'collapseAll' | 'addTask' | 'deleteTask' | 'zoomIn' | 'zoomOut' | 'deleteDependency' | 'taskDetails' | 'resourceManager'>;
 }
 
 /**
- * @docid
- * @inherits dxToolbarItem
+ * @public
+ * @namespace DevExpress.ui.dxGantt
+ */
+export type ToolbarItem = dxGanttToolbarItem;
+
+/**
+ * @deprecated Use ToolbarItem instead
  * @namespace DevExpress.ui
  */
 export interface dxGanttToolbarItem extends dxToolbarItem {
@@ -1149,8 +1161,13 @@ export interface dxGanttToolbarItem extends dxToolbarItem {
 }
 
 /**
- * @docid
- * @inherits dxContextMenuItem
+ * @public
+ * @namespace DevExpress.ui.dxGantt
+ */
+export type ContextMenuItem = dxGanttContextMenuItem;
+
+/**
+ * @deprecated Use ContextMenuItem instead
  * @namespace DevExpress.ui
  */
 export interface dxGanttContextMenuItem extends dxContextMenuItem {

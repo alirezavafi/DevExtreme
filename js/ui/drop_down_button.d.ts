@@ -15,6 +15,8 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
+
 import {
     DxEvent,
     EventInfo,
@@ -24,7 +26,7 @@ import {
 } from '../events/index';
 
 import {
-    dxListItem
+    Item as dxListItem
 } from './list';
 
 import {
@@ -71,10 +73,11 @@ export type SelectionChangedEvent = NativeEventInfo<dxDropDownButton> & {
 export interface dxDropDownButtonOptions extends WidgetOptions<dxDropDownButton> {
     /**
      * @docid
+     * @type string | Array<dxDropDownButtonItem | any> | Store | DataSource | DataSourceOptions
      * @default null
      * @public
      */
-    dataSource?: string | Array<dxDropDownButtonItem | any> | DataSource | DataSourceOptions;
+    dataSource?: string | Array<Item | any> | Store | DataSource | DataSourceOptions;
     /**
      * @docid
      * @default true
@@ -83,7 +86,7 @@ export interface dxDropDownButtonOptions extends WidgetOptions<dxDropDownButton>
     deferRendering?: boolean;
     /**
      * @docid
-     * @default 'this'
+     * @default undefined
      * @type_function_param1 itemData:object
      * @type_function_return string
      * @public
@@ -134,10 +137,11 @@ export interface dxDropDownButtonOptions extends WidgetOptions<dxDropDownButton>
     itemTemplate?: template | ((itemData: any, itemIndex: number, itemElement: DxElement) => string | UserDefinedElement);
     /**
      * @docid
+     * @type Array<dxDropDownButtonItem | any>
      * @default null
      * @public
      */
-    items?: Array<dxDropDownButtonItem | any>;
+    items?: Array<Item | any>;
     /**
      * @docid
      * @default 'this'
@@ -296,9 +300,13 @@ export default class dxDropDownButton extends Widget {
 }
 
 /**
- * @docid
- * @inherits dxListItem
- * @type object
+ * @public
+ * @namespace DevExpress.ui.dxDropDownButton
+ */
+export type Item = dxDropDownButtonItem;
+
+/**
+ * @deprecated Use Item instead
  * @namespace DevExpress.ui
  */
 export interface dxDropDownButtonItem extends dxListItem {

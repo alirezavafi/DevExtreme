@@ -15,6 +15,8 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
+
 import {
     EventInfo,
     NativeEventInfo,
@@ -83,16 +85,18 @@ export interface dxSlideOutOptions extends CollectionWidgetOptions<dxSlideOut> {
     contentTemplate?: template | ((container: DxElement) => string | UserDefinedElement);
     /**
      * @docid
+     * @type string | Array<string | dxSlideOutItem | any> | Store | DataSource | DataSourceOptions
      * @default null
      * @public
      */
-    dataSource?: string | Array<string | dxSlideOutItem | any> | DataSource | DataSourceOptions;
+    dataSource?: string | Array<string | Item | any> | Store | DataSource | DataSourceOptions;
     /**
      * @docid
+     * @type Array<string | dxSlideOutItem | any>
      * @fires dxSlideOutOptions.onOptionChanged
      * @public
      */
-    items?: Array<string | dxSlideOutItem | any>;
+    items?: Array<string | Item | any>;
     /**
      * @docid
      * @default "menuGroup"
@@ -173,6 +177,7 @@ export interface dxSlideOutOptions extends CollectionWidgetOptions<dxSlideOut> {
  * @module ui/slide_out
  * @export default
  * @namespace DevExpress.ui
+ * @deprecated dxDrawer
  * @public
  */
 export default class dxSlideOut extends CollectionWidget {
@@ -194,17 +199,21 @@ export default class dxSlideOut extends CollectionWidget {
     /**
      * @docid
      * @publicName toggleMenuVisibility(showing)
-     * @param1 showing:boolean
+     * @param1 showing:Boolean|undefined
      * @return Promise<void>
      * @public
      */
-    toggleMenuVisibility(showing: boolean): DxPromise<void>;
+    toggleMenuVisibility(showing?: boolean): DxPromise<void>;
 }
 
 /**
- * @docid
- * @inherits CollectionWidgetItem
- * @type object
+ * @public
+ * @namespace DevExpress.ui.dxSlideOut
+ */
+export type Item = dxSlideOutItem;
+
+/**
+ * @deprecated Use Item instead
  * @namespace DevExpress.ui
  */
 export interface dxSlideOutItem extends CollectionWidgetItem {

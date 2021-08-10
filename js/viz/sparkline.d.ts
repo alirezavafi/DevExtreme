@@ -3,7 +3,6 @@ import {
 } from '../core/element';
 
 import {
-    Cancelable,
     EventInfo,
     InitializedEventInfo,
     ChangedOptionInfo
@@ -13,6 +12,7 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
 
 import {
     FileSavingEventInfo,
@@ -37,7 +37,7 @@ export type ExportedEvent = EventInfo<dxSparkline>;
 export type ExportingEvent = EventInfo<dxSparkline> & ExportInfo;
 
 /** @public */
-export type FileSavingEvent = Cancelable & FileSavingEventInfo<dxSparkline>;
+export type FileSavingEvent = FileSavingEventInfo<dxSparkline>;
 
 /** @public */
 export type IncidentOccurredEvent = EventInfo<dxSparkline> & IncidentInfo;
@@ -82,7 +82,7 @@ export interface dxSparklineOptions extends BaseSparklineOptions<dxSparkline> {
      * @extends CommonVizDataSource
      * @public
      */
-    dataSource?: Array<any> | DataSource | DataSourceOptions | string;
+    dataSource?: Array<any> | Store | DataSource | DataSourceOptions | string;
     /**
      * @docid
      * @default '#666666'

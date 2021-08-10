@@ -15,6 +15,8 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
+
 import {
     EventInfo,
     NativeEventInfo,
@@ -150,10 +152,11 @@ export interface dxListOptions extends CollectionWidgetOptions<dxList>, SearchBo
     collapsibleGroups?: boolean;
     /**
      * @docid
+     * @type string | Array<string | dxListItem | any> | Store | DataSource | DataSourceOptions
      * @default null
      * @public
      */
-    dataSource?: string | Array<string | dxListItem | any> | DataSource | DataSourceOptions;
+    dataSource?: string | Array<string | Item | any> | Store | DataSource | DataSourceOptions;
     /**
      * @docid
      * @default undefined
@@ -212,10 +215,11 @@ export interface dxListOptions extends CollectionWidgetOptions<dxList>, SearchBo
     itemDragging?: dxSortableOptions;
     /**
      * @docid
+     * @type Array<string | dxListItem | any>
      * @fires dxListOptions.onOptionChanged
      * @public
      */
-    items?: Array<string | dxListItem | any>;
+    items?: Array<string | Item | any>;
     /**
      * @docid
      * @default []
@@ -226,7 +230,7 @@ export interface dxListOptions extends CollectionWidgetOptions<dxList>, SearchBo
        * @docid
        * @type_function_param1 itemElement:DxElement
        * @type_function_param2 itemData:object
-       * @return void
+       * @type_function_return void
        */
       action?: ((itemElement: DxElement, itemData: any) => any),
       /**
@@ -707,9 +711,13 @@ export default class dxList extends CollectionWidget {
 }
 
 /**
- * @docid
- * @inherits CollectionWidgetItem
- * @type object
+ * @public
+ * @namespace DevExpress.ui.dxList
+ */
+export type Item = dxListItem;
+
+/**
+ * @deprecated Use Item instead
  * @namespace DevExpress.ui
  */
 export interface dxListItem extends CollectionWidgetItem {

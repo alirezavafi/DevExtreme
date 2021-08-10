@@ -15,8 +15,9 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
+
 import {
-    Cancelable,
     EventInfo,
     NativeEventInfo,
     InitializedEventInfo,
@@ -74,7 +75,7 @@ export type ExportedEvent = EventInfo<dxVectorMap>;
 export type ExportingEvent = EventInfo<dxVectorMap> & ExportInfo;
 
 /** @public */
-export type FileSavingEvent = Cancelable & FileSavingEventInfo<dxVectorMap>;
+export type FileSavingEvent = FileSavingEventInfo<dxVectorMap>;
 
 /** @public */
 export type IncidentOccurredEvent = EventInfo<dxVectorMap> & IncidentInfo;
@@ -207,9 +208,13 @@ export interface MapLayerElement {
 }
 
 /**
- * @docid
- * @inherits BaseLegendItem
- * @type object
+ * @public
+ * @namespace DevExpress.viz.dxVectorMap
+ */
+export type LegendItem = VectorMapLegendItem;
+
+/**
+ * @deprecated Use LegendItem instead
  * @namespace DevExpress.viz
  */
 export interface VectorMapLegendItem extends BaseLegendItem {
@@ -358,10 +363,10 @@ export interface dxVectorMapOptions extends BaseWidgetOptions<dxVectorMap> {
       dataField?: string,
       /**
        * @docid
-       * @type object|DataSource|DataSourceOptions|string|Array<any>
+       * @type object|Store|DataSource|DataSourceOptions|string|Array<any>
        * @extends CommonVizDataSource
        */
-      dataSource?: any | DataSource | DataSourceOptions | string,
+      dataSource?: any | Store | DataSource | DataSourceOptions | string,
       /**
        * @docid
        * @type Enums.VectorMapMarkerType
@@ -484,7 +489,7 @@ export interface dxVectorMapOptions extends BaseWidgetOptions<dxVectorMap> {
        * @notUsedInTheme
        */
       type?: 'area' | 'line' | 'marker'
-    }> | { borderColor?: string, borderWidth?: number, color?: string, colorGroupingField?: string, colorGroups?: Array<number>, customize?: ((elements: Array<MapLayerElement>) => any), dataField?: string, dataSource?: any | DataSource | DataSourceOptions | string, elementType?: 'bubble' | 'dot' | 'image' | 'pie', hoverEnabled?: boolean, hoveredBorderColor?: string, hoveredBorderWidth?: number, hoveredColor?: string, label?: { dataField?: string, enabled?: boolean, font?: Font }, maxSize?: number, minSize?: number, name?: string, opacity?: number, palette?: Array<string> | PaletteType, paletteSize?: number, selectedBorderColor?: string, selectedBorderWidth?: number, selectedColor?: string, selectionMode?: 'multiple' | 'none' | 'single', size?: number, sizeGroupingField?: string, sizeGroups?: Array<number>, type?: 'area' | 'line' | 'marker' };
+    }> | { borderColor?: string, borderWidth?: number, color?: string, colorGroupingField?: string, colorGroups?: Array<number>, customize?: ((elements: Array<MapLayerElement>) => any), dataField?: string, dataSource?: any | Store | DataSource | DataSourceOptions | string, elementType?: 'bubble' | 'dot' | 'image' | 'pie', hoverEnabled?: boolean, hoveredBorderColor?: string, hoveredBorderWidth?: number, hoveredColor?: string, label?: { dataField?: string, enabled?: boolean, font?: Font }, maxSize?: number, minSize?: number, name?: string, opacity?: number, palette?: Array<string> | PaletteType, paletteSize?: number, selectedBorderColor?: string, selectedBorderWidth?: number, selectedColor?: string, selectionMode?: 'multiple' | 'none' | 'single', size?: number, sizeGroupingField?: string, sizeGroups?: Array<number>, type?: 'area' | 'line' | 'marker' };
     /**
      * @docid
      * @type Array<Object>
@@ -730,7 +735,7 @@ export interface dxVectorMapLegends extends BaseLegend {
      * @type_function_return Array<VectorMapLegendItem>
      * @public
      */
-    customizeItems?: ((items: Array<VectorMapLegendItem>) => Array<VectorMapLegendItem>);
+    customizeItems?: ((items: Array<LegendItem>) => Array<LegendItem>);
     /**
      * @docid dxVectorMapOptions.legends.customizeText
      * @type_function_param1 itemInfo:object
@@ -777,7 +782,7 @@ export interface dxVectorMapLegends extends BaseLegend {
      * @type_function_return string|SVGElement|jQuery
      * @public
      */
-    markerTemplate?: template | ((legendItem: VectorMapLegendItem, element: SVGGElement) => string | UserDefinedElement<SVGElement>);
+    markerTemplate?: template | ((legendItem: LegendItem, element: SVGGElement) => string | UserDefinedElement<SVGElement>);
     /**
      * @docid dxVectorMapOptions.legends.source
      * @notUsedInTheme

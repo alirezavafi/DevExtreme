@@ -48,6 +48,8 @@ const getMousePosition = (event) => ({
 });
 
 const GESTURE_COVER_CLASS = 'dx-gesture-cover';
+const OVERLAY_WRAPPER_CLASS = 'dx-overlay-wrapper';
+const OVERLAY_CONTENT_CLASS = 'dx-overlay-content';
 
 class ScrollHelper {
     constructor(orientation, component) {
@@ -78,11 +80,24 @@ class ScrollHelper {
     }
 
     updateScrollable(elements, mousePosition) {
-        const that = this;
+        let isScrollableFound = false;
 
-        if(!elements.some(element => that._trySetScrollable(element, mousePosition))) {
-            that._$scrollableAtPointer = null;
-            that._scrollSpeed = 0;
+        elements.some((element) => {
+            const $element = $(element);
+            const isTargetOverOverlayWrapper = $element.hasClass(OVERLAY_WRAPPER_CLASS) && $element.css('pointerEvents') !== 'none';
+            const isTargetOverOverlayContent = $element.hasClass(OVERLAY_CONTENT_CLASS);
+            if(isTargetOverOverlayWrapper || isTargetOverOverlayContent) {
+                return true;
+            }
+
+            isScrollableFound = this._trySetScrollable(element, mousePosition);
+
+            return isScrollableFound;
+        });
+
+        if(!isScrollableFound) {
+            this._$scrollableAtPointer = null;
+            this._scrollSpeed = 0;
         }
     }
 

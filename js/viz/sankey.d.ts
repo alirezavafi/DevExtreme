@@ -16,8 +16,9 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
+
 import {
-    Cancelable,
     EventInfo,
     NativeEventInfo,
     InitializedEventInfo,
@@ -48,7 +49,7 @@ export type ExportedEvent = EventInfo<dxSankey>;
 export type ExportingEvent = EventInfo<dxSankey> & ExportInfo;
 
 /** @public */
-export type FileSavingEvent = Cancelable & FileSavingEventInfo<dxSankey>;
+export type FileSavingEvent = FileSavingEventInfo<dxSankey>;
 
 /** @public */
 export type IncidentOccurredEvent = EventInfo<dxSankey> & IncidentInfo;
@@ -114,7 +115,7 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
      * @extends CommonVizDataSource
      * @public
      */
-    dataSource?: Array<any> | DataSource | DataSourceOptions | string;
+    dataSource?: Array<any> | Store | DataSource | DataSourceOptions | string;
     /**
      * @docid
      * @default true
@@ -725,7 +726,7 @@ export interface dxSankeyNode {
     showTooltip(): void;
     /**
      * @docid
-     * @deprecated
+     * @deprecated dxSankeyNode.label
      * @public
      */
     title?: string;

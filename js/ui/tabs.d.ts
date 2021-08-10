@@ -6,6 +6,8 @@ import DataSource, {
     DataSourceOptions
 } from '../data/data_source';
 
+import Store from '../data/abstract_store';
+
 import {
     EventInfo,
     NativeEventInfo,
@@ -54,10 +56,11 @@ export type SelectionChangedEvent = EventInfo<dxTabs> & SelectionChangedInfo;
 export interface dxTabsOptions<T = dxTabs> extends CollectionWidgetOptions<T> {
     /**
      * @docid
+     * @type string | Array<string | dxTabsItem | any> | Store | DataSource | DataSourceOptions
      * @default null
      * @public
      */
-    dataSource?: string | Array<string | dxTabsItem | any> | DataSource | DataSourceOptions;
+    dataSource?: string | Array<string | Item | any> | Store | DataSource | DataSourceOptions;
     /**
      * @docid
      * @default true [for](desktop)
@@ -72,10 +75,11 @@ export interface dxTabsOptions<T = dxTabs> extends CollectionWidgetOptions<T> {
     hoverStateEnabled?: boolean;
     /**
      * @docid
+     * @type Array<string | dxTabsItem | any>
      * @fires dxTabsOptions.onOptionChanged
      * @public
      */
-    items?: Array<string | dxTabsItem | any>;
+    items?: Array<string | Item | any>;
     /**
      * @docid
      * @default false
@@ -128,9 +132,13 @@ export default class dxTabs extends CollectionWidget {
 }
 
 /**
- * @docid
- * @inherits CollectionWidgetItem
- * @type object
+ * @public
+ * @namespace DevExpress.ui.dxTabs
+ */
+export type Item = dxTabsItem;
+
+/**
+ * @deprecated Use Item instead
  * @namespace DevExpress.ui
  */
 export interface dxTabsItem extends CollectionWidgetItem {
