@@ -90,7 +90,7 @@ const Views = {
             if (persianUtils.isPersianLocale()){
                 const cellPDate = new persianDate(cellDate);
                 const currentPDate = new persianDate(this.option('date'));
-                return !cellPDate.isSameMonth(currentPDate);     
+                return !cellPDate.isSameMonth(currentPDate);
             }
             return cellDate.getMonth() !== this.option('date').getMonth();
         },
@@ -129,7 +129,7 @@ const Views = {
         },
 
         _getNextCellData: function(date) {
-            date = dateUtils.createDate(date);
+            date = new Date(date);
             date.setDate(date.getDate() + 1);
             return date;
         },
@@ -187,17 +187,12 @@ const Views = {
         },
 
         _getCellText: function(cellDate) {
-            if (persianUtils.isPersianLocale())
-            {
-                return dateLocalization.format(cellDate, 'month');
-            }
-
             return dateLocalization.getMonthNames('abbreviated')[cellDate.getMonth()];
         },
 
         _getFirstCellData: function() {
             const currentDate = this.option('date');
-            const data = dateUtils.createDate(currentDate);
+            const data = new Date(currentDate);
             if (persianUtils.isPersianLocale()) {
                 return new persianDate(data).startOf('year').toDate();
             }
@@ -209,7 +204,7 @@ const Views = {
         },
 
         _getNextCellData: function(date) {
-            date = dateUtils.createDate(date);
+            date = new Date(date);
             if (persianUtils.isPersianLocale()) {
                 return new persianDate(date).add('M', 1).toDate();
             }
@@ -219,7 +214,7 @@ const Views = {
         },
 
         _getCellByDate: function(date) {
-            const foundDate = dateUtils.createDate(date);
+            const foundDate = new Date(date);
             foundDate.setDate(1);
 
             return this._$table.find(`td[data-value='${dateSerialization.serializeDate(foundDate, dateUtils.getShortDateFormat())}']`);
@@ -268,7 +263,7 @@ const Views = {
         },
 
         _isOtherView: function(cellDate) {
-            const date = dateUtils.createDate(cellDate);
+            const date = new Date(cellDate);
             if (persianUtils.isPersianLocale()) {
                 return !persianUtils.sameDecade(date, this.option('date'));
             }
@@ -296,6 +291,7 @@ const Views = {
         },
 
         _getNextCellData: function(date) {
+            date = new Date(date);
             date = dateUtils.createDate(date);
             if (persianUtils.isPersianLocale()) {
                 return new persianDate(date).add('y', 1).toDate();
@@ -317,8 +313,8 @@ const Views = {
             }
 
             const firstYearInDecade = dateUtils.getFirstYearInDecade(currentDate);
-            const startDate = dateUtils.createDate(currentDate);
-            const endDate = dateUtils.createDate(currentDate);
+            const startDate = new Date(currentDate);
+            const endDate = new Date(currentDate);
 
             startDate.setFullYear(firstYearInDecade);
             endDate.setFullYear(firstYearInDecade + 9);
@@ -331,7 +327,7 @@ const Views = {
         },
 
         _getCellByDate: function(date) {
-            const foundDate = dateUtils.createDate(date);
+            const foundDate = new Date(date);
             foundDate.setDate(1);
             foundDate.setMonth(0);
 
@@ -364,7 +360,7 @@ const Views = {
         },
 
         _isOtherView: function(cellDate) {
-            const date = dateUtils.createDate(cellDate);
+            const date = new Date(cellDate);
             if (persianUtils.isPersianLocale()) {
                 return !persianUtils.sameCentury(date, this.option('date'));
             }
@@ -383,7 +379,7 @@ const Views = {
             }
 
             const startDate = dateLocalization.format(cellDate, 'yyyy');
-            const endDate = dateUtils.createDate(cellDate);
+            const endDate = new Date(cellDate);
 
             endDate.setFullYear(endDate.getFullYear() + 9);
 
@@ -401,13 +397,13 @@ const Views = {
         },
 
         _getNextCellData: function(date) {
-            date = dateUtils.createDate(date);
+            date = new Date(date);
             date.setFullYear(date.getFullYear() + 10);
             return date;
         },
 
         _getCellByDate: function(date) {
-            const foundDate = dateUtils.createDate(date);
+            const foundDate = new Date(date);
             foundDate.setDate(1);
             foundDate.setMonth(0);
             foundDate.setFullYear(dateUtils.getFirstYearInDecade(foundDate));
@@ -426,8 +422,8 @@ const Views = {
                 return startPDate.year() + "-" + endPDate.year();
             }
             const firstDecadeInCentury = dateUtils.getFirstDecadeInCentury(currentDate);
-            const startDate = dateUtils.createDate(currentDate);
-            const endDate = dateUtils.createDate(currentDate);
+            const startDate = new Date(currentDate);
+            const endDate = new Date(currentDate);
 
             startDate.setFullYear(firstDecadeInCentury);
             endDate.setFullYear(firstDecadeInCentury + 99);
