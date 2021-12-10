@@ -40,7 +40,6 @@
     "inferno-hydrate": "^7.4.9",
     "persian-date": "^1.1.0",
     "jszip": "^3.7.1",
-    "persian-date": "^1.1.0",
     "rrule": "2.6.6",
     "turndown": "~7.0.0"
   },

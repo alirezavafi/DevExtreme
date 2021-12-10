@@ -5,6 +5,12 @@ This project has minimal modifications to original DevExtreme version with follo
 - Persian Date Picker
 - Localized Persian Messages
 
+For build:
+```
+npm install
+npm run build-dist
+```
+
 For use you must only set locale to 'fa-IR' or set calendar using Intl to persian:
 
 ```js
