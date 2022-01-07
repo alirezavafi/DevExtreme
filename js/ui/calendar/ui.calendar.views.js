@@ -77,12 +77,14 @@ const Views = {
 
         _isTodayCell: function(cellDate) {
             const today = this.option('_todayDate')();
+
             return dateUtils.sameDate(cellDate, today);
         },
 
         _isDateOutOfRange: function(cellDate) {
             const minDate = this.option('min');
             const maxDate = this.option('max');
+
             return !dateUtils.dateInRange(cellDate, minDate, maxDate, 'date');
         },
 
@@ -262,6 +264,7 @@ const Views = {
             }
 
             date.setMonth(1);
+
             return !dateUtils.sameDecade(date, this.option('date'));
         },
 
