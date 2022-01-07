@@ -165,13 +165,6 @@ const Views = {
             return 'year';
         },
 
-        _getDefaultOptions: function() {
-            return extend(this.callBase(), {
-                rowCount: 4,
-                colCount: 3
-            });
-        },
-
         _isTodayCell: function(cellDate) {
             const today = this.option('_todayDate')();
 
@@ -292,7 +285,6 @@ const Views = {
 
         _getNextCellData: function(date) {
             date = new Date(date);
-            date = dateUtils.createDate(date);
             if (persianUtils.isPersianLocale()) {
                 return new persianDate(date).add('y', 1).toDate();
             }
