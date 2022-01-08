@@ -6,6 +6,8 @@ import { extend } from '../../core/utils/extend';
 import dateLocalization from '../../localization/date';
 import dateSerialization from '../../core/utils/date_serialization';
 import { isDefined } from '../../core/utils/type';
+import persianUtils from '../../localization/persian';
+import persianDate from 'persian-date';
 
 const CALENDAR_OTHER_MONTH_CLASS = 'dx-calendar-other-month';
 const CALENDAR_OTHER_VIEW_CLASS = 'dx-calendar-other-view';
@@ -87,10 +89,20 @@ const Views = {
         },
 
         _isOtherView: function(cellDate) {
+            if(persianUtils.isPersianLocale()) {
+                const cellPDate = new persianDate(cellDate);
+                const currentPDate = new persianDate(this.option('date'));
+                return !cellPDate.isSameMonth(currentPDate);
+            }
+
             return cellDate.getMonth() !== this.option('date').getMonth();
         },
 
         _getCellText: function(cellDate) {
+            if(persianUtils.isPersianLocale()) {
+                return new persianDate(cellDate).date();
+            }
+
             return dateLocalization.format(cellDate, 'd');
         },
 
@@ -105,10 +117,13 @@ const Views = {
         },
 
         _getFirstCellData: function() {
-            const firstDay = dateUtils.getFirstMonthDate(this.option('date'));
+            const date = this.option('date');
+            var firstDay = dateUtils.getFirstMonthDate(date);
+            if(persianUtils.isPersianLocale()) {
+                firstDay = new persianDate(date).startOf('month').toDate();
+            }
             let firstMonthDayOffset = this._getFirstDayOfWeek() - firstDay.getDay();
             const daysInWeek = this.option('colCount');
-
             if(firstMonthDayOffset >= 0) {
                 firstMonthDayOffset -= daysInWeek;
             }
@@ -169,12 +184,22 @@ const Views = {
         },
 
         _getCellText: function(cellDate) {
-            return dateLocalization.getMonthNames('abbreviated')[cellDate.getMonth()];
+            const month = cellDate.getMonth();
+            if(persianUtils.isPersianLocale()) {
+                const monthNames = ['بهمن', 'اسفند', 'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور' , 'مهر' , 'آبان' ,'آذر' ,'دی']
+                return monthNames[month];
+            }
+
+            return dateLocalization.getMonthNames('abbreviated')[month];
         },
 
         _getFirstCellData: function() {
             const currentDate = this.option('date');
             const data = new Date(currentDate);
+            if(persianUtils.isPersianLocale()) {
+                const d = new persianDate(data).startOf('year').toDate();
+                return d;
+            }
 
             data.setDate(1);
             data.setMonth(0);
@@ -184,6 +209,10 @@ const Views = {
 
         _getNextCellData: function(date) {
             date = new Date(date);
+            if(persianUtils.isPersianLocale()) {
+                return new persianDate(date).add('M', 1).toDate();
+            }
+
             date.setMonth(date.getMonth() + 1);
             return date;
         },
@@ -200,6 +229,10 @@ const Views = {
         },
 
         getNavigatorCaption: function() {
+            if(persianUtils.isPersianLocale()) {
+                return new persianDate(this.option('date')).year();
+            }
+
             return dateLocalization.format(this.option('date'), 'yyyy');
         },
 
@@ -216,6 +249,11 @@ const Views = {
 
         _isTodayCell: function(cellDate) {
             const today = this.option('_todayDate')();
+            if(persianUtils.isPersianLocale()) {
+                const cellPDate = new persianDate(cellDate);
+                const todayPDate = new persianDate(today);
+                return cellPDate.isSameMonth(todayPDate) && cellPDate.year() == todayPDate.year();
+            }
 
             return dateUtils.sameYear(cellDate, today);
         },
@@ -229,28 +267,55 @@ const Views = {
 
         _isOtherView: function(cellDate) {
             const date = new Date(cellDate);
+            if (persianUtils.isPersianLocale()) {
+                return !persianUtils.sameDecade(date, this.option('date'));
+            }
+
             date.setMonth(1);
 
             return !dateUtils.sameDecade(date, this.option('date'));
         },
 
         _getCellText: function(cellDate) {
+            if (persianUtils.isPersianLocale()) {
+                return new persianDate(cellDate).year();
+            }
+
             return dateLocalization.format(cellDate, 'yyyy');
         },
 
         _getFirstCellData: function() {
+            if(persianUtils.isPersianLocale()) {
+                const pYear = persianUtils.firstYearInDecade(this.option('date'));
+                const d = new persianDate([pYear, 1, 1]).toDate();
+                return d;
+            }
+
             const year = dateUtils.getFirstYearInDecade(this.option('date')) - 1;
             return dateUtils.createDateWithFullYear(year, 0, 1);
         },
 
         _getNextCellData: function(date) {
             date = new Date(date);
+            if (persianUtils.isPersianLocale()) {
+                return new persianDate(date).add('y', 1).toDate();
+            }
+
             date.setFullYear(date.getFullYear() + 1);
             return date;
         },
 
         getNavigatorCaption: function() {
             const currentDate = this.option('date');
+            if(persianUtils.isPersianLocale()) {
+                const pYear = persianUtils.firstYearInDecade(currentDate);
+                const startPDate = new persianDate(currentDate);
+                const endPDate = new persianDate(currentDate);
+                startPDate.year(pYear);
+                endPDate.year(pYear + 9);
+                return startPDate.year() + "-" + endPDate.year();
+            }
+
             const firstYearInDecade = dateUtils.getFirstYearInDecade(currentDate);
             const startDate = new Date(currentDate);
             const endDate = new Date(currentDate);
@@ -300,12 +365,23 @@ const Views = {
 
         _isOtherView: function(cellDate) {
             const date = new Date(cellDate);
+            if(persianUtils.isPersianLocale()) {
+                return !persianUtils.sameCentury(date, this.option('date'));
+            }
+
             date.setMonth(1);
 
             return !dateUtils.sameCentury(date, this.option('date'));
         },
 
         _getCellText: function(cellDate) {
+            if(persianUtils.isPersianLocale()) {
+                const startPDate = new persianDate(cellDate);
+                const endPDate = new persianDate(cellDate);
+                endPDate.year(startPDate.year() + 9);
+                return startPDate.year() + "-" + endPDate.year();
+            }
+
             const startDate = dateLocalization.format(cellDate, 'yyyy');
             const endDate = new Date(cellDate);
 
@@ -315,6 +391,12 @@ const Views = {
         },
 
         _getFirstCellData: function() {
+            if(persianUtils.isPersianLocale()) {
+                const pYear = persianUtils.firstDecadeInCentury(this.option('date'));
+                const d = new persianDate([pYear, 1, 1]).toDate();
+                return d;
+            }
+
             const decade = dateUtils.getFirstDecadeInCentury(this.option('date')) - 10;
             return dateUtils.createDateWithFullYear(decade, 0, 1);
         },
@@ -336,6 +418,15 @@ const Views = {
 
         getNavigatorCaption: function() {
             const currentDate = this.option('date');
+            if (persianUtils.isPersianLocale()) {
+                const pYear = persianUtils.firstDecadeInCentury(currentDate);
+                const startPDate = new persianDate(currentDate);
+                const endPDate = new persianDate(currentDate);
+                startPDate.year(pYear);
+                endPDate.year(pYear + 99);
+                return startPDate.year() + "-" + endPDate.year();
+            }
+
             const firstDecadeInCentury = dateUtils.getFirstDecadeInCentury(currentDate);
             const startDate = new Date(currentDate);
             const endDate = new Date(currentDate);

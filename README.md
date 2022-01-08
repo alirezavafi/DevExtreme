@@ -1,3 +1,44 @@
+# DevExtreme (Persian Support)
+
+This project has minimal modifications to original DevExtreme version with following features:
+
+- Persian Date Picker
+- Localized Persian Messages
+
+For build:
+```
+npm install
+npm run build-dist
+```
+
+For use you must only set locale to 'fa-IR' or set calendar using Intl to persian:
+
+```js
+import { locale } from "devextreme/localization";
+
+// ...
+
+function App() {
+
+    // ...
+
+    locale("fa-IR");
+    // or
+    locale("fa-IR-u-ca-persian-nu-latn");
+    // or
+    locale("en-US-u-ca-persian-nu-latn");
+
+    // ...
+}
+
+```
+![Screenshot](screen01.png)
+![Screenshot](screen02.png)
+
+<br/>
+<hr/>
+<br/>
+
 # DevExtreme
 
 DevExtreme is a set of enterprise-ready UI component suites for Angular, React, Vue, and jQuery. It is everything you need to create responsive web apps for touch devices and traditional desktops: data grid, interactive charts, data editors, navigation and multi-purpose widgets. These controls are designed to look great and to provide powerful functionality in any browser.
