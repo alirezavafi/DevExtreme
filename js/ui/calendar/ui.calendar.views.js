@@ -4,10 +4,10 @@ import { noop } from '../../core/utils/common';
 import dateUtils from '../../core/utils/date';
 import { extend } from '../../core/utils/extend';
 import dateLocalization from '../../localization/date';
-import persianUtils from '../../localization/persian';
-import persianDate from 'persian-date';
 import dateSerialization from '../../core/utils/date_serialization';
 import { isDefined } from '../../core/utils/type';
+import persianUtils from '../../localization/persian';
+import persianDate from 'persian-date';
 
 const CALENDAR_OTHER_MONTH_CLASS = 'dx-calendar-other-month';
 const CALENDAR_OTHER_VIEW_CLASS = 'dx-calendar-other-view';
@@ -89,18 +89,20 @@ const Views = {
         },
 
         _isOtherView: function(cellDate) {
-            if (persianUtils.isPersianLocale()){
+            if(persianUtils.isPersianLocale()) {
                 const cellPDate = new persianDate(cellDate);
                 const currentPDate = new persianDate(this.option('date'));
                 return !cellPDate.isSameMonth(currentPDate);
             }
+
             return cellDate.getMonth() !== this.option('date').getMonth();
         },
 
         _getCellText: function(cellDate) {
-            if (persianUtils.isPersianLocale()){
+            if(persianUtils.isPersianLocale()) {
                 return new persianDate(cellDate).date();
             }
+
             return dateLocalization.format(cellDate, 'd');
         },
 
@@ -116,12 +118,12 @@ const Views = {
 
         _getFirstCellData: function() {
             const date = this.option('date');
-            let firstDay = dateUtils.getFirstMonthDate(date);
-            if (persianUtils.isPersianLocale())
+            var firstDay = dateUtils.getFirstMonthDate(date);
+            if(persianUtils.isPersianLocale()) {
                 firstDay = new persianDate(date).startOf('month').toDate();
+            }
             let firstMonthDayOffset = this._getFirstDayOfWeek() - firstDay.getDay();
             const daysInWeek = this.option('colCount');
-
             if(firstMonthDayOffset >= 0) {
                 firstMonthDayOffset -= daysInWeek;
             }
@@ -182,14 +184,21 @@ const Views = {
         },
 
         _getCellText: function(cellDate) {
-            return dateLocalization.getMonthNames('abbreviated')[cellDate.getMonth()];
+            const month = cellDate.getMonth();
+            if(persianUtils.isPersianLocale()) {
+                const monthNames = ['بهمن', 'اسفند', 'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور' , 'مهر' , 'آبان' ,'آذر' ,'دی']
+                return monthNames[month];
+            }
+
+            return dateLocalization.getMonthNames('abbreviated')[month];
         },
 
         _getFirstCellData: function() {
             const currentDate = this.option('date');
             const data = new Date(currentDate);
-            if (persianUtils.isPersianLocale()) {
-                return new persianDate(data).startOf('year').toDate();
+            if(persianUtils.isPersianLocale()) {
+                const d = new persianDate(data).startOf('year').toDate();
+                return d;
             }
 
             data.setDate(1);
@@ -200,7 +209,7 @@ const Views = {
 
         _getNextCellData: function(date) {
             date = new Date(date);
-            if (persianUtils.isPersianLocale()) {
+            if(persianUtils.isPersianLocale()) {
                 return new persianDate(date).add('M', 1).toDate();
             }
 
@@ -220,7 +229,7 @@ const Views = {
         },
 
         getNavigatorCaption: function() {
-            if (persianUtils.isPersianLocale()) {
+            if(persianUtils.isPersianLocale()) {
                 return new persianDate(this.option('date')).year();
             }
 
@@ -240,8 +249,7 @@ const Views = {
 
         _isTodayCell: function(cellDate) {
             const today = this.option('_todayDate')();
-            if (persianUtils.isPersianLocale())
-            {
+            if(persianUtils.isPersianLocale()) {
                 const cellPDate = new persianDate(cellDate);
                 const todayPDate = new persianDate(today);
                 return cellPDate.isSameMonth(todayPDate) && cellPDate.year() == todayPDate.year();
@@ -277,9 +285,10 @@ const Views = {
         },
 
         _getFirstCellData: function() {
-            if (persianUtils.isPersianLocale()) {
+            if(persianUtils.isPersianLocale()) {
                 const pYear = persianUtils.firstYearInDecade(this.option('date'));
-                return new persianDate([pYear, 1, 1]).toDate();
+                const d = new persianDate([pYear, 1, 1]).toDate();
+                return d;
             }
 
             const year = dateUtils.getFirstYearInDecade(this.option('date')) - 1;
@@ -298,7 +307,7 @@ const Views = {
 
         getNavigatorCaption: function() {
             const currentDate = this.option('date');
-            if (persianUtils.isPersianLocale()) {
+            if(persianUtils.isPersianLocale()) {
                 const pYear = persianUtils.firstYearInDecade(currentDate);
                 const startPDate = new persianDate(currentDate);
                 const endPDate = new persianDate(currentDate);
@@ -356,7 +365,7 @@ const Views = {
 
         _isOtherView: function(cellDate) {
             const date = new Date(cellDate);
-            if (persianUtils.isPersianLocale()) {
+            if(persianUtils.isPersianLocale()) {
                 return !persianUtils.sameCentury(date, this.option('date'));
             }
 
@@ -366,7 +375,7 @@ const Views = {
         },
 
         _getCellText: function(cellDate) {
-            if (persianUtils.isPersianLocale()) {
+            if(persianUtils.isPersianLocale()) {
                 const startPDate = new persianDate(cellDate);
                 const endPDate = new persianDate(cellDate);
                 endPDate.year(startPDate.year() + 9);
@@ -382,9 +391,10 @@ const Views = {
         },
 
         _getFirstCellData: function() {
-            if (persianUtils.isPersianLocale()) {
+            if(persianUtils.isPersianLocale()) {
                 const pYear = persianUtils.firstDecadeInCentury(this.option('date'));
-                return new persianDate([pYear, 1, 1]).toDate();
+                const d = new persianDate([pYear, 1, 1]).toDate();
+                return d;
             }
 
             const decade = dateUtils.getFirstDecadeInCentury(this.option('date')) - 10;
@@ -416,6 +426,7 @@ const Views = {
                 endPDate.year(pYear + 99);
                 return startPDate.year() + "-" + endPDate.year();
             }
+
             const firstDecadeInCentury = dateUtils.getFirstDecadeInCentury(currentDate);
             const startDate = new Date(currentDate);
             const endDate = new Date(currentDate);
