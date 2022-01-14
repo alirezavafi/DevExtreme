@@ -8,7 +8,9 @@ This project has minimal modifications to original DevExtreme version with follo
 For build:
 ```
 npm install
-npm run build-dist
+npm run build-npm-devextreme
+cd artifacts\npm\devextreme
+npm pack
 ```
 
 For use you must only set locale to 'fa-IR' or set calendar using Intl to persian:
