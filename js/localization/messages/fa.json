@@ -159,7 +159,7 @@
         "dxDataGrid-ariaSelectRow": "انتخب سطر",
         "dxDataGrid-ariaToolbar": "نوار ابزار",
         "dxDataGrid-filterBuilderPopupTitle": "فیلتر",
-        "dxDataGrid-filterPanelCreateFilter": "ایجاد فیتر",
+        "dxDataGrid-filterPanelCreateFilter": "ایجاد فیلتر",
         "dxDataGrid-filterPanelClearFilter": "حذف فیلتر",
         "dxDataGrid-filterPanelFilterEnabledHint": "فعال نمودن فیلتر",
 
@@ -168,7 +168,7 @@
           "dxTreeList-ariaToolbar": "Tree list toolbar",
           "dxTreeList-editingAddRowToNode": "Add",
 
-        "dxPager-infoText": "صقحه {0} از {1} ({2} آیتم)",
+        "dxPager-infoText": "صفحه {0} از {1} ({2} آیتم)",
         "dxPager-pagesCountText": "از",
         "dxPager-pageSizesAllText": "همه",
 
