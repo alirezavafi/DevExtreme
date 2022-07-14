@@ -10,6 +10,7 @@ const CLASS = {
   resizableHandleTop: 'dx-resizable-handle-top',
   stateFocused: 'dx-state-focused',
   allDay: 'dx-scheduler-all-day-appointment',
+  title: 'dx-scheduler-appointment-title',
   reduced: {
     icon: 'dx-scheduler-appointment-reduced-icon',
     appointment: 'dx-scheduler-appointment-reduced',
@@ -17,6 +18,7 @@ const CLASS = {
     body: 'dx-scheduler-appointment-body',
     tail: 'dx-scheduler-appointment-tail',
   },
+  draggableSource: 'dx-draggable-source',
 };
 
 export default class Appointment {
@@ -39,6 +41,10 @@ export default class Appointment {
   isReducedBody: Promise<boolean>;
 
   isReducedTail: Promise<boolean>;
+
+  isDraggableSource: Promise<boolean>;
+
+  title: Promise<string>;
 
   reducedIcon: Selector;
 
@@ -73,6 +79,8 @@ export default class Appointment {
     this.isReducedHead = this.element.hasClass(CLASS.reduced.head);
     this.isReducedBody = this.element.hasClass(CLASS.reduced.body);
     this.isReducedTail = this.element.hasClass(CLASS.reduced.tail);
+    this.isDraggableSource = this.element.hasClass(CLASS.draggableSource);
+    this.title = this.element.find(`.${CLASS.title}`).innerText;
   }
 
   getColor(): Promise<string> {

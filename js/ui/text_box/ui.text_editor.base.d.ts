@@ -10,15 +10,22 @@ import Editor, {
     EditorOptions,
 } from '../editor/editor';
 
+import {
+    LabelMode,
+    EditorStyle,
+    MaskMode,
+    TextBoxPredefinedButton,
+    TextEditorButtonLocation,
+} from '../../common';
+
 /** @namespace DevExpress.ui */
 export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponent> {
     /**
      * @docid
-     * @type Array<string, Enums.TextBoxButtonName, dxTextEditorButton>
      * @default undefined
      * @public
      */
-    buttons?: Array<string | 'clear' | dxTextEditorButton>;
+    buttons?: Array<string | TextBoxPredefinedButton | dxTextEditorButton>;
     /**
      * @docid
      * @default true
@@ -45,12 +52,11 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
     label?: string;
     /**
      * @docid
-     * @type Enums.EditorLabelMode
      * @default 'static'
      * @default 'floating' &for(Material)
      * @public
      */
-    labelMode?: 'static' | 'floating' | 'hidden';
+    labelMode?: LabelMode;
     /**
      * @docid
      * @default ""
@@ -85,10 +91,8 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -97,10 +101,8 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -109,10 +111,8 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -121,10 +121,8 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -133,10 +131,8 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -145,10 +141,8 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -157,10 +151,8 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -168,11 +160,9 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
+     * @type_function_param1_field event:event
      * @default null
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -181,10 +171,8 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -193,10 +181,8 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -215,11 +201,10 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
     showClearButton?: boolean;
     /**
      * @docid
-     * @type Enums.ShowMaskMode
      * @default "always"
      * @public
      */
-    showMaskMode?: 'always' | 'onFocus';
+    showMaskMode?: MaskMode;
     /**
      * @docid
      * @default false
@@ -228,12 +213,11 @@ export interface dxTextEditorOptions<TComponent> extends EditorOptions<TComponen
     spellcheck?: boolean;
     /**
      * @docid
-     * @type Enums.EditorStylingMode
      * @default 'outlined'
      * @default 'filled' &for(Material)
      * @public
      */
-    stylingMode?: 'outlined' | 'underlined' | 'filled';
+    stylingMode?: EditorStyle;
     /**
      * @docid
      * @readonly
@@ -281,7 +265,6 @@ export default class dxTextEditor<TProperties = Properties> extends Editor<TProp
     /**
      * @docid
      * @publicName getButton(name)
-     * @return dxButton | undefined
      * @public
      */
     getButton(name: string): dxButton | undefined;
@@ -295,11 +278,10 @@ export default class dxTextEditor<TProperties = Properties> extends Editor<TProp
 export interface dxTextEditorButton {
     /**
      * @docid
-     * @type Enums.TextEditorButtonLocation
      * @default "after"
      * @public
      */
-    location?: 'after' | 'before';
+    location?: TextEditorButtonLocation;
     /**
      * @docid
      * @default undefined

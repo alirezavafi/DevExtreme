@@ -38,10 +38,9 @@ const SRC = [
 
 const IGNORE_PATHS_BY_FRAMEWORKS = {
     vue: [],
-    react: [],
-    angular: [
-        '!js/renovation/ui/pager/pager.tsx'
-    ]
+    react: [
+        '!js/renovation/ui/grids/data_grid_next/data_grid_next_full.tsx'
+    ],
 };
 
 const COMPAT_TESTS_PARTS = 'testing/tests/Renovation/';
@@ -279,7 +278,7 @@ function addGenerationTaskWithSuffix(
                 )
                 .pipe(gulp.dest(frameworkDest));
         },
-        function declarationBuild() {
+        function watchDeclarationBuild() {
             gulp.watch(SRC, gulp.series(`generate-${frameworkName}${suffix}-declaration-only`));
         }
     ];
@@ -307,18 +306,9 @@ addGenerationTask('react',
 addGenerationTaskWithSuffix('react', '-typescript', knownErrors, false, false, false);
 
 const ngErrors = [
-    'Cannot find module \'@angular/core\'',
-    'Cannot find module \'@angular/common\'',
-    'Cannot find module \'@angular/forms\'',
-    'Cannot find module \'@angular/cdk/portal\'',
     'Cannot find module \'inferno\'',
     'Cannot find module \'inferno-create-element\'',
 ].concat(knownErrors);
-
-addGenerationTask('angular', ngErrors);
-addGenerationTaskWithSuffix('angular', '-typescript', ngErrors, false, false, false);
-
-addGenerationTask('vue', [], false, true, false);
 
 gulp.task('generate-components-watch', gulp.series('generate-components', function() {
     gulp
@@ -328,4 +318,4 @@ gulp.task('generate-components-watch', gulp.series('generate-components', functi
         ));
 }));
 
-gulp.task('native-components-compilation-check', gulp.series('react-compilation-check', 'angular-compilation-check'));
+gulp.task('native-components-compilation-check', gulp.series('react-compilation-check'));

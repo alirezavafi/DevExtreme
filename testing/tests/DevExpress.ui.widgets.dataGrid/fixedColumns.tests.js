@@ -15,6 +15,7 @@ QUnit.testStart(function() {
 </div>';
 
     $('#qunit-fixture').html(markup);
+    // $('body').append(markup);
 });
 
 
@@ -1889,7 +1890,6 @@ QUnit.module('Fixed columns', {
         // arrange
         const that = this;
         let $fixedTable;
-        const done = assert.async();
 
         that.items = generateData(20);
         that.setupDataGrid();
@@ -1902,19 +1902,18 @@ QUnit.module('Fixed columns', {
         assert.equal($fixedTable.position().top, 0, 'fixed table - position top');
 
         // arrange
-        that.rowsView.scrollTo(500);
+        const scrollable = that.rowsView.getScrollable();
+        scrollable.scrollTo(500);
+        $(scrollable.container()).trigger('scroll');
+        that.clock.tick();
 
-        that.clock.restore();
-        setTimeout(function() {
-            // act
-            that.rowsView.render(that.gridContainer);
-            that.rowsView.resize();
+        // act
+        that.rowsView.render(that.gridContainer);
+        that.rowsView.resize();
 
-            // assert
-            $fixedTable = that.gridContainer.find('.dx-datagrid-rowsview').children('.dx-datagrid-content-fixed').find('table');
-            assert.equal($fixedTable.parent().scrollTop(), 500, 'scroll top of the fixed table');
-            done();
-        });
+        // assert
+        $fixedTable = that.gridContainer.find('.dx-datagrid-rowsview').children('.dx-datagrid-content-fixed').find('table');
+        assert.equal($fixedTable.parent().scrollTop(), 500, 'scroll top of the fixed table');
     });
 
     // T310680
@@ -2000,7 +1999,6 @@ QUnit.module('Fixed columns', {
     QUnit.test('Updating position of the fixed table (when scrollbar at the bottom) after delete the row', function(assert) {
         // arrange
         const that = this;
-        const done = assert.async();
 
         that.items = generateData(20);
         that.setupDataGrid();
@@ -2013,21 +2011,20 @@ QUnit.module('Fixed columns', {
         assert.equal($fixedTable.position().top, 0, 'fixed table - position top');
 
         // arrange
-        that.rowsView.scrollTo(600);
-        that.clock.restore();
+        const scrollable = that.rowsView.getScrollable();
+        scrollable.scrollTo(600);
+        $(scrollable.container()).trigger('scroll');
+        that.clock.tick();
 
-        setTimeout(function() {
-            const positionTop = $fixedTable.position().top;
+        const positionTop = $fixedTable.position().top;
 
-            // act
-            that.gridContainer.find('.dx-data-row').eq(1).remove(); // remove second row of the main table
-            that.gridContainer.find('.dx-data-row').eq(20).remove(); // remove second row of the fixed table
-            that.rowsView.resize();
+        // act
+        that.gridContainer.find('.dx-data-row').eq(1).remove(); // remove second row of the main table
+        that.gridContainer.find('.dx-data-row').eq(20).remove(); // remove second row of the fixed table
+        that.rowsView.resize();
 
-            // assert
-            assert.notStrictEqual($fixedTable.position().top, positionTop, 'scroll top of the fixed table is changed');
-            done();
-        });
+        // assert
+        assert.notStrictEqual($fixedTable.position().top, positionTop, 'scroll top of the fixed table is changed');
     });
 
     // T722330
@@ -2650,6 +2647,43 @@ QUnit.module('Headers reordering and resizing with fixed columns', {
         assert.equal(pointsByFixedColumns.length, 2, 'count points by columns');
         assert.deepEqual(pointsByFixedColumns[0], { columnIndex: 0, index: 1, x: -9900, y: -10000 }, 'first point');
         assert.deepEqual(pointsByFixedColumns[1], { columnIndex: 1, index: 2, x: -9775, y: -10000 }, 'second point');
+    });
+
+    // T1098769
+    QUnit.test('Resizing (columnResizingMode=\'widget\') - get points by columns when all columns have resizing disabled and there is a fixed column with a fixed position on the right', function(assert) {
+        // arrange
+        const that = this;
+        const $testElement = $('#container').width(800);
+
+        that.setupDataGrid({
+            allowColumnResizing: true,
+            columnResizingMode: 'widget',
+            showColumnHeaders: true,
+            columns: [
+                {
+                    caption: 'Column 1', width: 200, allowResizing: false
+                },
+                {
+                    caption: 'Column 2', width: 200, allowResizing: false
+                },
+                {
+                    caption: 'Column 3', width: 200, allowResizing: false
+                },
+                {
+                    caption: 'Column 4', width: 200, allowResizing: false, fixed: true, fixedPosition: 'right'
+                }
+            ]
+        });
+        that.columnHeadersView.render($testElement);
+
+        // act
+        that.columnsResizerController._generatePointsByColumns();
+        const pointsByColumns = that.columnsResizerController._pointsByColumns;
+        const pointsByFixedColumns = that.columnsResizerController._pointsByFixedColumns;
+
+        // assert
+        assert.equal(pointsByColumns.length, 0, 'count points by columns');
+        assert.equal(pointsByFixedColumns.length, 0, 'count points by fixed columns');
     });
 });
 

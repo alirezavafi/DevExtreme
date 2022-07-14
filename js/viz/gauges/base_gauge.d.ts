@@ -4,11 +4,6 @@ import {
 } from '../../core/element';
 
 import {
-    PaletteType,
-    PaletteExtensionModeType,
-} from '../palette';
-
-import {
     template,
 } from '../../core/templates/template';
 
@@ -26,6 +21,18 @@ import BaseWidget, {
     BaseWidgetTooltip,
     Font,
 } from '../core/base_widget';
+
+import {
+    HorizontalEdge,
+    VerticalEdge,
+} from '../../common';
+
+import {
+    AnimationEaseMode,
+    Palette,
+    PaletteExtensionMode,
+    LabelOverlap,
+} from '../../common/charts';
 
 export interface TooltipInfo {
     target: any;
@@ -55,10 +62,8 @@ export interface BaseGaugeOptions<TComponent> extends BaseWidgetOptions<TCompone
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 target:object
+     * @type_function_param1_field component:this
+     * @type_function_param1_field target:object
      * @notUsedInTheme
      * @action
      * @public
@@ -68,10 +73,8 @@ export interface BaseGaugeOptions<TComponent> extends BaseWidgetOptions<TCompone
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 target:object
+     * @type_function_param1_field component:this
+     * @type_function_param1_field target:object
      * @notUsedInTheme
      * @action
      * @public
@@ -122,11 +125,10 @@ export interface BaseGaugeAnimation {
     duration?: number;
     /**
      * @docid BaseGaugeOptions.animation.easing
-     * @type Enums.VizAnimationEasing
      * @default 'easeOutCubic'
      * @public
      */
-    easing?: 'easeOutCubic' | 'linear';
+    easing?: AnimationEaseMode;
     /**
      * @docid BaseGaugeOptions.animation.enabled
      * @default true
@@ -159,17 +161,15 @@ export interface BaseGaugeRangeContainer {
     /**
      * @docid BaseGaugeOptions.rangeContainer.palette
      * @default "Material"
-     * @type Array<string>|Enums.VizPalette
      * @public
      */
-    palette?: Array<string> | PaletteType;
+    palette?: Array<string> | Palette;
     /**
      * @docid BaseGaugeOptions.rangeContainer.paletteExtensionMode
-     * @type Enums.VizPaletteExtensionMode
      * @default 'blend'
      * @public
      */
-    paletteExtensionMode?: PaletteExtensionModeType;
+    paletteExtensionMode?: PaletteExtensionMode;
     /**
      * @docid BaseGaugeOptions.rangeContainer.ranges
      * @default []
@@ -319,7 +319,6 @@ export interface BaseGaugeScale {
 export interface BaseGaugeScaleLabel {
     /**
      * @docid BaseGaugeOptions.scale.label.customizeText
-     * @type_function_param1_field1 value:Number
      * @notUsedInTheme
      * @public
      */
@@ -338,11 +337,10 @@ export interface BaseGaugeScaleLabel {
     format?: Format;
     /**
      * @docid BaseGaugeOptions.scale.label.overlappingBehavior
-     * @type Enums.ScaleLabelOverlappingBehavior
      * @default 'hide'
      * @public
      */
-    overlappingBehavior?: 'hide' | 'none';
+    overlappingBehavior?: LabelOverlap;
     /**
      * @docid BaseGaugeOptions.scale.label.useRangeColors
      * @default false
@@ -360,7 +358,6 @@ export interface BaseGaugeScaleLabel {
 export interface BaseGaugeTooltip extends BaseWidgetTooltip {
     /**
      * @docid BaseGaugeOptions.tooltip.contentTemplate
-     * @type_function_param1_field1 value:Number
      * @type_function_return string|Element|jQuery
      * @default undefined
      * @public
@@ -369,7 +366,6 @@ export interface BaseGaugeTooltip extends BaseWidgetTooltip {
     /**
      * @docid BaseGaugeOptions.tooltip.customizeTooltip
      * @default undefined
-     * @type_function_param1_field1 value:Number
      * @type_function_return object
      * @public
      */
@@ -459,13 +455,12 @@ export interface CommonIndicator {
     color?: string;
     /**
      * @docid
-     * @type Enums.HorizontalEdge
      * @default 'right' &for(value_indicators)
      * @default 'left' &for(subvalue_indicators)
      * @propertyOf linearRangeBar
      * @public
      */
-    horizontalOrientation?: 'left' | 'right';
+    horizontalOrientation?: HorizontalEdge;
     /**
      * @docid
      * @default 0
@@ -488,10 +483,9 @@ export interface CommonIndicator {
     /**
      * @docid
      * @default "Material"
-     * @type Array<string>|Enums.VizPalette
      * @public
      */
-    palette?: Array<string> | PaletteType;
+    palette?: Array<string> | Palette;
     /**
      * @docid
      * @default '#E18E92'
@@ -535,7 +529,6 @@ export interface CommonIndicator {
     text?: {
       /**
        * @docid
-       * @type_function_param1_field1 value:Number
        * @notUsedInTheme
        * @default undefined
        * @propertyOf circularRangeBar,linearRangeBar,circularTextCloud,linearTextCloud
@@ -562,13 +555,12 @@ export interface CommonIndicator {
     };
     /**
      * @docid
-     * @type Enums.VerticalEdge
      * @default 'bottom' &for(value_indicators)
      * @default 'top' &for(subvalue_indicators)
      * @propertyOf linearRangeBar
      * @public
      */
-    verticalOrientation?: 'bottom' | 'top';
+    verticalOrientation?: VerticalEdge;
     /**
      * @docid
      * @default 2
@@ -577,6 +569,7 @@ export interface CommonIndicator {
      */
     width?: number;
 }
+/** @public */
 export type GaugeIndicatorType = 'circle' | 'rangeBar' | 'rectangle' | 'rectangleNeedle' | 'rhombus' | 'textCloud' | 'triangleMarker' | 'triangleNeedle' | 'twoColorNeedle';
 
 /**

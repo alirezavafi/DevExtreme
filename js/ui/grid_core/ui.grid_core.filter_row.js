@@ -68,16 +68,17 @@ function isOnClickApplyFilterMode(that) {
     return that.option('filterRow.applyFilter') === 'onClick';
 }
 
-const ColumnHeadersViewFilterRowExtender = (function() {
-    const getEditorInstance = function($editorContainer) {
-        const $editor = $editorContainer && $editorContainer.children();
-        const componentNames = $editor && $editor.data('dxComponents');
-        const editor = componentNames && componentNames.length && $editor.data(componentNames[0]);
+const getEditorInstance = function($editorContainer) {
+    const $editor = $editorContainer && $editorContainer.children();
+    const componentNames = $editor && $editor.data('dxComponents');
+    const editor = componentNames && componentNames.length && $editor.data(componentNames[0]);
 
-        if(editor instanceof Editor) {
-            return editor;
-        }
-    };
+    if(editor instanceof Editor) {
+        return editor;
+    }
+};
+
+const ColumnHeadersViewFilterRowExtender = (function() {
 
     const getRangeTextByFilterValue = function(that, column) {
         let result = '';
@@ -182,7 +183,7 @@ const ColumnHeadersViewFilterRowExtender = (function() {
             let $editorRangeElements;
             let $menu;
 
-            if(gridCoreUtils.checkChanges(optionNames, ['filterValue', 'bufferedFilterValue', 'selectedFilterOperation', 'bufferedSelectedFilterOperation']) && e.columnIndex !== undefined) {
+            if(gridCoreUtils.checkChanges(optionNames, ['filterValue', 'bufferedFilterValue', 'selectedFilterOperation', 'bufferedSelectedFilterOperation', 'filterValues', 'filterType']) && e.columnIndex !== undefined) {
                 const visibleIndex = that._columnsController.getVisibleIndex(e.columnIndex);
                 const column = that._columnsController.columnOption(e.columnIndex);
                 $cell = that._getCellElement(that.element().find('.' + that.addWidgetPrefix(FILTER_ROW_CLASS)).index(), visibleIndex) || $();
@@ -476,7 +477,28 @@ const ColumnHeadersViewFilterRowExtender = (function() {
 
         _renderEditor: function($editorContainer, options) {
             $editorContainer.empty();
-            return this.getController('editorFactory').createEditor($('<div>').appendTo($editorContainer), options);
+            const $element = $('<div>').appendTo($editorContainer);
+            const editorController = this.getController('editorFactory');
+            const dataSource = this.getController('data').dataSource();
+            const filterRowController = this.getController('applyFilter');
+
+            if(options.lookup && this.option('syncLookupFilterValues')) {
+                filterRowController.setCurrentColumnForFiltering(options);
+                const filter = this.getController('data').getCombinedFilter();
+                filterRowController.setCurrentColumnForFiltering(null);
+
+                const lookupDataSource = gridCoreUtils.getWrappedLookupDataSource(options, dataSource, filter);
+                const lookupOptions = {
+                    ...options,
+                    lookup: {
+                        ...options.lookup,
+                        dataSource: lookupDataSource,
+                    }
+                };
+                return editorController.createEditor($element, lookupOptions);
+            } else {
+                return editorController.createEditor($element, options);
+            }
         },
 
         _renderFilterRangeContent: function($cell, column) {
@@ -641,6 +663,52 @@ const ColumnHeadersViewFilterRowExtender = (function() {
             return result;
         },
 
+        _handleDataChanged: function(e) {
+            this.callBase.apply(this, arguments);
+
+            if(e.operationTypes?.filtering || e.operationTypes?.fullReload) {
+                this.updateLookupDataSource();
+            }
+        },
+
+        updateLookupDataSource: function() {
+            if(!this.option('syncLookupFilterValues')) {
+                return;
+            }
+
+            if(!this.element()) {
+                return;
+            }
+
+            const columns = this._columnsController.getVisibleColumns();
+            const dataSource = this._dataController.dataSource();
+            const applyFilterViewController = this._applyFilterViewController;
+            const rowIndex = this.element().find('.' + this.addWidgetPrefix(FILTER_ROW_CLASS)).index();
+
+            if(rowIndex === -1) {
+                return;
+            }
+
+            columns.forEach((column, index) => {
+                if(!column.lookup) {
+                    return;
+                }
+
+                const $cell = this._getCellElement(rowIndex, index);
+                const editor = getEditorInstance($cell?.find('.dx-editor-container'));
+
+                if(editor) {
+                    applyFilterViewController.setCurrentColumnForFiltering(column);
+                    const filter = this._dataController.getCombinedFilter();
+                    applyFilterViewController.setCurrentColumnForFiltering(null);
+
+                    const lookupDataSource = gridCoreUtils.getWrappedLookupDataSource(column, dataSource, filter);
+
+                    editor.option('dataSource', lookupDataSource);
+                }
+            });
+        },
+
         optionChanged: function(args) {
             const that = this;
 
@@ -648,6 +716,14 @@ const ColumnHeadersViewFilterRowExtender = (function() {
                 case 'filterRow':
                 case 'showColumnLines':
                     this._invalidate(true, true);
+                    args.handled = true;
+                    break;
+                case 'syncLookupFilterValues':
+                    if(args.value) {
+                        this.updateLookupDataSource();
+                    } else {
+                        this.render();
+                    }
                     args.handled = true;
                     break;
                 default:
@@ -670,17 +746,18 @@ const DataControllerFilterRowExtender = {
 
         const filters = [this.callBase()];
         const columns = this._columnsController.getVisibleColumns(null, true);
+        const filterRowController = this.getController('applyFilter');
 
         each(columns, function() {
-
-            if(this.allowFiltering && this.calculateFilterExpression && isDefined(this.filterValue)) {
+            const shouldSkip = filterRowController.getCurrentColumnForFiltering()?.index === this.index;
+            if(this.allowFiltering && this.calculateFilterExpression && isDefined(this.filterValue) && !shouldSkip) {
                 const filter = this.createFilterExpression(this.filterValue, this.selectedFilterOperation || this.defaultFilterOperation, 'filterRow');
                 filters.push(filter);
             }
         });
 
         return gridCoreUtils.combineFilters(filters);
-    }
+    },
 };
 
 const ApplyFilterViewController = modules.ViewController.inherit({
@@ -727,12 +804,21 @@ const ApplyFilterViewController = modules.ViewController.inherit({
             columnHeadersViewElement.find('.' + this.addWidgetPrefix(FILTER_ROW_CLASS) + ' .' + FILTER_MODIFIED_CLASS).removeClass(FILTER_MODIFIED_CLASS);
             this._getHeaderPanel().enableApplyButton(false);
         }
+    },
+
+    setCurrentColumnForFiltering: function(column) {
+        this._currentColumn = column;
+    },
+
+    getCurrentColumnForFiltering: function() {
+        return this._currentColumn;
     }
 });
 
 export const filterRowModule = {
     defaultOptions: function() {
         return {
+            syncLookupFilterValues: true,
             filterRow: {
                 visible: false,
                 showOperationChooser: true,
@@ -801,6 +887,27 @@ export const filterRowModule = {
                     }
 
                     that.callBase.apply(that, arguments);
+                }
+            },
+            editing: {
+                updateFieldValue(options) {
+                    if(options.column.lookup) {
+                        this._needUpdateLookupDataSource = true;
+                    }
+
+                    return this.callBase.apply(this, arguments);
+                },
+                _afterSaveEditData(cancel) {
+                    if(this._needUpdateLookupDataSource && !cancel) {
+                        this.getView('columnHeadersView')?.updateLookupDataSource();
+                    }
+                    this._needUpdateLookupDataSource = false;
+
+                    return this.callBase.apply(this, arguments);
+                },
+                _afterCancelEditData() {
+                    this._needUpdateLookupDataSource = false;
+                    return this.callBase.apply(this, arguments);
                 }
             }
         },

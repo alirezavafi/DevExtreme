@@ -100,7 +100,7 @@ describe('Scrollable', () => {
       { name: 'clientHeight', calledWith: [] },
       { name: 'scrollLeft', calledWith: [] },
       { name: 'scrollTop', calledWith: [] },
-      { name: 'scrollOffset', calledWith: [] },
+      { name: 'scrollOffset', calledWith: [], hasSSRMode: true },
       { name: 'scrollWidth', calledWith: [] },
       { name: 'scrollHeight', calledWith: [] },
       { name: 'content', calledWith: [] },
@@ -380,7 +380,7 @@ describe('Scrollable', () => {
 
             viewModel.scrollTo(scrollToValue);
 
-            expect(viewModel.updateHandler).toBeCalledTimes(!useNative ? 1 : 0);
+            expect(viewModel.updateHandler).toBeCalledTimes(useNative ? 0 : 1);
             expect(viewModel.scrollBy).toBeCalledTimes(1);
             expect(viewModel.scrollBy).toBeCalledWith(expectedScrollByArg);
           });

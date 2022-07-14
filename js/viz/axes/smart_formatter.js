@@ -156,6 +156,10 @@ export function smartFormatter(tick, options) {
         tickInterval = abs(tick) >= 1 ? 1 : adjust(1 - abs(tick), tick);
     }
 
+    if(Object.is(tick, -0)) {
+        tick = 0;
+    }
+
     if(!isDefined(format) && options.type !== 'discrete' && tick && (options.logarithmBase === 10 || !isLogarithmic)) {
         if(options.dataType !== 'datetime' && isDefined(tickInterval)) {
             if(ticks.length && ticks.indexOf(tick) === -1) {
@@ -320,7 +324,7 @@ function processDateInterval(interval) {
     return interval;
 }
 
-export function formatRange(startValue, endValue, tickInterval, { dataType, type, logarithmBase }) {
+export function formatRange({ startValue, endValue, tickInterval, argumentFormat, axisOptions: { dataType, type, logarithmBase } }) {
     if(type === 'discrete') {
         return '';
     }
@@ -335,7 +339,7 @@ export function formatRange(startValue, endValue, tickInterval, { dataType, type
         dataType,
         tickInterval,
         logarithmBase,
-        labelOptions: {}
+        labelOptions: { format: argumentFormat }
     };
     return `${smartFormatter(startValue, formatOptions)} - ${smartFormatter(endValue, formatOptions)}`;
 }

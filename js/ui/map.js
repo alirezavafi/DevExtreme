@@ -1,6 +1,5 @@
 import $ from '../core/renderer';
 import eventsEngine from '../events/core/events_engine';
-import Promise from '../core/polyfills/promise';
 import { fromPromise } from '../core/utils/deferred';
 import registerComponent from '../core/component_registrator';
 import errors from './widget/ui.errors';
@@ -9,7 +8,7 @@ import Widget from './widget/ui.widget';
 import { titleize } from '../core/utils/inflector';
 import { each } from '../core/utils/iterator';
 import { extend } from '../core/utils/extend';
-import { inArray, wrapToArray } from '../core/utils/array';
+import { wrapToArray } from '../core/utils/array';
 import { isNumeric } from '../core/utils/type';
 import { addNamespace } from '../events/utils/index';
 import pointerEvents from '../events/pointer';
@@ -31,7 +30,6 @@ const PROVIDERS = {
 const MAP_CLASS = 'dx-map';
 const MAP_CONTAINER_CLASS = 'dx-map-container';
 const MAP_SHIELD_CLASS = 'dx-map-shield';
-const NATIVE_CLICK_CLASS = 'dx-native-click';
 
 const Map = Widget.inherit({
 
@@ -159,8 +157,7 @@ const Map = Widget.inherit({
         this.callBase();
 
         this.$element()
-            .addClass(MAP_CLASS)
-            .addClass(NATIVE_CLICK_CLASS);
+            .addClass(MAP_CLASS);
 
         this._lastAsyncAction = Promise.resolve();
 
@@ -410,7 +407,7 @@ const Map = Widget.inherit({
         each(removingValues, function(removingIndex, removingValue) {
             const index = isNumeric(removingValue)
                 ? removingValue
-                : inArray(removingValue, optionValue);
+                : optionValue?.indexOf(removingValue);
 
             if(index !== -1) {
                 const removing = optionValue.splice(index, 1)[0];

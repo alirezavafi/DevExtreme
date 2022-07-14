@@ -1,5 +1,5 @@
+import { AllDayPanelModeType } from '../appointment/utils/getAppointmentTakesAllDay';
 import { ResourceProps } from '../props';
-import { AppointmentColorConfigType } from '../resources/utils';
 import { DataAccessorType, GroupOrientation, ViewType } from '../types';
 import { CellsMetaData, Group } from '../workspaces/types';
 
@@ -34,6 +34,7 @@ export interface AppointmentsConfigType {
   supportAllDayRow: boolean;
   isVerticalGroupOrientation: boolean;
   groupCount: number;
+  allDayPanelMode: AllDayPanelModeType;
   dateRange: Date[]; // TODO replace with min / max
 }
 
@@ -58,6 +59,5 @@ export interface AppointmentsModelType extends AppointmentsConfigType {
   leftVirtualCellCount: number;
   topVirtualCellCount: number;
   cellDuration: number;
-  getAppointmentColor: (config: AppointmentColorConfigType) => Promise<string>;
   DOMMetaData: CellsMetaData;
 }

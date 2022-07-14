@@ -58,6 +58,14 @@
   }
 }
 
+.dx-form > .dx-layout-manager.dx-layout-manager-one-col {
+  .dx-field-item {
+    .dx-field-item.dx-last-row:not(.dx-last-col) {
+      padding-bottom: 10px;
+    }
+  }
+}
+
 .dx-field-item {
   &:not(.dx-field-item-has-group):not(.dx-field-item-has-tabs):not(.dx-first-row):not(.dx-label-v-align) {
     padding-top: $material-form-default-top-padding;
@@ -68,10 +76,6 @@
   }
 
   &.dx-label-v-align {
-    .dx-textarea {
-      margin-top: 6px;
-    }
-
     .dx-invalid-message > .dx-overlay-wrapper,
     .dx-invalid-message > .dx-overlay-content {
       transform: translate(0, 0) !important; // stylelint-disable-line declaration-no-important

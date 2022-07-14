@@ -1,5 +1,4 @@
 import { extend as _extend } from '../../core/utils/extend';
-import { inArray } from '../../core/utils/array';
 import { each as _each } from '../../core/utils/iterator';
 import rangeCalculator from './helpers/range_data_calculator';
 import { isDefined as _isDefined, isString as _isString } from '../../core/utils/type';
@@ -41,7 +40,7 @@ function sum(array) {
 function isErrorBarTypeCorrect(type) {
     // TODO why UNDEFINED is here
     // return inArray(type, [FIXED, PERCENT, VARIANCE, STANDARD_DEVIATION, STANDARD_ERROR, UNDEFINED]) !== -1;
-    return inArray(type, [FIXED, PERCENT, VARIANCE, STANDARD_DEVIATION, STANDARD_ERROR]) !== -1;
+    return [FIXED, PERCENT, VARIANCE, STANDARD_DEVIATION, STANDARD_ERROR].includes(type);
 }
 
 function variance(array, expectedValue) {
@@ -399,8 +398,13 @@ const baseScatterMethods = {
 
     _getIntervalCenter(intervalStart, intervalEnd) {
         const argAxis = this.getArgumentAxis();
+        const axisOptions = argAxis.getOptions();
 
-        return argAxis.getOptions().type !== 'discrete'
+        if(argAxis.aggregatedPointBetweenTicks()) {
+            return intervalStart;
+        }
+
+        return axisOptions.type !== 'discrete'
             ? argAxis.getVisualRangeCenter({ minVisible: intervalStart, maxVisible: intervalEnd }, true)
             : intervalStart;
     },

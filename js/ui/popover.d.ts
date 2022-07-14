@@ -28,6 +28,10 @@ import dxPopup, {
     TitleRenderedInfo,
 } from './popup';
 
+import {
+    Position,
+} from '../common';
+
 /** @public */
 export type ContentReadyEvent = EventInfo<dxPopover>;
 
@@ -71,7 +75,6 @@ export interface dxPopoverOptions<TComponent> extends dxPopupOptions<TComponent>
      * @docid
      * @deprecated dxPopoverOptions.hideOnOutsideClick
      * @type_function_param1 event:event
-     * @type_function_return Boolean
      * @default true
      * @public
      */
@@ -103,7 +106,6 @@ export interface dxPopoverOptions<TComponent> extends dxPopupOptions<TComponent>
      * @docid
      * @type boolean | function
      * @type_function_param1 event:event
-     * @type_function_return Boolean
      * @default true
      * @public
      */
@@ -116,11 +118,10 @@ export interface dxPopoverOptions<TComponent> extends dxPopupOptions<TComponent>
     hideOnParentScroll?: boolean;
     /**
      * @docid
-     * @type Enums.Position|PositionConfig
      * @default { my: 'top center', at: 'bottom center', collision: 'fit flip' }
      * @public
      */
-    position?: 'bottom' | 'left' | 'right' | 'top' | PositionConfig;
+    position?: Position | PositionConfig;
     /**
      * @docid
      * @default false

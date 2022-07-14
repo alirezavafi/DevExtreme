@@ -1,3 +1,4 @@
+import { UserDefinedElement } from '../core/element';
 import DOMComponent, {
     DOMComponentOptions,
 } from '../core/dom_component';
@@ -9,15 +10,12 @@ import {
     ChangedOptionInfo,
 } from '../events/index';
 
+/** @public */
+export type ResizeHandle = 'bottom' | 'left' | 'right' | 'top' | 'all';
+
 export interface ResizeInfo {
     readonly width: number;
     readonly height: number;
-    handles: {
-        readonly left: boolean;
-        readonly top: boolean;
-        readonly right: boolean;
-        readonly bottom: boolean;
-    };
 }
 
 /** @public */
@@ -45,17 +43,28 @@ export type ResizeEndEvent = NativeEventInfo<dxResizable, MouseEvent | TouchEven
 export interface dxResizableOptions extends DOMComponentOptions<dxResizable> {
     /**
      * @docid
-     * @type Enums.ResizeHandle | string
+     * @default undefined
+     * @public
+     */
+    area?: string | UserDefinedElement;
+    /**
+     * @docid
      * @default "all"
      * @public
      */
-    handles?: 'bottom' | 'left' | 'right' | 'top' | 'all' | string;
+    handles?: ResizeHandle | string;
     /**
      * @docid
      * @fires dxResizableOptions.onResize
      * @public
      */
     height?: number | string | (() => number | string);
+    /**
+     * @docid
+     * @default true
+     * @public
+     */
+    keepAspectRatio?: boolean;
     /**
      * @docid
      * @default Infinity
@@ -84,12 +93,8 @@ export interface dxResizableOptions extends DOMComponentOptions<dxResizable> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 width:number
-     * @type_function_param1_field6 height:number
-     * @type_function_param1_field1 component:dxResizable
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:dxResizable
      * @action
      * @public
      */
@@ -98,12 +103,8 @@ export interface dxResizableOptions extends DOMComponentOptions<dxResizable> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 width:number
-     * @type_function_param1_field6 height:number
-     * @type_function_param1_field1 component:dxResizable
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:dxResizable
      * @action
      * @public
      */
@@ -112,12 +113,8 @@ export interface dxResizableOptions extends DOMComponentOptions<dxResizable> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 width:number
-     * @type_function_param1_field6 height:number
-     * @type_function_param1_field1 component:dxResizable
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:dxResizable
      * @action
      * @public
      */

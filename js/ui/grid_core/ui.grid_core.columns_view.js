@@ -31,8 +31,10 @@ const TABLE_FIXED_CLASS = 'table-fixed';
 const CONTENT_FIXED_CLASS = 'content-fixed';
 const ROW_CLASS = 'dx-row';
 const GROUP_ROW_CLASS = 'dx-group-row';
+const GROUP_CELL_CLASS = 'dx-group-cell';
 const DETAIL_ROW_CLASS = 'dx-master-detail-row';
 const FILTER_ROW_CLASS = 'filter-row';
+const ERROR_ROW_CLASS = 'dx-error-row';
 const CELL_UPDATED_ANIMATION_CLASS = 'cell-updated-animation';
 
 const HIDDEN_COLUMNS_WIDTH = '0.0001px';
@@ -69,7 +71,7 @@ const subscribeToRowEvents = function(that, $table) {
         }
     });
 
-    eventsEngine.on($table, [clickEventName, dblclickEvent, pointerEvents.down].join(' '), '.dx-row', { useNative: that._isNativeClick() }, that.createAction(function(e) {
+    eventsEngine.on($table, [clickEventName, dblclickEvent, pointerEvents.down].join(' '), '.dx-row', that.createAction(function(e) {
         const event = e.event;
 
         if(touchTarget) {
@@ -324,8 +326,6 @@ export const ColumnsView = modules.View.inherit(columnStateMixin).inherit({
         return $table;
     },
 
-    _isNativeClick: noop,
-
     _rowPointerDown: noop,
 
     _rowClick: noop,
@@ -487,9 +487,10 @@ export const ColumnsView = modules.View.inherit(columnStateMixin).inherit({
         return $(tableElement).children('tbody').not('.dx-header').not('.dx-footer');
     },
 
-    _wrapRowIfNeed: function($table, $row) {
+    _wrapRowIfNeed: function($table, $row, isRefreshing) {
         const hasDataRowTemplate = this.option().rowTemplate || this.option('dataRowTemplate');
-        const $tBodies = hasDataRowTemplate && this._getBodies(this._tableElement || $table);
+        const $tableElement = isRefreshing ? $table || this._tableElement : this._tableElement || $table;
+        const $tBodies = hasDataRowTemplate && this._getBodies($tableElement);
 
         if($tBodies && $tBodies.filter('.' + ROW_CLASS).length) {
             const $tbody = $('<tbody>').addClass($row.attr('class'));
@@ -610,7 +611,6 @@ export const ColumnsView = modules.View.inherit(columnStateMixin).inherit({
 
     _setCellAriaAttributes: function($cell, cellOptions) {
         if(cellOptions.rowType !== 'freeSpace') {
-            this.setAria('selected', false, $cell);
             this.setAria('role', 'gridcell', $cell);
 
             const columnIndexOffset = this._columnsController.getColumnIndexOffset();
@@ -624,7 +624,8 @@ export const ColumnsView = modules.View.inherit(columnStateMixin).inherit({
 
         if(options.columnIndices) {
             if(options.row.cells) {
-                options.row.cells[cellOptions.columnIndex] = cellOptions;
+                const cellIndex = options.row.cells.findIndex(cell => cell.columnIndex === cellOptions.columnIndex);
+                options.row.cells[cellIndex] = cellOptions;
             }
         } else {
             options.row.cells.push(cellOptions);
@@ -912,7 +913,7 @@ export const ColumnsView = modules.View.inherit(columnStateMixin).inherit({
             for(let i = 0; i < $rows.length; i++) {
                 const $row = $rows.eq(i);
                 const isRowVisible = $row.get(0).style.display !== 'none' && !$row.hasClass('dx-state-invisible');
-                if(!$row.is('.' + GROUP_ROW_CLASS) && !$row.is('.' + DETAIL_ROW_CLASS) && isRowVisible) {
+                if(!$row.is('.' + GROUP_ROW_CLASS) && !$row.is('.' + DETAIL_ROW_CLASS) && !$row.is('.' + ERROR_ROW_CLASS) && isRowVisible) {
                     $cells = $row.children('td');
                     break;
                 }
@@ -952,10 +953,17 @@ export const ColumnsView = modules.View.inherit(columnStateMixin).inherit({
 
                         width = getWidthStyle(width);
                         minWidth = getWidthStyle(columns[i].minWidth || width);
-                        const $rows = $rows || $tableElement.children().children('.dx-row').not('.' + GROUP_ROW_CLASS).not('.' + DETAIL_ROW_CLASS);
+                        const $rows = $rows || $tableElement.children().children('.dx-row').not('.' + DETAIL_ROW_CLASS);
                         for(let rowIndex = 0; rowIndex < $rows.length; rowIndex++) {
+                            const row = $rows[rowIndex];
+
+                            let cell;
                             const visibleIndex = this.getVisibleColumnIndex(i, rowIndex);
-                            const cell = $rows[rowIndex].cells[visibleIndex];
+                            if(row.classList.contains(GROUP_ROW_CLASS)) {
+                                cell = row.querySelector(`td[aria-colindex='${visibleIndex + 1}']:not(.${GROUP_CELL_CLASS})`);
+                            } else {
+                                cell = row.cells[visibleIndex];
+                            }
                             if(cell) {
                                 setCellWidth(cell, columns[i], width);
                                 cell.style.minWidth = minWidth;

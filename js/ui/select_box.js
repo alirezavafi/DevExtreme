@@ -2,7 +2,6 @@ import $ from '../core/renderer';
 import { noop, ensureDefined } from '../core/utils/common';
 import { isDefined, isPromise } from '../core/utils/type';
 import { extend } from '../core/utils/extend';
-import { inArray } from '../core/utils/array';
 import { each } from '../core/utils/iterator';
 import { Deferred, fromPromise } from '../core/utils/deferred';
 import { getPublicElement } from '../core/element';
@@ -228,9 +227,10 @@ const SelectBox = DropDownList.inherit({
             return;
         }
 
+        const { items, selectedItem } = this.option();
         const $listItems = this._list._itemElements();
-        const index = inArray(this.option('selectedItem'), this.option('items'));
-        const focusedElement = index >= 0 && !this._isCustomItemSelected() ? $listItems.eq(index) : null;
+        const index = items?.indexOf(selectedItem) ?? -1;
+        const focusedElement = index !== -1 && !this._isCustomItemSelected() ? $listItems.eq(index) : null;
 
         this._focusListElement(focusedElement);
     },
@@ -495,11 +495,11 @@ const SelectBox = DropDownList.inherit({
         }
 
         this._loadItemDeferred && this._loadItemDeferred.always((function() {
-            const initialSelectedItem = this.option('selectedItem');
+            const { selectedItem: initialSelectedItem, text } = this.option();
 
             if(this.option('acceptCustomValue')) {
                 if(!saveEditingValue) {
-                    this._updateField(initialSelectedItem);
+                    this._updateField(initialSelectedItem ?? this._createCustomItem(text));
                     this._clearFilter();
                 }
                 return;
@@ -750,7 +750,7 @@ const SelectBox = DropDownList.inherit({
 
     _wasSearch: function(value) {
         if(!arguments.length) {
-            return this._wasSearchValue;
+            return !!this._wasSearchValue;
         }
         this._wasSearchValue = value;
     },
@@ -779,10 +779,12 @@ const SelectBox = DropDownList.inherit({
 
     _valueSubstituted: function() {
         const input = this._input().get(0);
-        const isAllSelected = input.selectionStart === 0 && input.selectionEnd === this._searchValue().length;
+        const currentSearchLength = this._searchValue().length;
+        const isAllSelected = input.selectionStart === 0 && input.selectionEnd === currentSearchLength;
         const inputHasSelection = input.selectionStart !== input.selectionEnd;
+        const isLastSymbolSelected = currentSearchLength === input.selectionEnd;
 
-        return this._wasSearch() && inputHasSelection && !isAllSelected;
+        return this._wasSearch() && inputHasSelection && !isAllSelected && isLastSymbolSelected && this._shouldSubstitutionBeRendered();
     },
 
     _shouldSubstitutionBeRendered: function() {

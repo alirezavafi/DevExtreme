@@ -121,8 +121,13 @@ const SelectionController = gridCore.Controller.inherit((function() {
 
         _getSelectionConfig: function() {
             const dataController = this._dataController;
+            const columnsController = this.getController('columns');
             const selectionOptions = this.option('selection') || {};
             const deferred = selectionOptions.deferred;
+            const scrollingMode = this.option('scrolling.mode');
+            const virtualPaging = scrollingMode === 'virtual' || scrollingMode === 'infinite';
+            const allowSelectAll = this.option('selection.allowSelectAll');
+            const legacyScrollingMode = this.option('scrolling.legacyMode');
 
             return {
                 selectedKeys: this.option('selectedRowKeys'),
@@ -131,6 +136,10 @@ const SelectionController = gridCore.Controller.inherit((function() {
                 maxFilterLengthInRequest: selectionOptions.maxFilterLengthInRequest,
                 selectionFilter: this.option('selectionFilter'),
                 ignoreDisabledItems: true,
+                allowLoadByRange: function() {
+                    const hasGroupColumns = columnsController.getGroupColumns().length > 0;
+                    return virtualPaging && !legacyScrollingMode && !hasGroupColumns && allowSelectAll && !deferred;
+                },
                 key: function() {
                     return dataController?.key();
                 },
@@ -160,6 +169,25 @@ const SelectionController = gridCore.Controller.inherit((function() {
                 },
                 totalCount: () => {
                     return dataController.totalCount();
+                },
+                getLoadOptions: function(loadItemIndex, focusedItemIndex, shiftItemIndex) {
+                    const { sort, filter } = dataController.dataSource()?.lastLoadOptions() ?? {};
+                    let minIndex = Math.min(loadItemIndex, focusedItemIndex);
+                    let maxIndex = Math.max(loadItemIndex, focusedItemIndex);
+
+                    if(isDefined(shiftItemIndex)) {
+                        minIndex = Math.min(shiftItemIndex, minIndex);
+                        maxIndex = Math.max(shiftItemIndex, maxIndex);
+                    }
+
+                    const take = maxIndex - minIndex + 1;
+
+                    return {
+                        skip: minIndex,
+                        take,
+                        filter,
+                        sort
+                    };
                 },
                 onSelectionChanged: this._updateSelectedItems.bind(this)
             };
@@ -224,7 +252,8 @@ const SelectionController = gridCore.Controller.inherit((function() {
             const isDeferredMode = that.option('selection.deferred');
             const selectionFilter = that._selection.selectionFilter();
             const dataController = that._dataController;
-            const items = dataController.items();
+            const items = dataController.items(true);
+            const visibleItems = dataController.items();
 
             if(!items) {
                 return;
@@ -232,6 +261,7 @@ const SelectionController = gridCore.Controller.inherit((function() {
 
             const isSelectionWithCheckboxes = that.isSelectionWithCheckboxes();
             const changedItemIndexes = that.getChangedItemIndexes(items);
+            const visibleChangedItemIndexes = that.getChangedItemIndexes(visibleItems);
 
             that._updateCheckboxesState({
                 selectedItemKeys: args.selectedItemKeys,
@@ -243,7 +273,7 @@ const SelectionController = gridCore.Controller.inherit((function() {
             if(changedItemIndexes.length || (isSelectionWithCheckboxes !== that.isSelectionWithCheckboxes())) {
                 dataController.updateItems({
                     changeType: 'updateSelection',
-                    itemIndexes: changedItemIndexes
+                    itemIndexes: visibleChangedItemIndexes
                 });
             }
 
@@ -415,13 +445,13 @@ const SelectionController = gridCore.Controller.inherit((function() {
             return this._selection.getSelectedItems();
         },
 
-        changeItemSelection: function(visibleItemIndex, keys) {
+        changeItemSelection: function(visibleItemIndex, keys, setFocusOnly) {
             keys = keys || {};
             if(this.isSelectionWithCheckboxes()) {
                 keys.control = true;
             }
             const loadedItemIndex = visibleItemIndex + this._dataController.getRowIndexOffset() - this._dataController.getRowIndexOffset(true);
-            return this._selection.changeItemSelection(loadedItemIndex, keys);
+            return this._selection.changeItemSelection(loadedItemIndex, keys, setFocusOnly);
         },
 
         focusedItemIndex: function(itemIndex) {
@@ -803,7 +833,7 @@ export const selectionModule = {
                     const $row = this.callBase.apply(this, arguments);
 
                     if(row) {
-                        const isSelected = !!row.isSelected;
+                        const isSelected = row.isSelected;
                         if(isSelected) {
                             $row.addClass(ROW_SELECTION_CLASS);
                         }

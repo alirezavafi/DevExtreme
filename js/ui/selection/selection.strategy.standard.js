@@ -1,6 +1,6 @@
 import { getKeyHash } from '../../core/utils/common';
 import { isDefined, isObject } from '../../core/utils/type';
-import { removeDuplicates, uniqueValues } from '../../core/utils/array';
+import { removeDuplicates, getUniqueValues } from '../../core/utils/array';
 import { isKeysEqual } from '../../core/utils/array_compare';
 import dataQuery from '../../data/query';
 import { Deferred, when } from '../../core/utils/deferred';
@@ -76,7 +76,7 @@ export default SelectionStrategy.inherit({
         this.updateSelectedItemKeyHash(this.options.selectedItemKeys);
     },
 
-    _loadSelectedItemsCore: function(keys, isDeselect, isSelectAll) {
+    _loadSelectedItemsCore: function(keys, isDeselect, isSelectAll, filter) {
         let deferred = new Deferred();
         const key = this.options.key();
 
@@ -85,7 +85,6 @@ export default SelectionStrategy.inherit({
             return deferred;
         }
 
-        const filter = this.options.filter();
         if(isSelectAll && isDeselect && !filter) {
             deferred.resolve(this.getSelectedItems());
             return deferred;
@@ -205,7 +204,7 @@ export default SelectionStrategy.inherit({
         let currentKeys = keys;
         if(this._isMultiSelectEnabled() && this._shouldMergeWithLastRequest && !isDeselect && !isSelectAll) {
             currentKeys = removeDuplicates(keys.concat(this._lastRequestData?.addedItems), this._lastRequestData?.removedItems);
-            currentKeys = uniqueValues(currentKeys);
+            currentKeys = getUniqueValues(currentKeys);
         }
 
         return currentKeys;
@@ -214,6 +213,8 @@ export default SelectionStrategy.inherit({
     _loadSelectedItems: function(keys, isDeselect, isSelectAll, updatedKeys) {
         const that = this;
         const deferred = new Deferred();
+        const filter = that.options.filter();
+
         this._shouldMergeWithLastRequest = this._requestInProgress();
 
         this._lastRequestData = this._collectLastRequestData(keys, isDeselect, isSelectAll, updatedKeys);
@@ -223,7 +224,7 @@ export default SelectionStrategy.inherit({
 
             that._shouldMergeWithLastRequest = false;
 
-            that._loadSelectedItemsCore(currentKeys, isDeselect, isSelectAll)
+            that._loadSelectedItemsCore(currentKeys, isDeselect, isSelectAll, filter)
                 .done(deferred.resolve)
                 .fail(deferred.reject);
         });

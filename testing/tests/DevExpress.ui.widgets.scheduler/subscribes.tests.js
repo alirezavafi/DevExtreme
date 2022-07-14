@@ -15,7 +15,6 @@ import { ExpressionUtils } from 'ui/scheduler/expressionUtils';
 import { createWrapper } from '../../helpers/scheduler/helpers.js';
 
 import { getAppointmentColor, createExpressions } from 'ui/scheduler/resources/utils';
-import { getTimeZoneCalculator } from 'ui/scheduler/instanceFactory.js';
 import { getAppointmentTakesSeveralDays } from 'ui/scheduler/appointments/dataProvider/utils';
 
 const {
@@ -289,16 +288,6 @@ module('Subscribes', {
         assert.equal(_positionMap[0][0].left, expectedLeftCoordinate, 'left coordinate is OK');
     });
 
-    test('"updateAppointmentStartDate" should work correct with custom data fields', function(assert) {
-        this.createInstance({
-            startDateExpr: 'Start'
-        });
-
-        assert.ok(this.instance.fire('updateAppointmentStartDate', {
-            startDate: new Date(2015, 2, 2, 0),
-        }));
-    });
-
     test('"mapAppointmentFields" should call getTargetedAppointment', function(assert) {
         this.createInstance();
 
@@ -504,44 +493,6 @@ module('Subscribes', {
         assert.equal(obj.recurrenceRule, 'FREQ=WEEKLY', 'the \'setField\' method works fine');
     });
 
-    test('UpdateAppointmentStartDate should return corrected startDate', function(assert) {
-        this.createInstance();
-        this.instance.option({
-            currentView: 'week',
-            currentDate: new Date(2016, 1, 1),
-            startDayHour: 5
-        });
-
-        const appointment = {
-            startDate: new Date(2016, 1, 2, 2),
-            endDate: new Date(2016, 1, 2, 7)
-        };
-
-        const result = this.instance.fire('updateAppointmentStartDate', {
-            startDate: appointment.startDate,
-        });
-        assert.deepEqual(result, new Date(2016, 1, 2, 5), 'Updated date is correct');
-    });
-
-    test('UpdateAppointmentStartDate should return corrected startDate when appointment is short', function(assert) {
-        this.createInstance();
-        this.instance.option({
-            currentView: 'week',
-            currentDate: new Date(2016, 1, 1),
-            startDayHour: 9
-        });
-
-        const appointment = {
-            startDate: new Date(2016, 1, 2, 8, 30),
-            endDate: new Date(2016, 1, 2, 9, 1)
-        };
-
-        const result = this.instance.fire('updateAppointmentStartDate', {
-            startDate: appointment.startDate,
-        });
-        assert.deepEqual(result, new Date(2016, 1, 2, 9, 0), 'Updated date is correct');
-    });
-
     test('appointmentTakesSeveralDays should return true, if startDate and endDate is different days', function(assert) {
         this.createInstance();
         this.instance.option({
@@ -563,34 +514,13 @@ module('Subscribes', {
         assert.ok(getAppointmentTakesSeveralDays(
             appointments[0],
             this.instance._dataAccessors,
-            getTimeZoneCalculator(this.instance.key)
+            this.instance.timeZoneCalculator,
         ), 'appointmentTakesSeveralDays works correctly');
         assert.notOk(getAppointmentTakesSeveralDays(
             appointments[1],
             this.instance._dataAccessors,
-            getTimeZoneCalculator(this.instance.key)
+            this.instance.timeZoneCalculator,
         ), 'appointmentTakesSeveralDays works correctly');
-    });
-
-    test('UpdateAppointmentStartDate should return corrected startDate for long appointments', function(assert) {
-        this.createInstance();
-
-        this.instance.option({
-            currentView: 'week',
-            currentDate: new Date(2016, 1, 1),
-            startDayHour: 5
-        });
-
-        const appointment = {
-            startDate: new Date(2016, 1, 2, 2),
-            endDate: new Date(2016, 1, 4, 7)
-        };
-
-        const result = this.instance.fire('updateAppointmentStartDate', {
-            startDate: appointment.startDate,
-            appointment: appointment,
-        });
-        assert.deepEqual(result, new Date(2016, 1, 2, 5), 'Date is correct');
     });
 
     test('UpdateAppointmentEndDate should return corrected endDate', function(assert) {
@@ -659,7 +589,7 @@ module('Subscribes', {
         assert.deepEqual(result, new Date(2015, 2, 3, 18), 'Updated date is correct');
     });
 
-    test('\'getAppointmentDurationInMs\' should return visible appointment duration', function(assert) {
+    test('"getAppointmentDurationInMs" should return visible appointment duration', function(assert) {
         this.createInstance();
 
         const renderingStrategy = this.instance.getRenderingStrategyInstance();
@@ -668,10 +598,10 @@ module('Subscribes', {
             new Date(2015, 2, 2, 20)
         );
 
-        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 12, '\'getAppointmentDurationInMs\' works fine');
+        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 12, '"getAppointmentDurationInMs" works fine');
     });
 
-    test('\'getAppointmentDurationInMs\' should return visible appointment duration considering startDayHour and endDayHour', function(assert) {
+    test('"getAppointmentDurationInMs" should return visible appointment duration considering startDayHour and endDayHour', function(assert) {
         this.createInstance();
 
         this.instance.option({
@@ -685,10 +615,10 @@ module('Subscribes', {
             new Date(2015, 2, 4, 20)
         );
 
-        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 12 * 3, '\'getAppointmentDurationInMs\' works fine');
+        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 12 * 3, '"getAppointmentDurationInMs" works fine');
     });
 
-    test('\'getAppointmentDurationInMs\' should return visible appointment duration considering startDayHour and endDayHour for stricly allDay appointment without allDay field', function(assert) {
+    test('"getAppointmentDurationInMs" should return visible appointment duration considering startDayHour and endDayHour for stricly allDay appointment without allDay field', function(assert) {
         this.createInstance();
 
         this.instance.option({
@@ -701,10 +631,10 @@ module('Subscribes', {
             new Date(2015, 2, 2, 8),
             new Date(2015, 2, 3, 0)
         );
-        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 12, '\'getAppointmentDurationInMs\' works fine');
+        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 12, '"getAppointmentDurationInMs" works fine');
     });
 
-    test('\'getAppointmentDurationInMs\' should return visible appointment duration considering hours of startDate and endDate', function(assert) {
+    test('"getAppointmentDurationInMs" should return visible appointment duration considering hours of startDate and endDate', function(assert) {
         this.createInstance();
 
         this.instance.option({
@@ -717,10 +647,10 @@ module('Subscribes', {
             new Date(2015, 4, 25, 21),
             new Date(2015, 4, 26, 3)
         );
-        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 3, '\'getAppointmentDurationInMs\' works fine');
+        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 3, '"getAppointmentDurationInMs" works fine');
     });
 
-    test('\'getAppointmentDurationInMs\' should return visible long appointment duration considering hours of startDate and endDate', function(assert) {
+    test('"getAppointmentDurationInMs" should return visible long appointment duration considering hours of startDate and endDate', function(assert) {
         this.createInstance();
 
         this.instance.option({
@@ -733,10 +663,10 @@ module('Subscribes', {
             new Date(2015, 2, 2, 10),
             new Date(2015, 2, 4, 17)
         );
-        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 31, '\'getAppointmentDurationInMs\' works fine');
+        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 31, '"getAppointmentDurationInMs" works fine');
     });
 
-    test('\'getAppointmentDurationInMs\' should return visible appointment duration considering hours of ultraboundary startDate and endDate', function(assert) {
+    test('"getAppointmentDurationInMs" should return visible appointment duration considering hours of ultraboundary startDate and endDate', function(assert) {
         this.createInstance();
 
         this.instance.option({
@@ -749,10 +679,10 @@ module('Subscribes', {
             new Date(2015, 2, 2, 7),
             new Date(2015, 2, 4, 21),
         );
-        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 12 * 3, '\'getAppointmentDurationInMs\' works fine');
+        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 12 * 3, '"getAppointmentDurationInMs" works fine');
     });
 
-    test('\'getAppointmentDurationInMs\' should return visible allDay appointment duration', function(assert) {
+    test('"getAppointmentDurationInMs" should return visible allDay appointment duration', function(assert) {
         this.createInstance();
 
         this.instance.option({
@@ -767,10 +697,10 @@ module('Subscribes', {
             true,
         );
 
-        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 12 * 3, '\'getAppointmentDurationInMs\' works fine');
+        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 12 * 3, '"getAppointmentDurationInMs" works fine');
     });
 
-    test('\'getAppointmentDurationInMs\' should return visible appointment duration if last cell has small duration (T664073)', function(assert) {
+    test('"getAppointmentDurationInMs" should return visible appointment duration if last cell has small duration (T664073)', function(assert) {
         this.createInstance();
 
         this.instance.option({
@@ -786,7 +716,7 @@ module('Subscribes', {
             true,
         );
 
-        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 48.8, '\'getAppointmentDurationInMs\' works fine');
+        assert.equal(result / dateUtils.dateToMilliseconds('hour'), 48.8, '"getAppointmentDurationInMs" works fine');
     });
 
     test('"getAppointmentColor" by certain group', function(assert) {
@@ -912,13 +842,13 @@ module('Subscribes', {
             dataSource: [{ startDate: new Date(2016, 2, 1, 1), endDate: new Date(2016, 2, 1, 2) }]
         });
 
-        let countPerCell = this.instance.modelProvider.maxAppointmentsPerCell;
+        let countPerCell = this.instance._getCurrentViewOption('maxAppointmentsPerCell');
 
         assert.equal(countPerCell, 5, 'overlappingMode is OK');
 
         this.instance.option('currentView', 'WEEK');
 
-        countPerCell = this.instance.modelProvider.maxAppointmentsPerCell;
+        countPerCell = this.instance._getCurrentViewOption('maxAppointmentsPerCell');
 
         assert.equal(countPerCell, 'auto', 'overlappingMode is OK');
     });
@@ -938,13 +868,13 @@ module('Subscribes', {
             dataSource: [{ startDate: new Date(2016, 2, 1, 1), endDate: new Date(2016, 2, 1, 2) }]
         });
 
-        let countPerCell = this.instance.modelProvider.maxAppointmentsPerCell;
+        let countPerCell = this.instance._getCurrentViewOption('maxAppointmentsPerCell');
 
         assert.equal(countPerCell, 5, 'overlappingMode is OK');
 
         this.instance.option('currentView', 'WEEK');
 
-        countPerCell = this.instance.modelProvider.maxAppointmentsPerCell;
+        countPerCell = this.instance._getCurrentViewOption('maxAppointmentsPerCell');
 
         assert.equal(countPerCell, 'unlimited', 'overlappingMode is OK');
     });

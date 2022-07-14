@@ -1,12 +1,15 @@
 import {
- FilterDescriptor, GroupDescriptor, SelectDescriptor, SortDescriptor, LoadOptions, SearchOperation,
+ FilterDescriptor,
+ GroupDescriptor,
+ LoadOptions,
+ SearchOperation,
+ SelectDescriptor,
+ SortDescriptor,
+ Store,
+ StoreOptions,
 } from './index';
-import { DxPromise } from '../core/utils/deferred';
-import Store from './abstract_store';
+import { DxExtendedPromise } from '../core/utils/deferred';
 import { Options as CustomStoreOptions } from './custom_store';
-import { Options as ArrayStoreOptions } from './array_store';
-import { Options as LocalStoreOptions } from './local_store';
-import { Options as ODataStoreOptions } from './odata/store';
 
 /** @public */
 export type Options<
@@ -57,15 +60,13 @@ export interface DataSourceOptions<
     map?: ((dataItem: TStoreItem) => TMappedItem);
     /**
      * @docid
-     * @type_function_param1 e:Object
-     * @type_function_param1_field1 changes:Array<any>
+     * @type_function_param1_field changes:Array<any>
      * @action
      * @public
      */
     onChanged?: ((e: { readonly changes?: Array<TMappedItem> }) => void);
     /**
      * @docid
-     * @type_function_param1 error:Object
      * @action
      * @public
      */
@@ -147,12 +148,7 @@ export interface DataSourceOptions<
      * @public
      * @type Store|StoreOptions|Array<any>
      */
-    store?: Array<TStoreItem> |
-        Store<TStoreItem, TKey> |
-        ArrayStoreOptions<TStoreItem, TKey> & { type: 'array' } |
-        LocalStoreOptions<TStoreItem, TKey> & { type: 'local' } |
-        ODataStoreOptions<TStoreItem, TKey> & { type: 'odata' } |
-        CustomStoreOptions<TStoreItem, TKey>;
+    store?: Array<TStoreItem> | Store<TStoreItem, TKey> | StoreOptions<TStoreItem, TKey>;
 }
 /**
  * @docid
@@ -242,7 +238,7 @@ export default class DataSource<
      * @return Promise<any>
      * @public
      */
-    load(): DxPromise<any>;
+    load(): DxExtendedPromise<any>;
     /**
      * @docid
      * @publicName loadOptions()
@@ -313,14 +309,12 @@ export default class DataSource<
     /**
      * @docid
      * @publicName paginate()
-     * @return Boolean
      * @public
      */
     paginate(): boolean;
     /**
      * @docid
      * @publicName paginate(value)
-     * @param1 value:Boolean
      * @public
      */
     paginate(value: boolean): void;
@@ -330,7 +324,7 @@ export default class DataSource<
      * @return Promise<any>
      * @public
      */
-    reload(): DxPromise<any>;
+    reload(): DxExtendedPromise<any>;
     /**
      * @docid
      * @publicName requireTotalCount()
@@ -436,7 +430,7 @@ export type DataSourceLike<TItem, TKey = any> =
     DataSourceOptionsStub<any, any, TItem> |
     DataSource<TItem, TKey>;
 
-    interface DataSourceOptionsStub<
+interface DataSourceOptionsStub<
     TStoreItem = any,
     TMappedItem = TStoreItem,
     TItem = TMappedItem,
@@ -460,12 +454,7 @@ export type DataSourceLike<TItem, TKey = any> =
     searchValue?: any;
     select?: SelectDescriptor<TItem>;
     sort?: SortDescriptor<TItem> | Array<SortDescriptor<TItem>>;
-    store?: Array<TStoreItem> |
-        Store<TStoreItem, any> |
-        ArrayStoreOptions<TStoreItem, any> & { type: 'array' } |
-        LocalStoreOptions<TStoreItem, any> & { type: 'local' } |
-        ODataStoreOptions<TStoreItem, any> & { type: 'odata' } |
-        CustomStoreOptions<TStoreItem, any>;
+    store?: Array<TStoreItem> | Store<TStoreItem, any> | StoreOptions<TStoreItem, any>;
 }
 
 type EventName = 'changed' | 'loadError' | 'loadingChanged';

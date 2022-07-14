@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import pointerMock from '../../helpers/pointerMock.js';
 import 'ui/sortable';
+import 'ui/scroll_view';
 import fx from 'animation/fx';
 import animationFrame from 'animation/frame';
 import browser from 'core/utils/browser';
@@ -2702,6 +2703,115 @@ QUnit.module('With scroll', getModuleConfigForTestsWithScroll('#itemsWithScroll'
         // assert
         assert.notOk($(PLACEHOLDER_SELECTOR).is(':visible'), 'placeholder is not visible');
     });
+
+    const generateItemElements = function($container, itemCount) {
+        for(let i = 1; i <= itemCount; i++) {
+            $container.append(`<div class="draggable" style="height: auto; border: 1px solid black; padding: 5px;">${i}</div>`);
+        }
+    };
+
+
+    [1, 1.25].forEach((zoom) => {
+        ['push', 'indicate'].forEach((dropFeedbackMode) => {
+            QUnit.test(`The item position should be changed after scrolling the list to the bottom and dragging an item to the first position (zoom=${zoom}, dropFeedbackMode=${dropFeedbackMode})`, function(assert) {
+                // arrange
+                let scrollView;
+                const originalZoom = $('body').css('zoom');
+
+                try {
+                    $('body').css('zoom', zoom);
+                    $('#itemsWithScroll').empty();
+                    generateItemElements($('#itemsWithScroll'), 11);
+
+                    scrollView = $('#scroll').dxScrollView({
+                        useNative: false,
+                        scrollByContent: false
+                    }).dxScrollView('instance');
+
+                    this.createSortable({
+                        filter: '.draggable',
+                        moveItemOnDrop: true,
+                        dropFeedbackMode,
+                        scrollSpeed: 10
+                    });
+
+                    // act
+                    scrollView.scrollTo({ y: 100 });
+                    this.clock.tick();
+
+                    // assert
+                    assert.ok($(scrollView.container()).scrollTop() > 0, 'scrollTop > 0');
+
+                    // act
+                    let items = $(this.$element).children();
+                    const pointer = pointerMock(items.last()).start().down().move(0, -200);
+                    this.clock.tick();
+
+                    scrollView.scrollTo({ y: 0 });
+                    $(scrollView.content()).trigger('scroll');
+                    this.clock.tick();
+
+                    pointer.move(0, -25);
+                    this.clock.tick();
+
+                    pointer.up();
+                    this.clock.tick();
+
+                    // assert
+                    items = $(this.$element).children();
+                    assert.strictEqual(items.first().text(), '11', 'the last cell became the first');
+                } finally {
+                    $('body').css('zoom', originalZoom);
+                    scrollView && scrollView.dispose();
+                }
+            });
+
+            QUnit.test(`The item position should be changed after dragging a first item to the last position (zoom=${zoom}, dropFeedbackMode=${dropFeedbackMode})`, function(assert) {
+                // arrange
+                let scrollView;
+
+                try {
+                    $('body').css('zoom', zoom);
+                    $('#itemsWithScroll').empty();
+                    generateItemElements($('#itemsWithScroll'), 11);
+
+                    scrollView = $('#scroll').dxScrollView({
+                        useNative: false,
+                        scrollByContent: false
+                    }).dxScrollView('instance');
+
+                    this.createSortable({
+                        filter: '.draggable',
+                        moveItemOnDrop: true,
+                        dropFeedbackMode,
+                        scrollSpeed: 10
+                    });
+
+                    // act
+                    let items = $(this.$element).children();
+                    const pointer = pointerMock(items.first()).start().down().move(0, 200);
+                    this.clock.tick();
+
+                    scrollView.scrollTo({ y: 100 });
+                    this.clock.tick(100);
+
+                    pointer.move(0, 40);
+                    this.clock.tick();
+
+                    pointer.up();
+                    this.clock.tick();
+
+                    // assert
+                    items = $(this.$element).children();
+                    assert.strictEqual(items.last().text(), '1', 'the first cell became the last');
+                    assert.ok($(scrollView.container()).scrollTop() > 0, 'scrollTop > 0');
+                } finally {
+                    $('body').css('zoom', '');
+                    scrollView && scrollView.dispose();
+                }
+            });
+        });
+    });
 });
 
 QUnit.module('With both scrolls', getModuleConfigForTestsWithScroll('#itemsWithBothScrolls', '#bothScrolls'), () => {
@@ -2745,7 +2855,6 @@ QUnit.module('With both scrolls', getModuleConfigForTestsWithScroll('#itemsWithB
         scrollTestIteration(180, 300, { left: 0, top: 200 });
 
         this.$scroll.scrollLeft(60);
-
         scrollTestIteration(180, 300, { left: 0, top: 200 });
 
         this.$scroll.scrollLeft(maxScroll);
@@ -2893,6 +3002,82 @@ QUnit.module('With both scrolls', getModuleConfigForTestsWithScroll('#itemsWithB
         $('.draggable').css('width', '600px');
         $('.draggable').css('margin-right', '0px');
         $('.draggable').css('margin-left', '0px');
+    });
+
+    QUnit.test('Placeholder width and offset should be correct if horizontal scroll exists, sortable has left offset and has width less then scrollable width (T1068082)', function(assert) {
+        // arrange
+        $('#itemsWithBothScrolls').css('padding-left', '40px');
+        $('#itemsWithBothScrolls .draggable').css('width', '100px');
+
+        this.createSortable({
+            filter: '.draggable',
+            dropFeedbackMode: 'indicate',
+            scrollSpeed: 10
+        });
+
+        const items = this.$element.children();
+
+        function scrollTestIteration(targetY, expectedWidth, expectedOffset) {
+            // arrange
+            const pointer = pointerMock(items.eq(0)).start().down().move(0, targetY);
+            const $placeholder = $(PLACEHOLDER_SELECTOR);
+
+            // assert
+            assert.roughEqual($placeholder.width(), expectedWidth, 3, 'placeholder width');
+            assert.deepEqual($placeholder.offset(), expectedOffset, 'placeholder offset');
+
+            // act
+            pointer.up();
+        }
+
+        scrollTestIteration(180, 100, { left: 40, top: 200 });
+
+        this.$scroll.scrollLeft(40);
+        scrollTestIteration(180, 100, { left: 0, top: 200 });
+
+        this.$scroll.scrollLeft(60);
+        scrollTestIteration(180, 80, { left: 0, top: 200 });
+
+        this.$scroll.scrollLeft(1000);
+        scrollTestIteration(180, 0, { left: 0, top: 200 });
+    });
+
+    QUnit.test('Placeholder width and offset should be correct if horizontal scroll exists, sortable has right offset and has width less then scrollable width (T1068082)', function(assert) {
+        // arrange
+        $('#itemsWithBothScrolls').css('padding-left', '250px');
+        $('#itemsWithBothScrolls .draggable').css('width', '100px');
+
+        this.createSortable({
+            filter: '.draggable',
+            dropFeedbackMode: 'indicate',
+            scrollSpeed: 10
+        });
+
+        const items = this.$element.children();
+
+        function scrollTestIteration(targetY, expectedWidth, expectedOffset) {
+            // arrange
+            const pointer = pointerMock(items.eq(0)).start().down().move(0, targetY);
+            const $placeholder = $(PLACEHOLDER_SELECTOR);
+
+            // assert
+            assert.roughEqual($placeholder.width(), expectedWidth, 3, 'placeholder width');
+            assert.deepEqual($placeholder.offset(), expectedOffset, 'placeholder offset');
+
+            // act
+            pointer.up();
+        }
+
+        scrollTestIteration(180, 50, { left: 250, top: 200 });
+
+        this.$scroll.scrollLeft(10);
+        scrollTestIteration(180, 60, { left: 240, top: 200 });
+
+        this.$scroll.scrollLeft(50);
+        scrollTestIteration(180, 100, { left: 200, top: 200 });
+
+        this.$scroll.scrollLeft(100);
+        scrollTestIteration(180, 100, { left: 150, top: 200 });
     });
 
     QUnit.test('onReorder should not be called if item was dropped under the sortable when scroll position at the top', function(assert) {
@@ -3344,7 +3529,9 @@ QUnit.module('Drag and drop with nested sortable', crossComponentModuleConfig, (
         assert.strictEqual($placeholder.length, 1, 'placeholder exists');
         assert.equal($placeholder.get(0).style.height, '250px', 'placeholder height style');
         assert.equal($placeholder.get(0).style.width, '', 'placeholder width style');
-        assert.deepEqual(translator.locate($placeholder), { left: 604, top: 0 }, 'placeholder position');
+        const position = translator.locate($placeholder);
+        assert.strictEqual(Math.round(position.left), 604, 'placeholder position left');
+        assert.strictEqual(position.top, 0, 'placeholder position top');
     });
 });
 
@@ -3823,6 +4010,44 @@ QUnit.module('autoscroll', getModuleConfigForTestsWithScroll('#itemsWithScroll',
             }
             done();
         });
+    });
+
+    // T1068082
+    QUnit.test('itemPoints should be corrected during browser autoscroll when a draggable element outside sortable', function(assert) {
+        let scrollEventCallCount = 0;
+        const done = assert.async();
+        const sortable = this.createSortable({
+            dropFeedbackMode: 'indicate',
+            itemOrientation: 'vertical',
+            group: 'test'
+        });
+        const pointer = pointerMock(getElement(0)).start();
+
+        pointer.down(25, 25).move(0, 100);
+
+        this.$scroll.on('scroll', () => {
+            scrollEventCallCount++;
+
+            // assert
+            const itemPoints = sortable.option('itemPoints');
+            assert.equal(itemPoints.length, itemCount + 1, 'item point count');
+            for(let i = 0; i < itemPoints.length; i++) {
+                assert.strictEqual(itemPoints[i].top, -scrollBy + i * itemHeight, `point ${i} height is corrected`);
+            }
+
+            if(scrollEventCallCount === 2) {
+                done();
+            } else {
+                // act
+                pointer.move(0, 135);
+                scrollBy = 100;
+                this.$scroll.scrollTop(scrollBy);
+            }
+        });
+
+        // act
+        let scrollBy = 50;
+        this.$scroll.scrollTop(scrollBy);
     });
 });
 

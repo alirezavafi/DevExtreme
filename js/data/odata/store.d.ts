@@ -4,13 +4,6 @@ import { LoadOptions } from '../index';
 import { Query } from '../query';
 import { ODataRequestOptions } from './context';
 
-interface PromiseExtension<T> {
-    then<TResult1 = T, TResult2 = never>(
-        onFulfilled?: ((value: T, extraParameters?: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
-        onRejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
-    ): Promise<TResult1 | TResult2>;
-}
-
 /** @public */
 export type Options<
     TItem = any,
@@ -27,9 +20,9 @@ export interface ODataStoreOptions<
 > extends StoreOptions<TItem, TKey> {
     /**
      * @docid
-     * @type_function_param1_field5 params:object
-     * @type_function_param1_field6 payload:object
-     * @type_function_param1_field7 headers:object
+     * @type_function_param1_field params:object
+     * @type_function_param1_field payload:object
+     * @type_function_param1_field headers:object
      * @public
      */
     beforeSend?: ((options: { url: string; async: boolean; method: string; timeout: number; params: any; payload: any; headers: any }) => void);
@@ -41,8 +34,8 @@ export interface ODataStoreOptions<
     /**
      * @docid
      * @type_function_param1 e:Error
-     * @type_function_param1_field2 errorDetails:object
-     * @type_function_param1_field3 requestOptions:object
+     * @type_function_param1_field errorDetails:object
+     * @type_function_param1_field requestOptions:object
      * @public
      */
     errorHandler?: ((e: { httpStatus: number; errorDetails: any; requestOptions: ODataRequestOptions }) => void);
@@ -122,13 +115,4 @@ export default class ODataStore<
      * @public
      */
     createQuery(loadOptions?: { expand?: string | Array<string>; requireTotalCount?: boolean; customQueryParams?: any }): Query;
-
-    /**
-     * @docid
-     * @publicName insert(values)
-     * @param1 values:object
-     * @return Promise<any>
-     * @public
-     */
-    insert(values: TItem): DxPromise<TItem> & PromiseExtension<TItem>;
 }

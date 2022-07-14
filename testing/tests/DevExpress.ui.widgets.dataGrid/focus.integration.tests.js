@@ -1540,6 +1540,21 @@ QUnit.module('Initialization', baseModuleConfig, () => {
         assert.strictEqual(dataGrid.getVisibleRows().length, 0, 'no rows');
     });
 
+    // T1090672
+    QUnit.test('Initialization with empty dataSource without columns with focusedRowEnabled should not cause exception', function(assert) {
+        // arrange
+        createDataGrid({
+            keyExpr: 'id',
+            dataSource: [],
+            focusedRowEnabled: true,
+        });
+
+        this.clock.tick(100);
+
+        // assert
+        assert.ok(true, 'no errors');
+    });
+
 });
 QUnit.module('Virtual row rendering', baseModuleConfig, () => {
     // T809900
@@ -1759,6 +1774,56 @@ QUnit.module('Virtual row rendering', baseModuleConfig, () => {
             assert.equal(dataGrid.option('focusedRowKey'), 80, 'focused row key');
             assert.equal($(dataGrid.element()).find('.dx-row-focused').length, 1, 'focused row is rendered');
         });
+
+        // T1062536
+        QUnit.testInActiveWindow(`autoNavigateToFocusedRow should work after resetting the filter when scrolling.mode == "${scrollingMode}"`, function(assert) {
+            // arrange
+            const items = [];
+
+            for(let i = 0; i < 100; i++) {
+                items.push({
+                    id: i + 1,
+                    name: `Name ${i + 1}`
+                });
+            }
+
+            const dataGrid = createDataGrid({
+                dataSource: items,
+                keyExpr: 'id',
+                height: 500,
+                scrolling: {
+                    mode: scrollingMode,
+                    useNative: false
+                },
+                paging: {
+                    pageSize: 20
+                },
+                focusedRowEnabled: true,
+                autoNavigateToFocusedRow: true
+            });
+
+            this.clock.tick(100);
+
+            dataGrid.columnOption(1, 'filterValue', 'Name 17');
+            this.clock.tick(100);
+
+            // act
+            $(dataGrid.getCellElement(0, 0)).trigger('dxpointerdown').trigger('dxclick');
+            this.clock.tick(500);
+
+            // assert
+            assert.equal(dataGrid.option('focusedRowKey'), 17, 'focused row key');
+
+            // act
+            dataGrid.columnOption(1, 'filterValue', '');
+            this.clock.tick(100);
+            $(dataGrid.getScrollable().container()).trigger('scroll');
+            this.clock.tick(500);
+
+            // assert
+            assert.equal(dataGrid.option('focusedRowKey'), 17, 'focused row key');
+            assert.notEqual(dataGrid.getScrollable().scrollTop(), 0, 'scrollTop > 0');
+        });
     });
 
     ['virtual', 'infinite'].forEach(mode => {
@@ -1781,6 +1846,9 @@ QUnit.module('Virtual row rendering', baseModuleConfig, () => {
                 keyExpr: 'ID',
                 remoteOperations: true,
                 height: 300,
+                editing: {
+                    mode: 'batch'
+                },
                 scrolling: {
                     mode: mode,
                     rowRenderingMode: 'virtual',
@@ -3974,6 +4042,157 @@ QUnit.module('View\'s focus', {
             // assert
             assert.ok($(this.dataGrid.getCellElement(getVisibleRowIndex(rowIndex), 0)).hasClass('dx-focused'), `Cell[${rowIndex}, 0] is focused`);
         }
+    });
+
+    QUnit.test('First cell should have tabindex when repaintChangesOnly is enabled', function(assert) {
+        // arrange
+        this.dataGrid.option({
+            dataSource: [{ id: 1, name: 'name 1' }],
+            keyExpr: 'id',
+            repaintChangesOnly: true
+        });
+        this.clock.tick(300);
+
+        // assert
+        assert.strictEqual($(this.dataGrid.getCellElement(0, 0)).attr('tabindex'), '0', 'tabindex is applied');
+    });
+
+    [true, false].forEach(withColumns => {
+        QUnit.testInActiveWindow(`Row should be focused correctly when dataSource and focusedRowKey are changed simultaneously ${withColumns ? 'with columns' : 'without columns'} (T1062545)`, function(assert) {
+            // arrange
+            const focusedRowIndices = [];
+            const config = {
+                dataSource: [
+                    { id: 1, name: 'name 1' },
+                    { id: 3, name: 'name 3' }
+                ],
+                keyExpr: 'id',
+                repaintChangesOnly: true,
+                focusedRowEnabled: true,
+                focusedRowKey: 1,
+                onFocusedRowChanged: function(e) {
+                    focusedRowIndices.push(e.rowIndex);
+                }
+            };
+            if(withColumns) {
+                config.columns = [
+                    {
+                        dataField: 'name'
+                    }
+                ];
+            }
+            this.dataGrid.option(config);
+            this.clock.tick(300);
+
+            // assert
+            assert.deepEqual(focusedRowIndices, [0], 'initial focused row indices');
+
+            // act
+            this.dataGrid.option('dataSource', [
+                { id: 1, name: 'name 1' },
+                { id: 2, name: 'name 2' },
+                { id: 3, name: 'name 3' }
+            ]);
+            this.dataGrid.option('focusedRowKey', 2);
+            this.clock.tick(300);
+            const $focusedRowElement = $(this.dataGrid.element()).find('.dx-row-focused');
+
+            // assert
+            assert.deepEqual(focusedRowIndices, [0, 1], 'focused row indices');
+            assert.equal($focusedRowElement.length, 1, 'one row is marked as focused');
+            assert.strictEqual($focusedRowElement.attr('aria-rowindex'), '2', 'aria-rowindex');
+        });
+    });
+
+    QUnit.test('Fixed cells should be focused after navigating to focused row', function(assert) {
+        // arrange
+        this.dataGrid.option({
+            dataSource: [
+                { id: 1, name: 'name 1' },
+                { id: 2, name: 'name 2' },
+                { id: 3, name: 'name 3' },
+                { id: 4, name: 'name 4' },
+            ],
+            columns: [{
+                dataField: 'id',
+                fixed: true,
+            }, {
+                dataField: 'name',
+                fixed: false,
+            }],
+            height: 100,
+            keyExpr: 'id',
+            focusedRowEnabled: true,
+            scrolling: {
+                mode: 'virtual',
+            },
+        });
+        this.clock.tick(300);
+
+        // act
+        let rowIndex = this.dataGrid.getRowIndexByKey(4);
+        this.dataGrid.option('focusedRowIndex', rowIndex);
+        this.clock.tick(100);
+
+        // assert
+        rowIndex = this.dataGrid.getRowIndexByKey(4);
+        const row = this.dataGrid.getVisibleRows()[rowIndex];
+        assert.strictEqual(row.cells.length, 2);
+
+        row.cells.forEach((cell) => {
+            const $cell = $(cell.cellElement);
+            const $row = $cell.parent();
+
+            assert.ok($row.hasClass('dx-row-focused'));
+        });
+    });
+
+    QUnit.testInActiveWindow('Keydown should work after deleting a row in the batch editing mode (T1083644)', function(assert) {
+        // arrange
+        this.dataGrid.option({
+            dataSource: [
+                { id: 1, name: 'name 1' },
+                { id: 2, name: 'name 2' },
+                { id: 3, name: 'name 3' }
+            ],
+            keyExpr: 'id',
+            editing: {
+                mode: 'batch',
+                allowDeleting: true,
+            },
+            focusedRowEnabled: true,
+            onKeyDown: function(e) {
+                if(e.event.key === 'Delete') {
+                    e.component.deleteRow(0);
+                }
+            }
+        });
+        this.clock.tick(300);
+
+        // act
+        $(this.dataGrid.getCellElement(0, 0)).trigger(CLICK_EVENT);
+        this.clock.tick(300);
+
+        // assert
+        assert.equal(this.dataGrid.option('focusedRowKey'), 1, 'row key is defined');
+        assert.ok($(this.dataGrid.getRowElement(0)).hasClass('dx-row-focused'), 'first row is focused');
+
+        // act
+        let keyboard = keyboardMock($(this.dataGrid.getCellElement(0, 0)));
+        keyboard.keyDown('del');
+        this.clock.tick(300);
+
+        // assert
+        assert.ok($(this.dataGrid.getRowElement(0)).hasClass('dx-row-removed'), 'first row is marked as removed');
+
+        // act
+        keyboard = keyboardMock($(this.dataGrid.getCellElement(0, 0)));
+        keyboard.keyDown('down');
+        this.clock.tick(300);
+
+        // assert
+        assert.equal(this.dataGrid.option('focusedRowKey'), 2, 'row key is changed');
+        assert.ok($(this.dataGrid.getRowElement(1)).hasClass('dx-row-focused'), 'second row is focused');
     });
 });
 

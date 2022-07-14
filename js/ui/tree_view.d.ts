@@ -27,12 +27,31 @@ import {
     SearchBoxMixinOptions,
 } from './widget/ui.search_box_mixin';
 
+import {
+    DataStructure,
+    SingleOrMultiple,
+    ScrollDirection,
+} from '../common';
+
+import dxScrollable from './scroll_view/ui.scrollable';
+
 interface ItemInfo<TKey = any> {
     readonly itemData?: Item;
     readonly itemElement?: DxElement;
     readonly itemIndex?: number;
     readonly node?: Node<TKey>;
 }
+
+export {
+    DataStructure,
+    SingleOrMultiple,
+    ScrollDirection,
+};
+
+/** @public */
+export type TreeViewCheckBoxMode = 'none' | 'normal' | 'selectAll';
+/** @public */
+export type TreeViewExpandEvent = 'dblclick' | 'click';
 
 /** @public */
 export type ContentReadyEvent<TKey = any> = EventInfo<dxTreeView<TKey>>;
@@ -104,11 +123,10 @@ export interface dxTreeViewOptions<TKey = any>
     dataSource?: DataSourceLike<Item, TKey>;
     /**
      * @docid
-     * @type Enums.TreeViewDataStructure
      * @default 'tree'
      * @public
      */
-    dataStructure?: 'plain' | 'tree';
+    dataStructure?: DataStructure;
     /**
      * @docid
      * @default false
@@ -117,11 +135,10 @@ export interface dxTreeViewOptions<TKey = any>
     expandAllEnabled?: boolean;
     /**
      * @docid
-     * @type Enums.TreeViewExpandEvent
      * @default "dblclick"
      * @public
      */
-    expandEvent?: 'dblclick' | 'click';
+    expandEvent?: TreeViewExpandEvent;
     /**
      * @docid
      * @default true
@@ -151,14 +168,11 @@ export interface dxTreeViewOptions<TKey = any>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 itemData:object
-     * @type_function_param1_field5 itemElement:DxElement
-     * @type_function_param1_field6 itemIndex:number
-     * @type_function_param1_field7 event:event
-     * @type_function_param1_field8 node:dxTreeViewNode
-     * @type_function_param1_field1 component:dxTreeView
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxTreeView
+     * @type_function_param1_field event:event
+     * @type_function_param1_field itemData:object
+     * @type_function_param1_field node:dxTreeViewNode
+
      * @action
      * @public
      */
@@ -167,14 +181,10 @@ export interface dxTreeViewOptions<TKey = any>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 itemData:object
-     * @type_function_param1_field5 itemElement:DxElement
-     * @type_function_param1_field6 itemIndex:Number
-     * @type_function_param1_field7 event:event
-     * @type_function_param1_field8 node:dxTreeViewNode
-     * @type_function_param1_field1 component:dxTreeView
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxTreeView
+     * @type_function_param1_field event:event
+     * @type_function_param1_field itemData:object
+     * @type_function_param1_field node:dxTreeViewNode
      * @action
      * @public
      */
@@ -183,14 +193,10 @@ export interface dxTreeViewOptions<TKey = any>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 itemData:object
-     * @type_function_param1_field5 itemElement:DxElement
-     * @type_function_param1_field6 itemIndex:number
-     * @type_function_param1_field7 event:event
-     * @type_function_param1_field8 node:dxTreeViewNode
-     * @type_function_param1_field1 component:dxTreeView
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field itemData:object
+     * @type_function_param1_field node:dxTreeViewNode
+     * @type_function_param1_field component:dxTreeView
      * @action
      * @public
      */
@@ -199,14 +205,10 @@ export interface dxTreeViewOptions<TKey = any>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 itemData:object
-     * @type_function_param1_field5 itemElement:DxElement
-     * @type_function_param1_field6 itemIndex:Number
-     * @type_function_param1_field7 event:event
-     * @type_function_param1_field8 node:dxTreeViewNode
-     * @type_function_param1_field1 component:dxTreeView
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxTreeView
+     * @type_function_param1_field event:event
+     * @type_function_param1_field itemData:object
+     * @type_function_param1_field node:dxTreeViewNode
      * @action
      * @public
      */
@@ -215,14 +217,10 @@ export interface dxTreeViewOptions<TKey = any>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 itemData:object
-     * @type_function_param1_field5 itemElement:DxElement
-     * @type_function_param1_field6 itemIndex:number
-     * @type_function_param1_field7 event:event
-     * @type_function_param1_field8 node:dxTreeViewNode
-     * @type_function_param1_field1 component:dxTreeView
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxTreeView
+     * @type_function_param1_field event:event
+     * @type_function_param1_field itemData:object
+     * @type_function_param1_field node:dxTreeViewNode
      * @action
      * @public
      */
@@ -231,13 +229,9 @@ export interface dxTreeViewOptions<TKey = any>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 itemData:object
-     * @type_function_param1_field5 itemElement:DxElement
-     * @type_function_param1_field6 itemIndex:number
-     * @type_function_param1_field7 node:dxTreeViewNode
-     * @type_function_param1_field1 component:dxTreeView
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field itemData:object
+     * @type_function_param1_field node:dxTreeViewNode
+     * @type_function_param1_field component:dxTreeView
      * @action
      * @public
      */
@@ -246,13 +240,9 @@ export interface dxTreeViewOptions<TKey = any>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 node:dxTreeViewNode
-     * @type_function_param1_field5 itemElement:DxElement
-     * @type_function_param1_field1 component:dxTreeView
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field6 itemData:object
-     * @type_function_param1_field7 itemIndex:number
+     * @type_function_param1_field node:dxTreeViewNode
+     * @type_function_param1_field component:dxTreeView
+     * @type_function_param1_field itemData:object
      * @action
      * @public
      */
@@ -261,10 +251,7 @@ export interface dxTreeViewOptions<TKey = any>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 value:boolean | undefined
-     * @type_function_param1_field1 component:dxTreeView
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxTreeView
      * @action
      * @public
      */
@@ -273,9 +260,7 @@ export interface dxTreeViewOptions<TKey = any>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxTreeView
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxTreeView
      * @action
      * @public
      * @override
@@ -296,11 +281,10 @@ export interface dxTreeViewOptions<TKey = any>
     rootValue?: any;
     /**
      * @docid
-     * @type Enums.ScrollDirection
      * @default "vertical"
      * @public
      */
-    scrollDirection?: 'both' | 'horizontal' | 'vertical';
+    scrollDirection?: ScrollDirection;
     /**
      * @docid
      * @default "Select All"
@@ -321,18 +305,16 @@ export interface dxTreeViewOptions<TKey = any>
     selectNodesRecursive?: boolean;
     /**
      * @docid
-     * @type Enums.NavSelectionMode
      * @default "multiple"
      * @public
      */
-    selectionMode?: 'multiple' | 'single';
+    selectionMode?: SingleOrMultiple;
     /**
      * @docid
-     * @type Enums.TreeViewCheckBoxMode
      * @default 'none'
      * @public
      */
-    showCheckBoxesMode?: 'none' | 'normal' | 'selectAll';
+    showCheckBoxesMode?: TreeViewCheckBoxMode;
     /**
      * @docid
      * @default false
@@ -437,6 +419,13 @@ export default class dxTreeView<TKey = any>
      * @public
      */
     selectAll(): void;
+    /**
+     * @docid
+     * @publicName getScrollable()
+     * @public
+     * @return dxScrollable
+     */
+    getScrollable(): Scrollable;
     /**
      * @docid
      * @publicName selectItem(itemData)
@@ -621,6 +610,9 @@ export interface dxTreeViewNode<TKey = any> {
      */
     text?: string;
 }
+
+/** @public */
+export type Scrollable = Skip<dxScrollable, '_templateManager' | '_cancelOptionChange' | '_getTemplate' | '_invalidate' | '_refresh' | '_notifyOptionChanged' | '_createElement'>;
 
 /** @public */
 export type ExplicitTypes<TKey = any> = {

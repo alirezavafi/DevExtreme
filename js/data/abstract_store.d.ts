@@ -1,4 +1,4 @@
-import { DxPromise } from '../core/utils/deferred';
+import { DxPromise, DxExtendedPromise } from '../core/utils/deferred';
 import { DeepPartial } from '../core/index';
 import { FilterDescriptor, GroupDescriptor, LoadOptions } from './index';
 
@@ -132,7 +132,7 @@ export default class Store<
      * @return Promise<any>
      * @public
      */
-    insert(values: TItem): DxPromise<TItem>;
+    insert(values: TItem): DxExtendedPromise<TItem>;
     /**
      * @docid
      * @publicName key()
@@ -153,7 +153,7 @@ export default class Store<
      * @return Promise<any>
      * @public
      */
-    load(): DxPromise<Array<TItem>>;
+    load(): DxExtendedPromise<Array<TItem>>;
     /**
      * @docid
      * @publicName load(options)
@@ -161,7 +161,7 @@ export default class Store<
      * @return Promise<any>
      * @public
      */
-    load(options: LoadOptions<TItem>): DxPromise<Array<TItem>>;
+    load(options: LoadOptions<TItem>): DxExtendedPromise<Array<TItem>>;
     /**
      * @docid
      * @publicName off(eventName)
@@ -212,8 +212,8 @@ export default class Store<
     /**
      * @docid
      * @publicName totalCount(options)
-     * @param1_field1 filter:object
-     * @param1_field2 group:object
+     * @param1_field filter:object
+     * @param1_field group:object
      * @return Promise<number>
      * @public
      */
@@ -226,5 +226,5 @@ export default class Store<
      * @return Promise<any>
      * @public
      */
-    update(key: TKey, values: DeepPartial<TItem>): DxPromise<TItem>;
+    update(key: TKey, values: DeepPartial<TItem>): DxExtendedPromise<TItem>;
 }

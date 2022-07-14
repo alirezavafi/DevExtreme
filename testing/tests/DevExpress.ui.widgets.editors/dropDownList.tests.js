@@ -18,7 +18,8 @@ import 'generic_light.css!';
 
 QUnit.testStart(() => {
     const markup =
-        '<div id="dropDownList"></div>';
+        '<div id="dropDownList"></div>\
+        <div id="popup"></div>';
 
     $('#qunit-fixture').html(markup);
 });
@@ -711,6 +712,10 @@ QUnit.module('items & dataSource', moduleConfig, () => {
         });
 
         QUnit.test('should not search if composition is in progress (T1003899)', function(assert) {
+            if(devices.real().platform === 'android') {
+                assert.expect(0);
+                return;
+            }
             this.$input.trigger($.Event('compositionstart'));
             this.keyboard.type('ㅇ');
             this.clock.tick(TIME_TO_WAIT);
@@ -730,6 +735,10 @@ QUnit.module('items & dataSource', moduleConfig, () => {
         });
 
         QUnit.test('should not get composite characters as search value when compositionend is raised because of next composition start', function(assert) {
+            if(devices.real().platform === 'android') {
+                assert.expect(0);
+                return;
+            }
             this.$input.trigger($.Event('compositionstart'));
             this.keyboard.type('ㅏ');
             this.$input.trigger($.Event('compositionend'));
@@ -1258,22 +1267,6 @@ QUnit.module('popup', moduleConfig, () => {
         parentContainer.remove();
     });
 
-    QUnit.test('skip gesture event class attach only when popup is opened', function(assert) {
-        const SKIP_GESTURE_EVENT_CLASS = 'dx-skip-gesture-event';
-        const $dropDownList = $('#dropDownList').dxDropDownList({
-            items: [1, 2, 3]
-        });
-
-        assert.equal($dropDownList.hasClass(SKIP_GESTURE_EVENT_CLASS), false, 'skip gesture event class was not added when popup is closed');
-
-        $dropDownList.dxDropDownList('option', 'opened', true);
-        assert.equal($dropDownList.hasClass(SKIP_GESTURE_EVENT_CLASS), true, 'skip gesture event class was added after popup was opened');
-
-        $dropDownList.dxDropDownList('option', 'opened', false);
-        assert.equal($dropDownList.hasClass(SKIP_GESTURE_EVENT_CLASS), false, 'skip gesture event class was removed after popup was closed');
-    });
-
-
     QUnit.test('After load new page scrollTop should not be changed', function(assert) {
         const data = [];
         const done = assert.async();
@@ -1410,50 +1403,23 @@ QUnit.module('popup', moduleConfig, () => {
         }
     });
 
-    QUnit.test('widget has a correct popup height for the first opening if the pageSize is equal to dataSource length (T942881)', function(assert) {
-        const items = [{
-            id: 1,
-            value: 'value11'
-        }, {
-            id: 2,
-            value: 'value12'
-        }];
-        const dropDownList = $('#dropDownList').dxDropDownList({
-            displayExpr: 'value',
-            valueExpr: 'id',
-            dataSource: new DataSource({
-                store: [],
-                paginate: true,
-                pageSize: 2
-            }),
-            opened: true
-        }).dxDropDownList('instance');
-        const listInstance = $(`.${LIST_CLASS}`).dxList('instance');
-        listInstance.option({
-            'pageLoadMode': 'scrollBottom',
-            'useNativeScrolling': 'true'
+    QUnit.test('scroll on input should not scroll the page when opened DropDownList is inside Popup (T1082501)', function(assert) {
+        const $dropDownList = $('<div>').dxDropDownList({ opened: true });
+        $('#popup').dxPopup({
+            visible: true,
+            contentTemplate: () => $dropDownList
         });
-        listInstance.option();
-        dropDownList.close();
+        const $input = $dropDownList.find(`.${TEXTEDITOR_INPUT_CLASS}`);
+        const wheelEvent = $.Event('dxmousewheel', {
+            delta: -125,
+            pageX: $input.scrollLeft(),
+            pageY: $input.scrollTop(),
+            originalEvent: $.Event('wheel')
+        });
 
-        dropDownList.option('dataSource', new DataSource({
-            store: items,
-            paginate: true,
-            pageSize: 2
-        }));
+        $input.trigger(wheelEvent);
 
-        dropDownList.open();
-        this.clock.tick();
-
-        const popupHeight = $(dropDownList.content()).height();
-
-        dropDownList.close();
-        dropDownList.open();
-
-        const recalculatedPopupHeight = $(dropDownList.content()).height();
-
-        assert.strictEqual(popupHeight, recalculatedPopupHeight);
-        assert.strictEqual(listInstance.option('_revertPageOnEmptyLoad'), true, 'default list _revertPageOnEmptyLoad is correct');
+        assert.ok(wheelEvent.originalEvent.isDefaultPrevented());
     });
 });
 

@@ -1329,6 +1329,32 @@ QUnit.module('Initialization', { beforeEach: setupModule, afterEach: teardownMod
         assert.equal(foundRowCount, 8, 'Found row count');
     });
 
+    QUnit.test('Get row index if group by one column and data item contains key field (T1078374)', function(assert) {
+        const done = assert.async();
+        // arrange
+        const dataSource = createDataSource([
+            { team: 'internal', name: 'Alex', key: 1 },
+            { team: 'internal', name: 'Bob', key: 2 }
+        ],
+        { key: 'name' },
+        { group: 'team', sort: 'name', pageSize: 3, asyncLoadEnabled: false, paginate: true }
+        );
+
+        this.applyOptions({
+            commonColumnSettings: { autoExpandGroup: true },
+            dataSource: dataSource
+        });
+
+        const dataController = this.dataController;
+        dataController._refreshDataSource();
+
+        // act
+        dataController.getGlobalRowIndexByKey('Bob').done(function(globalRowIndex) {
+            assert.equal(globalRowIndex, 2, 'Bob');
+            done();
+        });
+    });
+
     ['string', 'number', 'date', 'boolean'].forEach(dataField => {
         [true, false].forEach(desc => {
             QUnit.test(`Get row index if sort by column with null values (dataType = ${dataField}, desc = ${desc})`, function(assert) {
@@ -5640,6 +5666,30 @@ QUnit.module('Virtual scrolling preload', {
         // assert
         assert.deepEqual(loadedItems.length, 100, 'all items are selected');
     });
+
+    QUnit.test('New mode. Load page params should not be changed if the viewport position is not changed after scrolling back (T1052705)', function(assert) {
+        // act
+        this.option('scrolling.prerenderedRowCount', 5);
+        this.dataController.setViewportPosition(1000);
+        let loadPageParams = this.dataController.getLoadPageParams();
+
+        // assert
+        assert.deepEqual(loadPageParams, { pageIndex: 2, loadPageCount: 3, skipForCurrentPage: 10 }, 'params after scrolling down');
+
+        // act
+        this.dataController.setViewportPosition(800);
+        loadPageParams = this.dataController.getLoadPageParams();
+
+        // assert
+        assert.deepEqual(loadPageParams, { pageIndex: 1, loadPageCount: 2, skipForCurrentPage: 15 }, 'params after scrolling up');
+
+        // act
+        this.dataController.setViewportPosition(800);
+        loadPageParams = this.dataController.getLoadPageParams();
+
+        // assert
+        assert.deepEqual(loadPageParams, { pageIndex: 1, loadPageCount: 2, skipForCurrentPage: 15 }, 'params are not changed');
+    });
 });
 
 QUnit.module('Infinite scrolling', {
@@ -9709,6 +9759,41 @@ QUnit.module('Summary', {
                 summaryType: 'custom'
             }]]
         }], 'footerItems');
+    });
+
+    QUnit.test('CustomStore load summary on filter change if summary is single remote operation (T1071599)', function(assert) {
+        this.options = {
+            dataSource: {
+                load: function(options) {
+                    return $.Deferred().resolve([
+                        { name: 'Alex', age: 19 },
+                        { name: 'Dan', age: 25 }
+                    ], {
+                        summary: [3]
+                    });
+                },
+                pageSize: 2
+            },
+            summary: {
+                totalItems: [{
+                    column: 'age',
+                    summaryType: 'sum'
+                }]
+            },
+            remoteOperations: {
+                summary: true
+            }
+        };
+
+        // act
+        this.setupDataGridModules();
+        this.clock.tick();
+        this.filter(['age', '>', 20]);
+        this.clock.tick();
+
+        // assert
+        assert.deepEqual(this.getVisibleRows().length, 1, 'rows are filtered');
+        assert.deepEqual(this.getTotalSummaryValue('age'), 3, 'summary value');
     });
 
     // T306309
@@ -14157,7 +14242,7 @@ QUnit.module('Refresh changesOnly', {
         const items = this.dataController.items();
         assert.deepEqual(items[0].values, [1, 'Alex']);
         assert.strictEqual(changedArgs.changeType, 'refresh');
-        assert.strictEqual(changedArgs.repaintChangesOnly, undefined, 'full repaint');
+        assert.strictEqual(changedArgs.repaintChangesOnly, false, 'full repaint');
     });
 
     QUnit.test('update one cell when summary values are changed', function(assert) {

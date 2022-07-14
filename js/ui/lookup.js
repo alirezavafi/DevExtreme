@@ -68,6 +68,8 @@ const Lookup = DropDownList.inherit({
 
             searchEnabled: true,
 
+            searchStartEvent: 'input change keyup',
+
             cleanSearchOnOpening: true,
 
             showCancelButton: true,
@@ -137,6 +139,8 @@ const Lookup = DropDownList.inherit({
                 hideOnOutsideClick: false,
 
                 position: undefined,
+
+                visualContainer: undefined,
 
                 animation: {},
 
@@ -224,6 +228,13 @@ const Lookup = DropDownList.inherit({
 
             _scrollToSelectedItemEnabled: false,
             useHiddenSubmitElement: true
+        });
+    },
+
+    _setDeprecatedOptions() {
+        this.callBase();
+        extend(this._deprecatedOptions, {
+            'valueChangeEvent': { since: '22.1', alias: 'searchStartEvent' }
         });
     },
 
@@ -409,7 +420,7 @@ const Lookup = DropDownList.inherit({
         }
 
         const displayValue = this.option('displayValue');
-        this._updateField(isDefined(displayValue) && String(displayValue) || this.option('placeholder'));
+        this._updateField(displayValue);
         this.$element().toggleClass(LOOKUP_EMPTY_CLASS, !this.option('selectedItem'));
     },
 
@@ -426,6 +437,8 @@ const Lookup = DropDownList.inherit({
     },
 
     _updateField: function(text) {
+        text = isDefined(text) && String(text) || this.option('placeholder');
+
         this._$field.text(text);
     },
 
@@ -612,7 +625,7 @@ const Lookup = DropDownList.inherit({
     },
 
     _getPopupHeight: function() {
-        if(this._list && this._list.itemElements()) {
+        if(this._list?.itemElements().length) {
             return this._calculateListHeight(this.option('grouped')) +
                 (this._$searchWrapper ? getOuterHeight(this._$searchWrapper) : 0) +
                 (this._popup._$bottom ? getOuterHeight(this._popup._$bottom) : 0) +
@@ -643,6 +656,7 @@ const Lookup = DropDownList.inherit({
                 showEvent: null,
                 hideEvent: null,
                 target: this.$element(),
+                visualContainer: this.$element(),
                 fullScreen: false,
                 shading: false,
                 hideOnParentScroll: true,
@@ -703,6 +717,7 @@ const Lookup = DropDownList.inherit({
 
         delete result.animation;
         delete result.position;
+        delete result.visualContainer;
 
         if(this.option('_scrollToSelectedItemEnabled')) {
             result.position = this.option('dropDownCentered') ? {
@@ -714,11 +729,12 @@ const Lookup = DropDownList.inherit({
                 at: 'left bottom',
                 of: this.element()
             };
+            result.visualContainer = this.$element();
 
             result.hideOnParentScroll = true;
         }
 
-        each(['position', 'animation', 'width', 'height'], (_, optionName) => {
+        each(['position', 'animation', 'width', 'height', 'visualContainer'], (_, optionName) => {
             const popupOptionValue = this.option(`dropDownOptions.${ optionName }`);
             if(popupOptionValue !== undefined) {
                 result[optionName] = popupOptionValue;
@@ -815,6 +831,8 @@ const Lookup = DropDownList.inherit({
         this._renderSearch();
     },
 
+    _renderValueChangeEvent: noop,
+
     _renderSearch: function() {
         const isSearchEnabled = this.option('searchEnabled');
 
@@ -827,7 +845,7 @@ const Lookup = DropDownList.inherit({
                 .appendTo($searchWrapper);
 
             const currentDevice = devices.current();
-            const searchMode = currentDevice.android && currentDevice.version[0] >= 5 ? 'text' : 'search';
+            const searchMode = currentDevice.android ? 'text' : 'search';
 
             let isKeyboardListeningEnabled = false;
 
@@ -838,7 +856,7 @@ const Lookup = DropDownList.inherit({
                 onKeyboardHandled: opts => isKeyboardListeningEnabled && this._list._keyboardHandler(opts),
                 mode: searchMode,
                 showClearButton: true,
-                valueChangeEvent: this.option('valueChangeEvent'),
+                valueChangeEvent: this.option('searchStartEvent'),
                 onValueChanged: (e) => { this._searchHandler(e); }
             });
 
@@ -1082,6 +1100,9 @@ const Lookup = DropDownList.inherit({
             case 'grouped':
             case 'groupTemplate':
                 this._setListOption(name);
+                break;
+            case 'searchStartEvent':
+                this._searchBox?.option('valueChangeEvent', value);
                 break;
             case 'onScroll':
                 this._initScrollAction();

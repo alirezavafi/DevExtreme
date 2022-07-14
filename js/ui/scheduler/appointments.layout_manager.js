@@ -1,8 +1,4 @@
 import { equalByValue } from '../../core/utils/common';
-import {
-    getModelProvider,
-    getTimeZoneCalculator
-} from './instanceFactory';
 import { AppointmentViewModelGenerator } from './appointments/viewModelGenerator';
 import { getGroupCount } from './resources/utils';
 import { getCellWidth, getCellHeight, getAllDayHeight } from './workspaces/helpers/positionHelper';
@@ -15,9 +11,8 @@ class AppointmentLayoutManager {
         this.appointmentViewModel = new AppointmentViewModelGenerator();
     }
 
-    get modelProvider() { return getModelProvider(this.instance.key); }
     get appointmentRenderingStrategyName() {
-        return getAppointmentRenderingStrategyName(this.modelProvider.currentViewType);
+        return getAppointmentRenderingStrategyName(this.instance.currentViewType);
     }
 
     getCellDimensions(options) {
@@ -32,7 +27,6 @@ class AppointmentLayoutManager {
 
     _getRenderingStrategyOptions() {
         const workspace = this.instance.getWorkSpace();
-        const key = this.instance.key;
         const { virtualScrollingDispatcher } = this.instance.getWorkSpace();
         const {
             cellCountInsideLeftVirtualCell,
@@ -64,15 +58,14 @@ class AppointmentLayoutManager {
             loadedResources: this.instance.option('loadedResources'),
             getAppointmentColor: this.instance.createGetAppointmentColor(),
             dataAccessors: this.instance._dataAccessors,
-            key,
-            isRenovatedAppointments: this.modelProvider.isRenovatedAppointments,
+            isRenovatedAppointments: this.instance.option('isRenovatedAppointments'),
             appointmentRenderingStrategyName: this.appointmentRenderingStrategyName,
-            adaptivityEnabled: this.modelProvider.adaptivityEnabled,
-            rtlEnabled: this.modelProvider.rtlEnabled,
-            startDayHour: this.modelProvider.startDayHour,
-            endDayHour: this.modelProvider.endDayHour,
-            maxAppointmentsPerCell: this.modelProvider.maxAppointmentsPerCell,
-            currentDate: this.modelProvider.currentDate,
+            adaptivityEnabled: this.instance.option('adaptivityEnabled'),
+            rtlEnabled: this.instance.option('rtlEnabled'),
+            startDayHour: this.instance._getCurrentViewOption('startDayHour'),
+            endDayHour: this.instance._getCurrentViewOption('endDayHour'),
+            maxAppointmentsPerCell: this.instance._getCurrentViewOption('maxAppointmentsPerCell'),
+            currentDate: this.instance.option('currentDate'),
             isVirtualScrolling: this.instance.isVirtualScrolling(),
             leftVirtualCellCount: cellCountInsideLeftVirtualCell,
             topVirtualCellCount: cellCountInsideTopVirtualRow,
@@ -80,7 +73,7 @@ class AppointmentLayoutManager {
             hoursInterval: workspace.option('hoursInterval'),
             showAllDayPanel: workspace.option('showAllDayPanel'),
             isGroupedAllDayPanel: workspace.isGroupedAllDayPanel(),
-            groups: this.modelProvider.getCurrentViewOption('groups'),
+            groups: this.instance._getCurrentViewOption('groups'),
             groupCount,
             rowCount,
             appointmentCountPerCell: this.instance.option('_appointmentCountPerCell'),
@@ -94,12 +87,13 @@ class AppointmentLayoutManager {
             allDayHeight: allDayHeight,
             resizableStep: positionHelper.getResizableStep(),
             visibleDayDuration,
+            allDayPanelMode: this.instance._getCurrentViewOption('allDayPanelMode'),
             // appointment settings
-            timeZoneCalculator: getTimeZoneCalculator(key),
-            timeZone: this.modelProvider.timeZone,
+            timeZoneCalculator: this.instance.timeZoneCalculator,
+            timeZone: this.instance.option('timeZone'),
             firstDayOfWeek: this.instance.getFirstDayOfWeek(),
-            viewStartDayHour: this.modelProvider.getCurrentViewOption('startDayHour'),
-            viewEndDayHour: this.modelProvider.getCurrentViewOption('endDayHour'),
+            viewStartDayHour: this.instance._getCurrentViewOption('startDayHour'),
+            viewEndDayHour: this.instance._getCurrentViewOption('endDayHour'),
             viewType: workspace.type,
             endViewDate: workspace.getEndViewDate(),
             positionHelper,
@@ -134,9 +128,13 @@ class AppointmentLayoutManager {
 
     _isDataChanged(data) {
         const appointmentDataProvider = this.instance.appointmentDataProvider;
-
         const updatedData = appointmentDataProvider.getUpdatedAppointment();
-        return updatedData === data || appointmentDataProvider.getUpdatedAppointmentKeys().some(item => data[item.key] === item.value);
+
+        return updatedData === data || appointmentDataProvider
+            .getUpdatedAppointmentKeys()
+            .some((item) => {
+                return data[item.key] === item.value;
+            });
     }
 
     _isAppointmentShouldAppear(currentAppointment, sourceAppointment) {
@@ -161,6 +159,7 @@ class AppointmentLayoutManager {
                 ...currentSetting,
                 columnIndex,
                 rowIndex,
+                positionByMap: undefined,
                 topVirtualCellCount: undefined,
                 leftVirtualCellCount: undefined,
                 leftVirtualWidth: undefined,
@@ -220,9 +219,11 @@ class AppointmentLayoutManager {
         currentAppointments.forEach(appointment => {
             const sourceAppointment = this._getAssociatedSourceAppointment(appointment, sourceAppointments);
             if(sourceAppointment) {
-                appointment.needRepaint = this._isDataChanged(appointment.itemData) ||
-                    this._isSettingChanged(appointment.settings, sourceAppointment.settings) ||
-                    this._isAppointmentShouldAppear(appointment, sourceAppointment);
+                const isDataChanged = this._isDataChanged(appointment.itemData);
+                const isSettingChanged = this._isSettingChanged(appointment.settings, sourceAppointment.settings);
+                const isAppointmentShouldAppear = this._isAppointmentShouldAppear(appointment, sourceAppointment);
+
+                appointment.needRepaint = isDataChanged || isSettingChanged || isAppointmentShouldAppear;
             }
         });
 

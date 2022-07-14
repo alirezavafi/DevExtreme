@@ -1,6 +1,6 @@
 import { Selector, ClientFunction } from 'testcafe';
 
-const CLASS = {
+export const CLASS = {
   appointmentPopup: 'dx-scheduler-appointment-popup',
   popup: 'dx-popup',
   popupWrapper: 'dx-popup-wrapper',
@@ -8,6 +8,8 @@ const CLASS = {
   stateInvisible: 'dx-state-invisible',
   recurrenceEditor: 'dx-recurrence-editor',
   textEditorInput: 'dx-texteditor-input',
+  overlayWrapper: 'dx-overlay-wrapper',
+  fullScreen: 'dx-popup-fullscreen',
 };
 
 export default class AppointmentPopup {
@@ -35,6 +37,10 @@ export default class AppointmentPopup {
 
   endRepeatDateElement: Selector;
 
+  repeatEveryElement: Selector;
+
+  fullScreen: Promise<boolean>;
+
   constructor(scheduler: Selector) {
     this.element = scheduler.find(`.${CLASS.popup}.${CLASS.appointmentPopup}`);
     this.wrapper = Selector(`.${CLASS.popupWrapper}.${CLASS.appointmentPopup}`);
@@ -52,13 +58,16 @@ export default class AppointmentPopup {
     this.cancelButton = this.wrapper.find(`.${CLASS.cancelButton}`);
 
     this.endRepeatDateElement = this.wrapper.find(`.${CLASS.recurrenceEditor} .${CLASS.textEditorInput}`).nth(2);
+    this.repeatEveryElement = this.wrapper.find(`.${CLASS.recurrenceEditor} .${CLASS.textEditorInput}`).nth(1);
+
+    this.fullScreen = this.wrapper.find(`.${CLASS.overlayWrapper} .${CLASS.fullScreen}`).exists;
   }
 
   isVisible(): Promise<boolean> {
     const { element } = this;
     const invisibleStateClass = CLASS.stateInvisible;
 
-    return ClientFunction(() => !$(element()).hasClass(invisibleStateClass), {
+    return ClientFunction(() => !(element() as any).classList.contains(invisibleStateClass), {
       dependencies: { element, invisibleStateClass },
     })();
   }

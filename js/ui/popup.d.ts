@@ -23,6 +23,12 @@ import {
     ChangedOptionInfo,
 } from '../events/index';
 
+import {
+    PositionAlignment,
+    ToolbarItemLocation,
+    ToolbarItemComponent,
+} from '../common';
+
 import dxOverlay, {
     dxOverlayAnimation,
     dxOverlayOptions,
@@ -32,9 +38,18 @@ import {
     ResizeInfo,
 } from './resizable';
 
+export {
+    PositionAlignment,
+    ToolbarItemLocation,
+    ToolbarItemComponent as ToolbarItemWidget,
+};
+
 export interface TitleRenderedInfo {
     readonly titleElement: DxElement;
 }
+
+/** @public */
+export type ToolbarLocation = 'bottom' | 'top';
 
 /** @public */
 export type ContentReadyEvent = EventInfo<dxPopup>;
@@ -131,12 +146,8 @@ export interface dxPopupOptions<TComponent> extends dxOverlayOptions<TComponent>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 width:number
-     * @type_function_param1_field6 height:number
+     * @type_function_param1_field component:this
+     * @type_function_param1_field event:event
      * @action
      * @public
      */
@@ -145,12 +156,8 @@ export interface dxPopupOptions<TComponent> extends dxOverlayOptions<TComponent>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 width:number
-     * @type_function_param1_field6 height:number
+     * @type_function_param1_field component:this
+     * @type_function_param1_field event:event
      * @action
      * @public
      */
@@ -159,12 +166,8 @@ export interface dxPopupOptions<TComponent> extends dxOverlayOptions<TComponent>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 width:number
-     * @type_function_param1_field6 height:number
+     * @type_function_param1_field component:this
+     * @type_function_param1_field event:event
      * @action
      * @public
      */
@@ -173,20 +176,16 @@ export interface dxPopupOptions<TComponent> extends dxOverlayOptions<TComponent>
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 titleElement:DxElement
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
     onTitleRendered?: ((e: EventInfo<TComponent> & TitleRenderedInfo) => void);
     /**
      * @docid
-     * @type Enums.PositionAlignment|PositionConfig|function
      * @public
      */
-    position?: 'bottom' | 'center' | 'left' | 'left bottom' | 'left top' | 'right' | 'right bottom' | 'right top' | 'top' | PositionConfig | Function;
+    position?: PositionAlignment | PositionConfig | Function;
     /**
      * @docid
      * @default false
@@ -279,11 +278,10 @@ export interface dxPopupToolbarItem {
     html?: string;
     /**
      * @docid dxPopupOptions.toolbarItems.location
-     * @type Enums.ToolbarItemLocation
      * @default 'center'
      * @public
      */
-    location?: 'after' | 'before' | 'center';
+    location?: ToolbarItemLocation;
     /**
      * @docid dxPopupOptions.toolbarItems.options
      * @public
@@ -301,11 +299,10 @@ export interface dxPopupToolbarItem {
     text?: string;
     /**
      * @docid dxPopupOptions.toolbarItems.toolbar
-     * @type Enums.Toolbar
      * @default 'top'
      * @public
      */
-    toolbar?: 'bottom' | 'top';
+    toolbar?: ToolbarLocation;
     /**
      * @docid dxPopupOptions.toolbarItems.visible
      * @default true
@@ -314,10 +311,9 @@ export interface dxPopupToolbarItem {
     visible?: boolean;
     /**
      * @docid dxPopupOptions.toolbarItems.widget
-     * @type Enums.ToolbarItemWidget
      * @public
      */
-    widget?: 'dxAutocomplete' | 'dxButton' | 'dxCheckBox' | 'dxDateBox' | 'dxMenu' | 'dxSelectBox' | 'dxTabs' | 'dxTextBox' | 'dxButtonGroup' | 'dxDropDownButton';
+    widget?: ToolbarItemComponent;
 }
 /**
  * @docid

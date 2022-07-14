@@ -37,18 +37,19 @@ const Widget = require('ui/widget/ui.widget');
 const Popup = require('ui/popup');
 const Popover = require('ui/popover');
 const RadioGroup = require('ui/radio_group');
+const Resizable = require('ui/resizable');
 const Scheduler = require('ui/scheduler/ui.scheduler');
 const Scrollable = require('ui/scroll_view/ui.scrollable');
 const ScrollView = require('ui/scroll_view');
 const SelectBox = require('ui/select_box');
 const SliderHandle = require('ui/slider/ui.slider_handle');
-const SliderTooltip = require('ui/slider/ui.slider_tooltip');
 const Tabs = require('ui/tabs');
 const TabPanel = require('ui/tab_panel');
 const TagBox = require('ui/tag_box');
 const Toast = require('ui/toast');
 const TreeList = require('ui/tree_list');
 const TreeView = require('ui/tree_view');
+const TileView = require('ui/tile_view');
 const FileUploader = require('ui/file_uploader');
 const Form = require('ui/form');
 const ValidationMessage = require('ui/validation_message');
@@ -161,19 +162,6 @@ testComponentDefaults(DateBox,
     {
         useMaskBehavior: false,
         adaptivityEnabled: false
-    }
-);
-
-testComponentDefaults(DateBox,
-    { platform: 'android' },
-    { pickerType: 'rollers' },
-    function() {
-        this._origDevice = devices.real();
-        const deviceConfig = { platform: 'android', android: true, version: [4, 3] };
-        devices.real(deviceConfig);
-    },
-    function() {
-        devices.real(this._origDevice);
     }
 );
 
@@ -338,6 +326,30 @@ testComponentDefaults(List,
 testComponentDefaults(TreeView,
     {},
     { useNativeScrolling: false },
+    function() {
+        this._supportNativeScrolling = support.nativeScrolling;
+        support.nativeScrolling = false;
+    },
+    function() {
+        support.nativeScrolling = this._supportNativeScrolling;
+    }
+);
+
+testComponentDefaults(TileView,
+    {},
+    { showScrollbar: 'onScroll' },
+    function() {
+        this._supportNativeScrolling = support.nativeScrolling;
+        support.nativeScrolling = true;
+    },
+    function() {
+        support.nativeScrolling = this._supportNativeScrolling;
+    }
+);
+
+testComponentDefaults(TileView,
+    {},
+    { showScrollbar: 'never' },
     function() {
         this._supportNativeScrolling = support.nativeScrolling;
         support.nativeScrolling = false;
@@ -581,23 +593,6 @@ testComponentDefaults(Widget,
     }
 );
 
-testComponentDefaults(Widget,
-    {},
-    {
-        useResizeObserver: false
-    },
-    function() {
-        this.originalRealDevice = devices.real();
-        devices.real({
-            platform: 'android',
-            version: '4.4.4'
-        });
-    },
-    function() {
-        devices.real(this.originalRealDevice);
-    }
-);
-
 testComponentDefaults(Popover,
     {},
     {
@@ -624,6 +619,11 @@ testComponentDefaults(Popover,
 testComponentDefaults(RadioGroup,
     { tablet: true },
     { layout: 'horizontal' }
+);
+
+testComponentDefaults(Resizable,
+    { },
+    { keepAspectRatio: true }
 );
 
 testComponentDefaults(Gallery,
@@ -996,22 +996,6 @@ testComponentDefaults(SliderHandle, {},
             position: 'top',
             showMode: 'onHover'
         }
-    }
-);
-
-testComponentDefaults(SliderTooltip, {},
-    {
-        visible: false,
-        position: 'top',
-        hideOnOutsideClick: false,
-        hideTopOverlayHandler: null,
-        hideOnParentScroll: false,
-        animation: null,
-        templatesRenderAsynchronously: false,
-        _fixWrapperPosition: false,
-        useResizeObserver: false,
-        showMode: 'onHover',
-        value: 0
     }
 );
 

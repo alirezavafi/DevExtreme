@@ -323,6 +323,18 @@ describe('Widget\'s container manipulations', () => {
     });
   });
 
+  it('pass custom attribute with empty value (hidden) as props on first render', () => {
+    $('#component').attr('id', 'my-id');
+    $('#my-id').attr('hidden', '');
+
+    $('#my-id').dxTestWidget({});
+
+    expect($('#my-id').dxTestWidget('getLastPassedProps')).toMatchObject({
+      id: 'my-id',
+      hidden: 'true',
+    });
+  });
+
   it('keep passing custom class and attributes (with id) props on repaint', () => {
     $('#component').attr('id', 'my-id');
     $('#my-id').addClass('custom-css-class');
@@ -439,6 +451,12 @@ describe('option', () => {
     $('#component').dxOptionsTestWidget({});
 
     expect($('#component').dxOptionsTestWidget('option').text).toBe('default text');
+  });
+
+  it('should patch options without freezing', () => {
+    $('#component').dxOptionsTestWidget({});
+    expect(Object.isFrozen($('#component')
+      .dxOptionsTestWidget('instance')._patchOptionValues({ objectProp: undefined }).objectProp)).toBe(false);
   });
 
   it('should copy default props of component (not by reference)', () => {
@@ -640,6 +658,20 @@ describe('option', () => {
     expect(mockFunction).toHaveBeenCalledWith({
       originalEvent: defaultEvent, keyName: KEY.space, which: KEY.space,
     });
+  });
+
+  it('updates props if it is called on onInitialized handler (T1057680)', () => {
+    const $component = $('#component');
+    const options = {
+      text: 'new text',
+    };
+    $component.dxTestWidget({
+      onInitialized: (e) => {
+        e.component.option(options);
+      },
+    });
+
+    expect($component.dxTestWidget('getLastPassedProps')).toMatchObject(options);
   });
 });
 
@@ -945,6 +977,24 @@ describe('templates and slots', () => {
       template: null,
     });
     expect($('#component').children('.templates-root').length).toBe(0);
+  });
+
+  it('should not rerender the same template', () => {
+    const render = jest.fn();
+    const template = {
+      render,
+    };
+
+    const instance = $('#component').dxTemplatedTestWidget({
+      template,
+    }).dxTemplatedTestWidget('instance');
+
+    expect(render).toBeCalledTimes(1);
+
+    const widgetTemplate = instance.option('template');
+    instance.option('template', widgetTemplate);
+
+    expect(render).toBeCalledTimes(1);
   });
 
   it('should not re-render template if new data shadow equal', () => {

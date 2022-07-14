@@ -13,6 +13,19 @@ import Widget, {
     WidgetOptions,
 } from './widget/ui.widget';
 
+import {
+    FieldChooserLayout,
+} from '../common';
+
+import {
+    ApplyChangesMode,
+} from '../common/grids';
+
+export {
+    ApplyChangesMode,
+    FieldChooserLayout,
+};
+
 /** @public */
 export type ContentReadyEvent = EventInfo<dxPivotGridFieldChooser>;
 
@@ -46,11 +59,10 @@ export interface dxPivotGridFieldChooserOptions extends WidgetOptions<dxPivotGri
     allowSearch?: boolean;
     /**
      * @docid
-     * @type Enums.ApplyChangesMode
      * @default "instantly"
      * @public
      */
-    applyChangesMode?: 'instantly' | 'onDemand';
+    applyChangesMode?: ApplyChangesMode;
     /**
      * @docid
      * @default null
@@ -58,6 +70,12 @@ export interface dxPivotGridFieldChooserOptions extends WidgetOptions<dxPivotGri
      * @public
      */
     dataSource?: PivotGridDataSource;
+    /**
+     * @docid
+     * @default true
+     * @public
+     */
+    encodeHtml?: boolean;
     /**
      * @docid
      * @public
@@ -117,22 +135,19 @@ export interface dxPivotGridFieldChooserOptions extends WidgetOptions<dxPivotGri
     height?: number | string | (() => number | string);
     /**
      * @docid
-     * @type Enums.PivotGridFieldChooserLayout
      * @default 0
      * @public
      */
-    layout?: 0 | 1 | 2;
+    layout?: FieldChooserLayout;
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field4 items:Array<Object>
-     * @type_function_param1_field5 area:string
-     * @type_function_param1_field6 field:PivotGridDataSourceOptions.fields
-     * @type_function_param1_field7 event:event
+     * @type_function_param1_field component:dxPivotGridFieldChooser
+     * @type_function_param1_field field:PivotGridDataSourceOptions.fields
+     * @type_function_param1_field event:event
+     * @type_function_param1_field items:Array<Object>
      * @default null
-     * @type_function_param1_field1 component:dxPivotGridFieldChooser
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+
      * @action
      * @public
      */

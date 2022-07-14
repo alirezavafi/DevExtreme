@@ -16,6 +16,7 @@ import combineRemoteFilter from '../utils/filtering/remote';
 import { getAppointmentsConfig, getAppointmentsModel } from '../model/appointments';
 import { getAppointmentsViewModel } from '../view_model/appointments/appointments';
 import { AppointmentsContextProvider } from '../appointments_context_provider';
+import { AppointmentEditForm } from '../appointment_edit_form/layout';
 
 jest.mock('../model/appointments', () => ({
   ...jest.requireActual('../model/appointments'),
@@ -117,6 +118,7 @@ describe('Scheduler', () => {
       };
       const tree = renderComponent({
         restAttributes: { 'custom-attribute': 'customAttribute' },
+        classes: 'some-classes',
         props,
       });
 
@@ -124,8 +126,8 @@ describe('Scheduler', () => {
         .toEqual({
           ...new WidgetProps(),
           'custom-attribute': 'customAttribute',
-          classes: 'dx-scheduler dx-scheduler-native',
           ...props,
+          classes: 'some-classes',
           children: expect.anything(),
         });
     });
@@ -145,7 +147,7 @@ describe('Scheduler', () => {
         resourceCellTemplate: jest.fn(),
       };
       const tree = renderComponent({
-        onViewRendered: () => {},
+        onViewRendered: () => { },
         workSpaceKey: 'workSpaceKey',
         currentViewConfig: {
           ...defaultCurrentViewConfig,
@@ -207,10 +209,10 @@ describe('Scheduler', () => {
             location: 'after',
           },
         ],
-        customizeDateNavigatorText: () => {},
+        customizeDateNavigatorText: () => { },
       };
-      const setCurrentDate = () => {};
-      const setCurrentView = () => {};
+      const setCurrentDate = () => { };
+      const setCurrentView = () => { };
 
       const tree = renderComponent({
         props,
@@ -247,6 +249,25 @@ describe('Scheduler', () => {
       const schedulerToolbar = tree.find(SchedulerToolbar);
 
       expect(schedulerToolbar.exists()).toBe(false);
+    });
+
+    describe('AppointmentEditForm', () => {
+      [true, false].forEach((needCreate) => {
+        it(`should correctly render AppointmentEditForm if needCreateAppointmentEditForm = ${needCreate}`, () => {
+          const scheduler = renderComponent({
+            needCreateAppointmentEditForm: needCreate,
+            appointmentPopupSize: {
+              fullScreen: false,
+              maxWidth: 1000,
+            },
+          });
+
+          const editForm = scheduler.find(AppointmentEditForm);
+
+          expect(editForm.exists())
+            .toBe(needCreate);
+        });
+      });
     });
   });
 
@@ -775,6 +796,21 @@ describe('Scheduler', () => {
             .toBe(false);
         });
       });
+
+      describe('changeAppointmentEditFormVisible', () => {
+        [true, false].forEach((visibility) => {
+          it(`should correctly set appointmentEditFormVisible if visibility=${visibility}`, () => {
+            const scheduler = new Scheduler({
+              ...new SchedulerProps(),
+            });
+
+            scheduler.changeAppointmentEditFormVisible(visibility);
+
+            expect(scheduler.appointmentEditFormVisible)
+              .toBe(visibility);
+          });
+        });
+      });
     });
   });
 
@@ -833,6 +869,7 @@ describe('Scheduler', () => {
                 showCurrentTimeIndicator: true,
                 indicatorUpdateInterval: 300000,
                 shadeUntilCurrentTime: false,
+                allDayPanelMode: 'all',
                 crossScrollingEnabled: false,
                 height: undefined,
                 width: undefined,
@@ -1460,6 +1497,50 @@ describe('Scheduler', () => {
             .toBe('day_horizontal_3_0');
         });
       });
+
+      describe('classes', () => {
+        [
+          {
+            value: true,
+            expected: 'dx-scheduler dx-scheduler-native dx-scheduler-adaptive',
+          },
+          {
+            value: false,
+            expected: 'dx-scheduler dx-scheduler-native',
+          },
+        ].forEach(({ value, expected }) => {
+          it(`should return correct classes if adaptivityEnabled is ${value}`, () => {
+            const scheduler = new Scheduler({
+              ...new SchedulerProps(),
+              adaptivityEnabled: value,
+            });
+
+            expect(scheduler.classes)
+              .toBe(expected);
+          });
+        });
+      });
+    });
+
+    describe('mergedGroups', () => {
+      [
+        { schedulerGroups: ['groups'], viewGroups: undefined, expected: ['groups'] },
+        { schedulerGroups: ['groups'], viewGroups: ['viewGroups'], expected: ['viewGroups'] },
+        { schedulerGroups: undefined, viewGroups: ['viewGroups'], expected: ['viewGroups'] },
+        { schedulerGroups: undefined, viewGroups: undefined, expected: undefined },
+      ].forEach(({ schedulerGroups, viewGroups, expected }) => {
+        it(`should return correct value if schedulerGroups=${schedulerGroups}, viewGroups=${viewGroups}`, () => {
+          const scheduler = new Scheduler({
+            ...new SchedulerProps(),
+            groups: schedulerGroups,
+            views: [{ type: 'day', groups: viewGroups }],
+            currentView: 'day',
+          });
+
+          expect(scheduler.mergedGroups)
+            .toEqual(expected);
+        });
+      });
     });
 
     describe('appointmentsContextValue', () => {
@@ -1473,6 +1554,12 @@ describe('Scheduler', () => {
           appointmentCollectorTemplate,
         });
 
+        jest.spyOn(scheduler, 'mergedGroups', 'get')
+          .mockReturnValue(['mock-groups']);
+
+        jest.spyOn(scheduler, 'dataAccessors', 'get')
+          .mockReturnValue('dataAccessors-test' as any);
+
         expect(scheduler.appointmentsContextValue)
           .toEqual({
             viewModel: {
@@ -1481,11 +1568,18 @@ describe('Scheduler', () => {
               allDay: [],
               allDayCompact: [],
             },
+            groups: ['mock-groups'],
+            resources: [],
+            resourceLoaderMap: new Map(),
+            loadedResources: undefined,
+            dataAccessors: 'dataAccessors-test',
             appointmentTemplate,
             overflowIndicatorTemplate: appointmentCollectorTemplate,
             onAppointmentClick: expect.any(Function),
+            onAppointmentDoubleClick: expect.any(Function),
             showReducedIconTooltip: expect.any(Function),
             hideReducedIconTooltip: expect.any(Function),
+            updateFocusedAppointment: expect.any(Function),
           });
 
         const data = { startDate: new Date(2021, 11, 27) };
@@ -1518,6 +1612,294 @@ describe('Scheduler', () => {
 
         expect(scheduler.reducedIconTooltipVisible)
           .toBe(false);
+      });
+
+      describe('onAppointmentDoubleClick', () => {
+        it('should return correct data', () => {
+          const appointmentTemplate = jest.fn();
+          const appointmentCollectorTemplate = jest.fn();
+
+          const scheduler = new Scheduler({
+            ...new SchedulerProps(),
+            appointmentTemplate,
+            appointmentCollectorTemplate,
+          });
+
+          jest.spyOn(scheduler, 'mergedGroups', 'get')
+            .mockReturnValue(['mock-groups']);
+
+          jest.spyOn(scheduler, 'dataAccessors', 'get')
+            .mockReturnValue('dataAccessors-test' as any);
+
+          const hideTooltip = jest.spyOn(scheduler, 'hideTooltip');
+          const changeAppointmentEditFormVisible = jest.spyOn(scheduler, 'changeAppointmentEditFormVisible');
+
+          const data = [{
+            info: {
+              isRecurrent: true,
+            },
+          }];
+          scheduler.appointmentsContextValue.onAppointmentDoubleClick({
+            data,
+          } as any);
+
+          expect(scheduler.appointmentPopupSize)
+            .toEqual({
+              fullScreen: false,
+              maxWidth: expect.anything(),
+            });
+          expect(scheduler.appointmentData)
+            .toEqual(data[0]);
+          expect(scheduler.needCreateAppointmentEditForm)
+            .toBe(true);
+
+          expect(hideTooltip)
+            .toBeCalledTimes(1);
+
+          expect(changeAppointmentEditFormVisible)
+            .toBeCalledTimes(1);
+
+          expect(changeAppointmentEditFormVisible)
+            .toBeCalledWith(true);
+        });
+      });
+    });
+
+    describe('Methods', () => {
+      describe('updateFocusedAppointment', () => {
+        it('should correctly init appointmentFocus state', () => {
+          const scheduler = new Scheduler({
+            ...new SchedulerProps(),
+          });
+
+          expect(scheduler.appointmentFocus)
+            .toEqual({ type: 'regular', index: -1 });
+
+          scheduler.updateFocusedAppointment('regular', 10);
+
+          expect(scheduler.appointmentFocus)
+            .toEqual({ type: 'regular', index: 10 });
+        });
+
+        it('should correctly update state for focused regular appointment', () => {
+          const appointmentsViewModel = {
+            regular: [
+              { key: '1', focused: true },
+              { key: '2', focused: false },
+            ],
+            regularCompact: [
+              { key: '3', focused: false },
+              { key: '4', focused: false },
+            ],
+            allDay: [
+              { key: '5', focused: false },
+              { key: '6', focused: false },
+            ],
+            allDayCompact: [
+              { key: '7', focused: false },
+              { key: '8', focused: false },
+            ],
+          } as any;
+
+          const scheduler = new Scheduler({
+            ...new SchedulerProps(),
+          });
+
+          scheduler.appointmentFocus = { type: 'regular', index: 0 };
+
+          jest.spyOn(scheduler, 'appointmentsViewModel', 'get')
+            .mockReturnValue(appointmentsViewModel);
+
+          scheduler.updateFocusedAppointment('regular', 1);
+
+          expect(scheduler.appointmentFocus)
+            .toEqual({ type: 'regular', index: 1 });
+
+          expect(appointmentsViewModel)
+            .toEqual({
+              regular: [
+                { key: '1', focused: false },
+                { key: '2', focused: true },
+              ],
+              regularCompact: [
+                { key: '3', focused: false },
+                { key: '4', focused: false },
+              ],
+              allDay: [
+                { key: '5', focused: false },
+                { key: '6', focused: false },
+              ],
+              allDayCompact: [
+                { key: '7', focused: false },
+                { key: '8', focused: false },
+              ],
+            });
+        });
+
+        it('should correctly update state for focused regularCompact appointment', () => {
+          const appointmentsViewModel = {
+            regular: [
+              { key: '1', focused: false },
+              { key: '2', focused: false },
+            ],
+            regularCompact: [
+              { key: '3', focused: true },
+              { key: '4', focused: false },
+            ],
+            allDay: [
+              { key: '5', focused: false },
+              { key: '6', focused: false },
+            ],
+            allDayCompact: [
+              { key: '7', focused: false },
+              { key: '8', focused: false },
+            ],
+          } as any;
+
+          const scheduler = new Scheduler({
+            ...new SchedulerProps(),
+          });
+
+          scheduler.appointmentFocus = { type: 'regularCompact', index: 0 };
+
+          jest.spyOn(scheduler, 'appointmentsViewModel', 'get')
+            .mockReturnValue(appointmentsViewModel);
+
+          scheduler.updateFocusedAppointment('regularCompact', 1);
+
+          expect(scheduler.appointmentFocus)
+            .toEqual({ type: 'regularCompact', index: 1 });
+
+          expect(appointmentsViewModel)
+            .toEqual({
+              regular: [
+                { key: '1', focused: false },
+                { key: '2', focused: false },
+              ],
+              regularCompact: [
+                { key: '3', focused: false },
+                { key: '4', focused: true },
+              ],
+              allDay: [
+                { key: '5', focused: false },
+                { key: '6', focused: false },
+              ],
+              allDayCompact: [
+                { key: '7', focused: false },
+                { key: '8', focused: false },
+              ],
+            });
+        });
+
+        it('should correctly update state for focused allDay appointment', () => {
+          const appointmentsViewModel = {
+            regular: [
+              { key: '1', focused: false },
+              { key: '2', focused: false },
+            ],
+            regularCompact: [
+              { key: '3', focused: false },
+              { key: '4', focused: false },
+            ],
+            allDay: [
+              { key: '5', focused: true },
+              { key: '6', focused: false },
+            ],
+            allDayCompact: [
+              { key: '7', focused: false },
+              { key: '8', focused: false },
+            ],
+          } as any;
+
+          const scheduler = new Scheduler({
+            ...new SchedulerProps(),
+          });
+
+          scheduler.appointmentFocus = { type: 'allDay', index: 0 };
+
+          jest.spyOn(scheduler, 'appointmentsViewModel', 'get')
+            .mockReturnValue(appointmentsViewModel);
+
+          scheduler.updateFocusedAppointment('allDay', 1);
+
+          expect(scheduler.appointmentFocus)
+            .toEqual({ type: 'allDay', index: 1 });
+
+          expect(appointmentsViewModel)
+            .toEqual({
+              regular: [
+                { key: '1', focused: false },
+                { key: '2', focused: false },
+              ],
+              regularCompact: [
+                { key: '3', focused: false },
+                { key: '4', focused: false },
+              ],
+              allDay: [
+                { key: '5', focused: false },
+                { key: '6', focused: true },
+              ],
+              allDayCompact: [
+                { key: '7', focused: false },
+                { key: '8', focused: false },
+              ],
+            });
+        });
+
+        it('should correctly update state for focused allDayCompact appointment', () => {
+          const appointmentsViewModel = {
+            regular: [
+              { key: '1', focused: false },
+              { key: '2', focused: false },
+            ],
+            regularCompact: [
+              { key: '3', focused: false },
+              { key: '4', focused: false },
+            ],
+            allDay: [
+              { key: '5', focused: false },
+              { key: '6', focused: false },
+            ],
+            allDayCompact: [
+              { key: '7', focused: true },
+              { key: '8', focused: false },
+            ],
+          } as any;
+
+          const scheduler = new Scheduler({
+            ...new SchedulerProps(),
+          });
+
+          scheduler.appointmentFocus = { type: 'allDayCompact', index: 0 };
+
+          jest.spyOn(scheduler, 'appointmentsViewModel', 'get')
+            .mockReturnValue(appointmentsViewModel);
+
+          scheduler.updateFocusedAppointment('allDayCompact', 1);
+
+          expect(scheduler.appointmentFocus)
+            .toEqual({ type: 'allDayCompact', index: 1 });
+
+          expect(appointmentsViewModel)
+            .toEqual({
+              regular: [
+                { key: '1', focused: false },
+                { key: '2', focused: false },
+              ],
+              regularCompact: [
+                { key: '3', focused: false },
+                { key: '4', focused: false },
+              ],
+              allDay: [
+                { key: '5', focused: false },
+                { key: '6', focused: false },
+              ],
+              allDayCompact: [
+                { key: '7', focused: false },
+                { key: '8', focused: true },
+              ],
+            });
+        });
       });
     });
   });

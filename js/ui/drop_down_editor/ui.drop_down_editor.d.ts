@@ -28,6 +28,13 @@ import {
     EventInfo,
 } from '../../events/index';
 
+import {
+    ApplyValueMode,
+} from '../../common';
+
+/** @public */
+export type DropDownPredefinedButton = 'clear' | 'dropDown';
+
 export interface DropDownButtonTemplateDataModel {
     readonly text?: string;
     readonly icon?: string;
@@ -49,11 +56,10 @@ export interface dxDropDownEditorOptions<TComponent> extends dxTextBoxOptions<TC
     activeStateEnabled?: boolean;
     /**
      * @docid
-     * @type Enums.EditorApplyValueMode
      * @default "instantly"
      * @public
      */
-    applyValueMode?: 'instantly' | 'useButtons';
+    applyValueMode?: ApplyValueMode;
     /**
      * @docid
      * @default {}
@@ -63,11 +69,10 @@ export interface dxDropDownEditorOptions<TComponent> extends dxTextBoxOptions<TC
     dropDownOptions?: PopupProperties | PopoverProperties;
     /**
      * @docid
-     * @type Array<Enums.DropDownEditorButtonName,dxTextEditorButton>
      * @default undefined
      * @public
      */
-    buttons?: Array<'clear' | 'dropDown' | dxTextEditorButton>;
+    buttons?: Array<DropDownPredefinedButton | dxTextEditorButton>;
     /**
      * @docid
      * @default true
@@ -78,8 +83,6 @@ export interface dxDropDownEditorOptions<TComponent> extends dxTextBoxOptions<TC
      * @docid
      * @default "dropDownButton"
      * @type_function_param1 buttonData:object
-     * @type_function_param1_field1 text:string
-     * @type_function_param1_field2 icon:string
      * @type_function_return string|Element|jQuery
      * @public
      */
@@ -88,9 +91,7 @@ export interface dxDropDownEditorOptions<TComponent> extends dxTextBoxOptions<TC
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -99,9 +100,7 @@ export interface dxDropDownEditorOptions<TComponent> extends dxTextBoxOptions<TC
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:this
      * @action
      * @public
      */

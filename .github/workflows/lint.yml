@@ -1,7 +1,7 @@
 name: Lint
 
 concurrency:
-  group: wf-${{github.event.pull_request.number}}-${{github.workflow}}
+  group: wf-${{github.event.pull_request.number || github.sha}}-${{github.workflow}}
   cancel-in-progress: true
 
 on:
@@ -11,7 +11,7 @@ on:
 
 jobs:
   Renovation:
-    runs-on: shr-ubuntu-c5-docker-cpu2ram4
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
     - name: Get sources
@@ -33,13 +33,16 @@ jobs:
       run: npm install --no-audit --no-fund 
 
     - name: Compile renovation
-      run: npm run compile:r
+      run: | 
+        npm i cheerio@1.0.0-rc.10 
+        npm run compile:r
+# Remove package install after upgrade to TypeScript >= 4.6
 
     - name: Lint renovation
       run: npm run lint-renovation
 
   TS:
-    runs-on: shr-ubuntu-m5a-instance-cpu2ram8
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
     - name: Get sources
@@ -60,6 +63,12 @@ jobs:
     - name: Run npm install
       run: npm install --no-audit --no-fund
 
+    - name: Run npm install TS testing
+      run: |
+        pushd testing/typescript
+        npm install --no-audit --no-fund
+        popd
+
     - name: Build
       run: npm run build
 
@@ -74,7 +83,7 @@ jobs:
       run: npm run lint-dts
 
   JS:
-    runs-on: shr-ubuntu-m5a-instance-cpu2ram8
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
     - name: Get sources
@@ -104,7 +113,7 @@ jobs:
       run: npm run lint-js
 
   CSS:
-    runs-on: shr-ubuntu-c5-docker-cpu2ram4
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
     - name: Get sources
@@ -129,7 +138,7 @@ jobs:
       run: npm run lint-css
 
   package_lock_npm_6:
-    runs-on: shr-ubuntu-c5-docker-cpu2ram4
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
     - name: Get sources
@@ -150,7 +159,7 @@ jobs:
       run: npm run build:dev
 
   package_lock:
-    runs-on: shr-ubuntu-c5-docker-cpu2ram4
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
     - name: Get sources
@@ -159,7 +168,7 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '15'
+        node-version: '16'
 
     - name: Check package-lock
       run: |
@@ -169,7 +178,7 @@ jobs:
         git diff --exit-code package-lock.json
 
   notify:
-    runs-on: shr-ubuntu-c5-docker-cpu0d5ram1
+    runs-on: ubuntu-latest
     name: Send notifications
     needs: [Renovation, TS, JS, CSS, package_lock, package_lock_npm_6]
     if: always() && contains(needs.*.result, 'failure')

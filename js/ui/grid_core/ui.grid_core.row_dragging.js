@@ -3,6 +3,7 @@ import $ from '../../core/renderer';
 import { extend } from '../../core/utils/extend';
 import Sortable from '../sortable';
 import gridCoreUtils from './ui.grid_core.utils';
+import { deferUpdate } from '../../core/utils/common';
 
 const COMMAND_HANDLE_CLASS = 'dx-command-drag';
 const CELL_FOCUS_DISABLED_CLASS = 'dx-cell-focus-disabled';
@@ -55,15 +56,35 @@ const RowDraggingExtender = {
             // T929503
             this[sortableFixedName]?.$element().css('pointerEvents', toggle ? 'auto' : '');
         };
+
+        const rowSelector = '.dx-row:not(.dx-freespace-row):not(.dx-virtual-row):not(.dx-header-row):not(.dx-footer-row)';
         const filter = this.option('dataRowTemplate')
-            ? '> table > tbody.dx-row:not(.dx-freespace-row):not(.dx-virtual-row)'
-            : '> table > tbody > .dx-row:not(.dx-freespace-row):not(.dx-virtual-row)';
+            ? `> table > tbody${rowSelector}`
+            : `> table > tbody > ${rowSelector}`;
 
         if((allowReordering || this[currentSortableName]) && $content.length) {
             this[currentSortableName] = this._createComponent($content, Sortable, extend({
                 component: this.component,
                 contentTemplate: null,
                 filter,
+                cursorOffset: (options) => {
+                    const event = options.event;
+                    const rowsViewOffset = $(this.element()).offset();
+
+                    return {
+                        x: event.pageX - rowsViewOffset.left
+                    };
+                },
+                onDraggableElementShown: (e) => {
+                    if(rowDragging.dragTemplate) {
+                        return;
+                    }
+
+                    const $dragElement = $(e.dragElement);
+                    const gridInstance = $dragElement.children('.dx-widget').data(this.component.NAME);
+
+                    this._synchronizeScrollLeftPosition(gridInstance);
+                },
                 dragTemplate: this._getDraggableRowTemplate(),
                 handle: rowDragging.showDragIcons && `.${COMMAND_HANDLE_CLASS}`,
                 dropFeedbackMode: 'indicate'
@@ -112,13 +133,29 @@ const RowDraggingExtender = {
         return $content;
     },
 
-    _resizeCore: function() {
+    _renderCore(e) {
         this.callBase.apply(this, arguments);
+
+        if(e && e.changeType === 'update' &&
+        e.repaintChangesOnly &&
+        gridCoreUtils.isVirtualRowRendering(this)) {
+            deferUpdate(() => {
+                this._updateSortable();
+            });
+        }
+    },
+
+    _updateSortable() {
         const offset = this._dataController.getRowIndexOffset();
         [this._sortable, this._sortableFixed].forEach((sortable) => {
             sortable?.option('offset', offset);
             sortable?.update();
         });
+    },
+
+    _resizeCore: function() {
+        this.callBase.apply(this, arguments);
+        this._updateSortable();
     },
 
     _getDraggableGridOptions: function(options) {
@@ -153,6 +190,12 @@ const RowDraggingExtender = {
                 $(e.rowElement).replaceWith($rowElement.eq(rowsView._isFixedTableRendering ? 1 : 0).clone());
             }
         };
+    },
+
+    _synchronizeScrollLeftPosition: function(gridInstance) {
+        const scrollable = gridInstance?.getScrollable();
+
+        scrollable?.scrollTo({ x: this._scrollLeft });
     },
 
     _getDraggableRowTemplate: function() {

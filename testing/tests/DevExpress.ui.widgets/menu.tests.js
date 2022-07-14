@@ -2137,6 +2137,7 @@ QUnit.module('adaptivity: render', {
 
         const $overlay = this.$element.find('.dx-overlay-content').first();
 
+        assert.ok(this.$element.hasClass('custom-class'), 'element has custom class');
         assert.ok($overlay.hasClass('custom-class'), 'content has custom class');
     });
 
@@ -2948,5 +2949,36 @@ QUnit.module('itemRendered event', () => { // T906117
 
             assert.equal(expectedItemsArray.length, 0);
         });
+    });
+
+    QUnit.test('itemRendered callback is called for menu & treeview items, adaptivityEnabled: true (T1092214)', function(assert) {
+        const onItemRenderedHandler = sinon.stub();
+
+        $('#menu').dxMenu({
+            dataSource: testDataSource,
+            adaptivityEnabled: true,
+            width: 50,
+            onItemRendered: onItemRenderedHandler
+        });
+
+        const checkRenderedItem = (call, itemText, itemClass) => {
+            const itemRenderedHandlerArgs = onItemRenderedHandler.getCall(call).args[0];
+
+            assert.strictEqual(itemRenderedHandlerArgs.itemData.text, itemText);
+            assert.ok($(itemRenderedHandlerArgs.itemElement).hasClass(itemClass));
+        };
+
+        assert.strictEqual(onItemRenderedHandler.callCount, 2);
+        checkRenderedItem(0, 'item1', DX_MENU_ITEM_CLASS);
+        checkRenderedItem(1, 'item1', DX_TREEVIEW_ITEM_CLASS);
+
+        const $treeview = $('#menu').find(`.${DX_TREEVIEW_CLASS}`);
+        $treeview.find(`.${DX_TREEVIEW_ITEM_CLASS}`).eq(0).trigger('dxclick');
+        assert.strictEqual(onItemRenderedHandler.callCount, 3);
+        checkRenderedItem(2, 'item1_1', DX_TREEVIEW_ITEM_CLASS);
+
+        $treeview.find(`.${DX_TREEVIEW_ITEM_CLASS}`).eq(1).trigger('dxclick');
+        assert.strictEqual(onItemRenderedHandler.callCount, 4);
+        checkRenderedItem(3, 'item1_1_1', DX_TREEVIEW_ITEM_CLASS);
     });
 });

@@ -4,11 +4,6 @@ import {
 } from '../../core/element';
 
 import {
-    PaletteType,
-    PaletteExtensionModeType,
-} from '../palette';
-
-import {
     template,
 } from '../../core/templates/template';
 
@@ -43,6 +38,16 @@ import BaseWidget, {
     BaseWidgetAnnotationConfig,
 } from '../core/base_widget';
 
+import {
+    AnimationEaseMode,
+    Palette,
+    PaletteExtensionMode,
+} from '../../common/charts';
+
+import {
+    SingleOrMultiple,
+} from '../../common';
+
 export interface PointInteractionInfo {
     readonly target: basePointObject;
 }
@@ -71,10 +76,9 @@ export interface BaseChartOptions<TComponent> extends BaseWidgetOptions<TCompone
       duration?: number;
       /**
        * @docid
-       * @type Enums.VizAnimationEasing
        * @default 'easeOutCubic'
        */
-      easing?: 'easeOutCubic' | 'linear';
+      easing?: AnimationEaseMode;
       /**
        * @docid
        * @default true
@@ -118,9 +122,7 @@ export interface BaseChartOptions<TComponent> extends BaseWidgetOptions<TCompone
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:this
      * @notUsedInTheme
      * @action
      * @public
@@ -131,11 +133,8 @@ export interface BaseChartOptions<TComponent> extends BaseWidgetOptions<TCompone
      * @default null
      * @type function
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 target:basePointObject
+     * @type_function_param1_field component:this
+     * @type_function_param1_field event:event
      * @notUsedInTheme
      * @action
      * @public
@@ -144,9 +143,8 @@ export interface BaseChartOptions<TComponent> extends BaseWidgetOptions<TCompone
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:object
-     * @type_function_param1_field2 element:object
-     * @type_function_param1_field3 target:basePointObject
+     * @type_function_param1_field component:object
+     * @type_function_param1_field element:object
      * @notUsedInTheme
      * @action
      * @public
@@ -155,9 +153,8 @@ export interface BaseChartOptions<TComponent> extends BaseWidgetOptions<TCompone
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:object
-     * @type_function_param1_field2 element:object
-     * @type_function_param1_field3 target:basePointObject
+     * @type_function_param1_field component:object
+     * @type_function_param1_field element:object
      * @notUsedInTheme
      * @action
      * @public
@@ -167,10 +164,7 @@ export interface BaseChartOptions<TComponent> extends BaseWidgetOptions<TCompone
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 target:basePointObject|dxChartAnnotationConfig|any
+     * @type_function_param1_field component:this
      * @notUsedInTheme
      * @action
      * @public
@@ -180,10 +174,7 @@ export interface BaseChartOptions<TComponent> extends BaseWidgetOptions<TCompone
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 target:basePointObject|dxChartAnnotationConfig|any
+     * @type_function_param1_field component:this
      * @notUsedInTheme
      * @action
      * @public
@@ -192,24 +183,21 @@ export interface BaseChartOptions<TComponent> extends BaseWidgetOptions<TCompone
     /**
      * @docid
      * @default "Material"
-     * @type Array<string>|Enums.VizPalette
      * @public
      */
-    palette?: Array<string> | PaletteType;
+    palette?: Array<string> | Palette;
     /**
      * @docid
-     * @type Enums.VizPaletteExtensionMode
      * @default 'blend'
      * @public
      */
-    paletteExtensionMode?: PaletteExtensionModeType;
+    paletteExtensionMode?: PaletteExtensionMode;
     /**
      * @docid
-     * @type Enums.ChartElementSelectionMode
      * @default 'single'
      * @public
      */
-    pointSelectionMode?: 'multiple' | 'single';
+    pointSelectionMode?: SingleOrMultiple;
     /**
      * @docid
      * @default undefined

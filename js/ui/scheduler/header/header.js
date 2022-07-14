@@ -26,8 +26,10 @@ import {
     validateViews,
     getStep,
     getViewType,
+    getViewName,
     nextWeek,
 } from './utils';
+import { getCurrentView } from '../../../renovation/ui/scheduler/model/views';
 
 const DEFAULT_ELEMENT = 'defaultElement';
 const VIEW_SWITCHER = 'viewSwitcher';
@@ -36,10 +38,6 @@ const DATE_NAVIGATOR = 'dateNavigator';
 const COMPONENT_CLASS = 'dx-scheduler-header';
 
 export class SchedulerHeader extends Widget {
-    get currentView() {
-        return this.option('currentView');
-    }
-
     get views() {
         return this.option('views');
     }
@@ -49,7 +47,7 @@ export class SchedulerHeader extends Widget {
     }
 
     get intervalOptions() {
-        const step = getStep(this.option('currentView'));
+        const step = getStep(this.currentView);
         const intervalCount = this.option('intervalCount');
         const firstDayOfWeek = this.option('firstDayOfWeek');
         const agendaDuration = this.option('agendaDuration');
@@ -66,6 +64,12 @@ export class SchedulerHeader extends Widget {
     _createEventMap() {
         this.eventMap = new Map(
             [
+                ['currentView', [(view) => {
+                    this.currentView = getCurrentView(
+                        getViewName(view),
+                        this.option('views'),
+                    );
+                }]],
                 ['items', [this.repaint.bind(this)]],
                 ['views', [validateViews]],
                 ['currentDate', [this._getCalendarOptionUpdater('date')]],
@@ -102,6 +106,11 @@ export class SchedulerHeader extends Widget {
         super._init();
         this._createEventMap();
         this.$element().addClass(COMPONENT_CLASS);
+
+        this.currentView = getCurrentView(
+            getViewName(this.option('currentView')),
+            this.option('views'),
+        );
     }
 
     _render() {
@@ -215,7 +224,7 @@ export class SchedulerHeader extends Widget {
     }
 
     _isMonth() {
-        const currentView = this.option('currentView');
+        const currentView = this.currentView;
         return getViewType(currentView) === 'month';
     }
 

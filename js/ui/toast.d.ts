@@ -20,6 +20,9 @@ import dxOverlay, {
 } from './overlay';
 
 /** @public */
+export type ToastType = 'custom' | 'error' | 'info' | 'success' | 'warning';
+
+/** @public */
 export type ContentReadyEvent = EventInfo<dxToast>;
 
 /** @public */
@@ -66,7 +69,6 @@ export interface dxToastOptions extends dxOverlayOptions<dxToast> {
      * @docid
      * @deprecated dxToastOptions.hideOnOutsideClick
      * @type_function_param1 event:event
-     * @type_function_return Boolean
      * @default true &for(Android)
      * @public
      */
@@ -88,7 +90,6 @@ export interface dxToastOptions extends dxOverlayOptions<dxToast> {
      * @docid
      * @type boolean | function
      * @type_function_param1 event:event
-     * @type_function_return Boolean
      * @default true &for(Android)
      * @public
      */
@@ -133,11 +134,10 @@ export interface dxToastOptions extends dxOverlayOptions<dxToast> {
     shading?: boolean;
     /**
      * @docid
-     * @type Enums.ToastType
      * @default 'info'
      * @public
      */
-    type?: 'custom' | 'error' | 'info' | 'success' | 'warning';
+    type?: ToastType;
     /**
      * @docid
      * @default '80vw'

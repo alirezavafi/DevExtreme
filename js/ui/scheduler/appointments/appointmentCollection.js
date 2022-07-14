@@ -9,7 +9,7 @@ import { normalizeKey, grep } from '../../../core/utils/common';
 import { isDefined, isDeferred, isString, isPlainObject } from '../../../core/utils/type';
 import { each } from '../../../core/utils/iterator';
 import { deepExtendArraySafe } from '../../../core/utils/object';
-import { merge, inArray } from '../../../core/utils/array';
+import { wrapToArray } from '../../../core/utils/array';
 import { extend } from '../../../core/utils/extend';
 import { getPublicElement } from '../../../core/element';
 import { getRecurrenceProcessor } from '../recurrence';
@@ -22,11 +22,11 @@ import timeZoneUtils from '../utils.timeZone';
 import { APPOINTMENT_SETTINGS_KEY } from '../constants';
 import { APPOINTMENT_ITEM_CLASS, APPOINTMENT_DRAG_SOURCE_CLASS } from '../classes';
 import { createAgendaAppointmentLayout, createAppointmentLayout } from './appointmentLayout';
-import { getTimeZoneCalculator } from '../instanceFactory';
 import { ExpressionUtils } from '../expressionUtils';
 import { createAppointmentAdapter } from '../appointmentAdapter';
-import { getResourcesFromItem } from '../resources/utils';
 import { getAppointmentTakesSeveralDays, sortAppointmentsByStartDate } from './dataProvider/utils';
+import { getBoundingRect } from '../../../core/utils/position';
+import { getAppointmentDateRange } from './resizing/core';
 
 const COMPONENT_CLASS = 'dx-scheduler-scrollable-appointments';
 
@@ -476,6 +476,7 @@ class SchedulerAppointments extends CollectionWidget {
             const setting = item.settings[i];
             this._currentAppointmentSettings = setting;
             const $item = super._renderItem(index, itemData, container);
+
             $item.data(APPOINTMENT_SETTINGS_KEY, setting);
 
             $items.push($item);
@@ -580,17 +581,17 @@ class SchedulerAppointments extends CollectionWidget {
     }
 
     _applyResourceDataAttr($appointment) {
-        const resourceList = this.option('getResources')();
-        const resources = getResourcesFromItem(resourceList, this.option('getResourceDataAccessors')(), this._getItemData($appointment));
+        const dataAccessors = this.option('getResourceDataAccessors')();
+        const rawAppointment = this._getItemData($appointment);
 
-        if(resources) {
-            each(resources, function(name, values) {
-                const attr = 'data-' + normalizeKey(name.toLowerCase()) + '-';
-                for(let i = 0; i < values.length; i++) {
-                    $appointment.attr(attr + normalizeKey(values[i]), true);
-                }
-            });
-        }
+        each(dataAccessors.getter, function(key) {
+            const value = dataAccessors.getter[key](rawAppointment);
+            if(isDefined(value)) {
+                const prefix = `data-${normalizeKey(key.toLowerCase())}-`;
+
+                wrapToArray(value).forEach(value => $appointment.attr(prefix + normalizeKey(value), true));
+            }
+        });
     }
 
     _resizableConfig(appointmentData, itemSetting) {
@@ -636,22 +637,61 @@ class SchedulerAppointments extends CollectionWidget {
     _resizeEndHandler(e) {
         const $element = $(e.element);
 
-        const { info } = $element.data('dxAppointmentSettings');
+        const { allDay, info } = $element.data('dxAppointmentSettings');
+        const sourceAppointment = this._getItemData($element);
+        let dateRange = {};
+
+        if(allDay) {
+            dateRange = this.resizeAllDay(e);
+        } else {
+            const startDate = this._getEndResizeAppointmentStartDate(e, sourceAppointment, info.appointment);
+            const endDate = info.appointment.endDate;
+
+            dateRange = this._getDateRange(e, startDate, endDate);
+        }
+
+        this.updateResizedAppointment(
+            $element,
+            dateRange,
+            this.option('dataAccessors'),
+            this.option('timeZoneCalculator'),
+        );
+    }
+
+    resizeAllDay(e) {
+        const $element = $(e.element);
+        const timeZoneCalculator = this.option('timeZoneCalculator');
+        const dataAccessors = this.option('dataAccessors');
+
+        return getAppointmentDateRange({
+            handles: e.handles,
+            appointmentSettings: $element.data('dxAppointmentSettings'),
+            isVerticalViewDirection: this.option('isVerticalViewDirection')(),
+            isVerticalGroupedWorkSpace: this.option('isVerticalGroupedWorkSpace')(),
+            appointmentRect: getBoundingRect($element[0]),
+            parentAppointmentRect: getBoundingRect($element.parent()[0]),
+            viewDataProvider: this.option('getViewDataProvider')(),
+            isDateAndTimeView: this.option('isDateAndTimeView')(),
+            startDayHour: this.invoke('getStartDayHour'),
+            endDayHour: this.invoke('getEndDayHour'),
+            timeZoneCalculator,
+            dataAccessors,
+            rtlEnabled: this.option('rtlEnabled'),
+            DOMMetaData: this.option('getDOMElementsMetaData')(),
+        });
+    }
+
+    updateResizedAppointment($element, dateRange, dataAccessors, timeZoneCalculator) {
         const sourceAppointment = this._getItemData($element);
 
         const modifiedAppointmentAdapter = createAppointmentAdapter(
             sourceAppointment,
-            this.option('dataAccessors'),
-            getTimeZoneCalculator(this.option('key'))
+            dataAccessors,
+            timeZoneCalculator,
         ).clone();
 
-        const startDate = this._getEndResizeAppointmentStartDate(e, sourceAppointment, info.appointment);
-        const endDate = info.appointment.endDate;
-
-        const dateRange = this._getDateRange(e, startDate, endDate);
-
-        modifiedAppointmentAdapter.startDate = new Date(dateRange[0]);
-        modifiedAppointmentAdapter.endDate = new Date(dateRange[1]);
+        modifiedAppointmentAdapter.startDate = new Date(dateRange.startDate);
+        modifiedAppointmentAdapter.endDate = new Date(dateRange.endDate);
 
         this.notifyObserver('updateAppointmentAfterResize', {
             target: sourceAppointment,
@@ -661,10 +701,11 @@ class SchedulerAppointments extends CollectionWidget {
     }
 
     _getEndResizeAppointmentStartDate(e, rawAppointment, appointmentInfo) {
+        const timeZoneCalculator = this.option('timeZoneCalculator');
         const appointmentAdapter = createAppointmentAdapter(
             rawAppointment,
             this.option('dataAccessors'),
-            getTimeZoneCalculator(this.option('key'))
+            timeZoneCalculator,
         );
 
         let startDate = appointmentInfo.startDate;
@@ -674,7 +715,7 @@ class SchedulerAppointments extends CollectionWidget {
         const isRecurrent = recurrenceProcessor.isValidRecurrenceRule(recurrenceRule);
 
         if(!e.handles.top && !isRecurrent && !isAllDay) {
-            startDate = getTimeZoneCalculator(this.option('key')).createDate(
+            startDate = timeZoneCalculator.createDate(
                 appointmentAdapter.startDate,
                 {
                     appointmentTimeZone: startDateTimeZone,
@@ -703,16 +744,23 @@ class SchedulerAppointments extends CollectionWidget {
         }
 
         if(isStartDateChanged) {
-            startTime = needCorrectDates ? this._correctStartDateByDelta(startDate, deltaTime) : startDate.getTime() - deltaTime;
+            startTime = needCorrectDates
+                ? this._correctStartDateByDelta(startDate, deltaTime)
+                : startDate.getTime() - deltaTime;
             startTime += timeZoneUtils.getTimezoneOffsetChangeInMs(startDate, endDate, startTime, endDate);
             endTime = endDate.getTime();
         } else {
             startTime = startDate.getTime();
-            endTime = needCorrectDates ? this._correctEndDateByDelta(endDate, deltaTime) : endDate.getTime() + deltaTime;
+            endTime = needCorrectDates
+                ? this._correctEndDateByDelta(endDate, deltaTime)
+                : endDate.getTime() + deltaTime;
             endTime -= timeZoneUtils.getTimezoneOffsetChangeInMs(startDate, endDate, startDate, endTime);
         }
 
-        return [startTime, endTime];
+        return {
+            startDate: new Date(startTime),
+            endDate: new Date(endTime),
+        };
     }
 
     _correctEndDateByDelta(endDate, deltaTime) {
@@ -721,7 +769,10 @@ class SchedulerAppointments extends CollectionWidget {
         let result = endDate.getTime() + deltaTime;
         const visibleDayDuration = (endDayHour - startDayHour) * toMs('hour');
 
-        const daysCount = deltaTime > 0 ? Math.ceil(deltaTime / visibleDayDuration) : Math.floor(deltaTime / visibleDayDuration);
+        const daysCount = deltaTime > 0
+            ? Math.ceil(deltaTime / visibleDayDuration)
+            : Math.floor(deltaTime / visibleDayDuration);
+
         const maxDate = new Date(endDate);
         const minDate = new Date(endDate);
 
@@ -731,8 +782,8 @@ class SchedulerAppointments extends CollectionWidget {
         if(result > maxDate.getTime() || result <= minDate.getTime()) {
             const tailOfCurrentDay = maxDate.getTime() - endDate.getTime();
             const tailOfPrevDays = deltaTime - tailOfCurrentDay;
-
-            const lastDay = new Date(endDate.setDate(endDate.getDate() + daysCount));
+            const correctedEndDate = new Date(endDate).setDate(endDate.getDate() + daysCount);
+            const lastDay = new Date(correctedEndDate);
             lastDay.setHours(startDayHour, 0, 0, 0);
 
             result = lastDay.getTime() + tailOfPrevDays - visibleDayDuration * (daysCount - 1);
@@ -746,7 +797,10 @@ class SchedulerAppointments extends CollectionWidget {
         let result = startDate.getTime() - deltaTime;
         const visibleDayDuration = (endDayHour - startDayHour) * toMs('hour');
 
-        const daysCount = deltaTime > 0 ? Math.ceil(deltaTime / visibleDayDuration) : Math.floor(deltaTime / visibleDayDuration);
+        const daysCount = deltaTime > 0
+            ? Math.ceil(deltaTime / visibleDayDuration)
+            : Math.floor(deltaTime / visibleDayDuration);
+
         const maxDate = new Date(startDate);
         const minDate = new Date(startDate);
 
@@ -846,18 +900,27 @@ class SchedulerAppointments extends CollectionWidget {
             const dates = appointment.settings || appointment;
 
             const startDate = new Date(ExpressionUtils.getField(this.option('dataAccessors'), 'startDate', dates));
+            const startDateTimeZone = ExpressionUtils.getField(this.option('dataAccessors'), 'startDateTimeZone', appointment);
             const endDate = new Date(ExpressionUtils.getField(this.option('dataAccessors'), 'endDate', dates));
             const appointmentDuration = endDate.getTime() - startDate.getTime();
             const recurrenceException = ExpressionUtils.getField(this.option('dataAccessors'), 'recurrenceException', appointment);
             const startViewDate = this.invoke('getStartViewDate');
             const endViewDate = this.invoke('getEndViewDate');
+
+            const timezoneCalculator = this.option('timeZoneCalculator');
+
             const recurrentDates = getRecurrenceProcessor().generateDates({
                 rule: recurrenceRule,
                 exception: recurrenceException,
                 start: startDate,
                 end: endDate,
                 min: startViewDate,
-                max: endViewDate
+                max: endViewDate,
+                appointmentTimezoneOffset: timezoneCalculator.getOriginStartDateOffsetInMs(
+                    startDate,
+                    startDateTimeZone,
+                    false,
+                ),
             });
             const recurrentDateCount = appointment.settings ? 1 : recurrentDates.length;
 
@@ -891,7 +954,7 @@ class SchedulerAppointments extends CollectionWidget {
         const endViewDate = this.invoke('getEndViewDate').getTime();
         const startViewDate = this.invoke('getStartViewDate').getTime();
 
-        const timeZoneCalculator = getTimeZoneCalculator(this.option('key'));
+        const timeZoneCalculator = this.option('timeZoneCalculator');
 
         result = result || {
             parts: []
@@ -921,7 +984,7 @@ class SchedulerAppointments extends CollectionWidget {
 
     _combineAppointments(appointments, additionalAppointments) {
         if(additionalAppointments.length) {
-            merge(appointments, additionalAppointments);
+            appointments.push(...additionalAppointments);
         }
         this._sortAppointmentsByStartDate(appointments);
     }
@@ -982,7 +1045,7 @@ class SchedulerAppointments extends CollectionWidget {
         const maxAllowedDate = this.invoke('getEndViewDate');
         const startDayHour = this.invoke('getStartDayHour');
         const endDayHour = this.invoke('getEndDayHour');
-        const timeZoneCalculator = getTimeZoneCalculator(this.option('key'));
+        const timeZoneCalculator = this.option('timeZoneCalculator');
 
         const adapter = createAppointmentAdapter(
             appointment,
@@ -1079,9 +1142,9 @@ class SchedulerAppointments extends CollectionWidget {
         const horizontalResizables = grep($allResizableElements, (el) => {
             const $el = $(el);
             const resizableInst = $el.dxResizable('instance');
-            const area = resizableInst.option('area');
+            const { area, handles } = resizableInst.option();
 
-            return inArray(resizableInst.option('handles'), ['right left', 'left right']) > -1 && isPlainObject(area);
+            return (handles === 'right left' || handles === 'left right') && isPlainObject(area);
         });
 
         each(horizontalResizables, ((_, el) => {

@@ -28,8 +28,9 @@ import { SchedulerToolbar } from './header/header';
 import { getViewDataGeneratorByViewType } from '../../../ui/scheduler/workspaces/view_model/utils';
 import type { AppointmentDataItem, DataAccessorType, DataSourcePromise } from './types';
 import {
-  createDataAccessors, createTimeZoneCalculator, isViewDataProviderConfigValid,
+  createDataAccessors, isViewDataProviderConfigValid,
 } from './common';
+import { createTimeZoneCalculator } from './timeZoneCalculator/createTimeZoneCalculator';
 import { getGroupCount, loadResources } from '../../../ui/scheduler/resources/utils';
 import { getAppointmentsViewModel } from './view_model/appointments/appointments';
 import { getAppointmentsConfig, getAppointmentsModel } from './model/appointments';
@@ -38,6 +39,8 @@ import {
   AppointmentViewModel,
   AppointmentClickData,
   ReducedIconHoverData,
+  IAppointmentFocusState,
+  AppointmentKindType,
 } from './appointment/types';
 import { AppointmentsConfigType } from './model/types';
 import { AppointmentTooltip } from './appointment/tooltip/appointment_tooltip';
@@ -47,7 +50,11 @@ import { getFilterStrategy } from './utils/filtering/local';
 import combineRemoteFilter from './utils/filtering/remote';
 import { ReducedIconTooltip } from './appointment/reduced_icon_tooltip/layout';
 import { AppointmentsContextProvider } from './appointments_context_provider';
-import { AppointmentsContextValue } from './appointments_context';
+import { IAppointmentContext } from './appointments_context';
+import { ResourceMapType } from './resources/utils';
+import { combineClasses } from '../../utils/combine_classes';
+import { AppointmentEditForm } from './appointment_edit_form/layout';
+import { getPopupSize, IAppointmentPopupSize } from './appointment_edit_form/popup_config';
 
 export const viewFunction = ({
   restAttributes,
@@ -64,8 +71,14 @@ export const viewFunction = ({
   reducedIconEndDate,
   reducedIconTarget,
   changeTooltipVisible,
+  appointmentEditFormVisible,
+  needCreateAppointmentEditForm,
+  changeAppointmentEditFormVisible,
   workSpaceKey,
   appointmentsContextValue,
+  appointmentData,
+  appointmentPopupSize,
+  classes,
 
   props: {
     accessKey,
@@ -87,6 +100,9 @@ export const viewFunction = ({
     min,
     max,
     focusStateEnabled,
+    editing: {
+      allowUpdating,
+    },
   },
 }: Scheduler): JSX.Element => {
   const {
@@ -119,7 +135,7 @@ export const viewFunction = ({
 
   return (
     <Widget // eslint-disable-line jsx-a11y/no-access-key
-      classes="dx-scheduler dx-scheduler-native"
+      classes={classes}
       accessKey={accessKey}
       activeStateEnabled={activeStateEnabled}
       disabled={disabled}
@@ -204,6 +220,18 @@ export const viewFunction = ({
           endDate={reducedIconEndDate}
           target={reducedIconTarget}
         />
+        {
+          needCreateAppointmentEditForm && (
+            <AppointmentEditForm
+              visible={appointmentEditFormVisible}
+              fullScreen={appointmentPopupSize.fullScreen}
+              maxWidth={appointmentPopupSize.maxWidth}
+              appointmentData={appointmentData}
+              allowUpdating={allowUpdating}
+              onVisibleChange={changeAppointmentEditFormVisible}
+            />
+          )
+        }
       </div>
     </Widget>
   );
@@ -217,7 +245,7 @@ export const viewFunction = ({
 export class Scheduler extends JSXComponent(SchedulerProps) {
   @InternalState() workSpaceViewModel?: ViewMetaData;
 
-  @InternalState() resourcePromisesMap: Map<string, Promise<Group[]>> = new Map();
+  @InternalState() resourcePromisesMap: ResourceMapType = new Map();
 
   @InternalState() loadedResources?: Group[];
 
@@ -227,7 +255,17 @@ export class Scheduler extends JSXComponent(SchedulerProps) {
 
   @InternalState() tooltipVisible = false;
 
+  @InternalState() appointmentEditFormVisible = false;
+
+  @InternalState() appointmentPopupSize!: IAppointmentPopupSize;
+
+  @InternalState() appointmentFocus: IAppointmentFocusState = { type: 'regular', index: -1 };
+
+  @InternalState() needCreateAppointmentEditForm = false;
+
   @InternalState() tooltipData: AppointmentViewModel[] = [];
+
+  @InternalState() appointmentData!: AppointmentViewModel;
 
   @InternalState() lastViewDateByEndDayHour?: Date;
 
@@ -251,6 +289,7 @@ export class Scheduler extends JSXComponent(SchedulerProps) {
       appointmentTemplate, appointmentCollectorTemplate, appointmentTooltipTemplate,
       maxAppointmentsPerCell, currentDate, showAllDayPanel, showCurrentTimeIndicator,
       indicatorUpdateInterval, shadeUntilCurrentTime, crossScrollingEnabled, height, width,
+      allDayPanelMode,
     } = this.props;
 
     return getCurrentViewConfig(
@@ -277,6 +316,7 @@ export class Scheduler extends JSXComponent(SchedulerProps) {
         crossScrollingEnabled,
         height,
         width,
+        allDayPanelMode,
       },
       currentDate,
     );
@@ -403,15 +443,13 @@ export class Scheduler extends JSXComponent(SchedulerProps) {
       this.currentViewConfig.groupOrientation,
     );
 
-    const validGroups = getValidGroups(this.props.groups, this.currentViewProps.groups);
-
     return getAppointmentsConfig(
       {
         adaptivityEnabled: this.props.adaptivityEnabled,
         rtlEnabled: this.props.rtlEnabled,
         resources: this.props.resources,
         timeZone: this.props.timeZone,
-        groups: validGroups,
+        groups: this.mergedGroups,
       },
       {
         startDayHour: this.currentViewConfig.startDayHour,
@@ -425,6 +463,7 @@ export class Scheduler extends JSXComponent(SchedulerProps) {
         type: this.currentViewConfig.type,
         cellDuration: this.currentViewConfig.cellDuration,
         maxAppointmentsPerCell: this.currentViewConfig.maxAppointmentsPerCell,
+        allDayPanelMode: this.currentViewConfig.allDayPanelMode,
       },
       this.loadedResources,
       this.workSpaceViewModel!.viewDataProvider,
@@ -506,15 +545,37 @@ export class Scheduler extends JSXComponent(SchedulerProps) {
     return `${currentView}_${groupOrientation}_${intervalCount}_${groupCount}`;
   }
 
-  get appointmentsContextValue(): AppointmentsContextValue {
+  get mergedGroups(): string[] {
+    return getValidGroups(
+      this.props.groups,
+      this.currentViewProps.groups,
+    );
+  }
+
+  get appointmentsContextValue(): IAppointmentContext {
     return {
       viewModel: this.appointmentsViewModel,
+      groups: this.mergedGroups,
+      resources: this.props.resources,
+      resourceLoaderMap: this.resourcePromisesMap,
+      loadedResources: this.loadedResources,
+      dataAccessors: this.dataAccessors,
       appointmentTemplate: this.currentViewConfig.appointmentTemplate,
       overflowIndicatorTemplate: this.currentViewConfig.appointmentCollectorTemplate,
       onAppointmentClick: (data) => this.showTooltip(data),
+      onAppointmentDoubleClick: (data) => this.showAppointmentPopupForm(data),
       showReducedIconTooltip: (data) => this.showReducedIconTooltip(data),
       hideReducedIconTooltip: () => this.hideReducedIconTooltip(),
+      updateFocusedAppointment: this.updateFocusedAppointment,
     };
+  }
+
+  get classes(): string {
+    return combineClasses({
+      'dx-scheduler': true,
+      'dx-scheduler-native': true,
+      'dx-scheduler-adaptive': this.props.adaptivityEnabled,
+    });
   }
 
   @Method()
@@ -591,10 +652,12 @@ export class Scheduler extends JSXComponent(SchedulerProps) {
 
   @Effect()
   loadGroupResources(): void {
-    const validGroups = getValidGroups(this.props.groups, this.currentViewProps.groups);
-
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    (loadResources(validGroups, this.props.resources, this.resourcePromisesMap) as Promise<Group[]>)
+    (loadResources(
+      this.mergedGroups,
+      this.props.resources,
+      this.resourcePromisesMap,
+    ) as Promise<Group[]>)
       .then((loadedResources) => {
         this.loadedResources = loadedResources;
       });
@@ -651,12 +714,26 @@ export class Scheduler extends JSXComponent(SchedulerProps) {
     this.changeTooltipVisible(true);
   }
 
+  showAppointmentPopupForm({ data }: AppointmentClickData): void {
+    const appointmentData = { ...data[0] };
+    const { isRecurrent } = appointmentData.info;
+    this.appointmentPopupSize = getPopupSize(isRecurrent);
+    this.appointmentData = appointmentData;
+    this.needCreateAppointmentEditForm = true;
+    this.hideTooltip();
+    this.changeAppointmentEditFormVisible(true);
+  }
+
   hideTooltip(): void {
     this.changeTooltipVisible(false);
   }
 
   changeTooltipVisible(value: boolean): void {
     this.tooltipVisible = value;
+  }
+
+  changeAppointmentEditFormVisible(value: boolean): void {
+    this.appointmentEditFormVisible = value;
   }
 
   showReducedIconTooltip(data: ReducedIconHoverData): void {
@@ -667,5 +744,34 @@ export class Scheduler extends JSXComponent(SchedulerProps) {
 
   hideReducedIconTooltip(): void {
     this.reducedIconTooltipVisible = false;
+  }
+
+  updateAppointmentFocus(type: AppointmentKindType, index: number): void {
+    this.appointmentFocus.type = type;
+    this.appointmentFocus.index = index;
+  }
+
+  updateFocusedAppointment(type: AppointmentKindType, index: number): void {
+    const {
+      index: prevFocusedIndex,
+      type: prevFocusedType,
+    } = this.appointmentFocus;
+
+    if (prevFocusedIndex >= 0) {
+      const prevViewModels = this.appointmentsViewModel[prevFocusedType];
+      const prevViewModel = prevViewModels[prevFocusedIndex];
+      prevViewModels[prevFocusedIndex] = {
+        ...prevViewModel,
+        focused: false,
+      };
+    }
+
+    this.updateAppointmentFocus(type, index);
+
+    const viewModels = this.appointmentsViewModel[type];
+    viewModels[index] = {
+      ...viewModels[index],
+      focused: true,
+    };
   }
 }

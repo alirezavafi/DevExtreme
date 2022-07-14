@@ -6,11 +6,6 @@ import {
 } from '../core/element';
 
 import {
-    PaletteType,
-    PaletteExtensionModeType,
-} from './palette';
-
-import {
     template,
 } from '../core/templates/template';
 
@@ -30,7 +25,26 @@ import BaseWidget, {
     IncidentInfo,
 } from './core/base_widget';
 
-import { HatchingDirectionType } from './common';
+import {
+    VerticalAlignment,
+} from '../common';
+
+import {
+    HatchDirection,
+    Palette,
+    PaletteExtensionMode,
+    TextOverflow,
+} from '../common/charts';
+
+export {
+    HatchDirection,
+    Palette,
+    PaletteExtensionMode,
+    TextOverflow,
+};
+
+/** @public */
+export type SankeyColorMode = 'none' | 'source' | 'target' | 'gradient';
 
 /** @public */
 export type DisposingEvent = EventInfo<dxSankey>;
@@ -101,11 +115,10 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
     };
     /**
      * @docid
-     * @type Enums.VerticalAlignment|Array<Enums.VerticalAlignment>
      * @default 'center'
      * @public
      */
-    alignment?: 'bottom' | 'center' | 'top' | Array<'bottom' | 'center' | 'top'>;
+    alignment?: VerticalAlignment | Array<VerticalAlignment>;
     /**
      * @docid
      * @notUsedInTheme
@@ -146,7 +159,6 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
       };
       /**
        * @docid
-       * @type_function_param1 itemInfo: dxSankeyNode
        * @notUsedInTheme
        */
       customizeText?: ((itemInfo: dxSankeyNode) => string);
@@ -162,10 +174,9 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
       horizontalOffset?: number;
       /**
        * @docid
-       * @type Enums.SankeyLabelOverlappingBehavior
        * @default 'ellipsis'
        */
-      overlappingBehavior?: 'ellipsis' | 'hide' | 'none';
+      overlappingBehavior?: TextOverflow;
       /**
        * @docid
        */
@@ -244,10 +255,9 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
       color?: string;
       /**
        * @docid
-       * @type Enums.SankeyColorMode
        * @default 'none'
        */
-      colorMode?: 'none' | 'source' | 'target' | 'gradient';
+      colorMode?: SankeyColorMode;
       /**
        * @docid
        */
@@ -283,10 +293,9 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
         hatching?: {
           /**
            * @docid
-           * @type Enums.HatchingDirection
            * @default 'right'
            */
-          direction?: HatchingDirectionType;
+          direction?: HatchDirection;
           /**
            * @docid
            * @default 0.75
@@ -380,10 +389,9 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
         hatching?: {
           /**
            * @docid
-           * @type Enums.HatchingDirection
            * @default 'right'
            */
-          direction?: HatchingDirectionType;
+          direction?: HatchDirection;
           /**
            * @docid
            * @default 0.75
@@ -427,11 +435,8 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
      * @default null
      * @type function
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxSankey
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 target:dxSankeyLink
+     * @type_function_param1_field component:dxSankey
+     * @type_function_param1_field event:event
      * @notUsedInTheme
      * @action
      * @public
@@ -441,10 +446,7 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxSankey
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 target:dxSankeyLink
+     * @type_function_param1_field component:dxSankey
      * @notUsedInTheme
      * @action
      * @public
@@ -455,11 +457,8 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
      * @default null
      * @type function
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxSankey
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 target:dxSankeyNode
+     * @type_function_param1_field component:dxSankey
+     * @type_function_param1_field event:event
      * @notUsedInTheme
      * @action
      * @public
@@ -469,10 +468,7 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxSankey
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 target:dxSankeyNode
+     * @type_function_param1_field component:dxSankey
      * @notUsedInTheme
      * @action
      * @public
@@ -481,17 +477,15 @@ export interface dxSankeyOptions extends BaseWidgetOptions<dxSankey> {
     /**
      * @docid
      * @default "Material"
-     * @type Array<string>|Enums.VizPalette
      * @public
      */
-    palette?: Array<string> | PaletteType;
+    palette?: Array<string> | Palette;
     /**
      * @docid
-     * @type Enums.VizPaletteExtensionMode
      * @default 'blend'
      * @public
      */
-    paletteExtensionMode?: PaletteExtensionModeType;
+    paletteExtensionMode?: PaletteExtensionMode;
     /**
      * @docid
      * @default undefined
@@ -528,7 +522,6 @@ export interface dxSankeyTooltip extends BaseWidgetTooltip {
     /**
      * @docid  dxSankeyOptions.tooltip.customizeLinkTooltip
      * @default undefined
-     * @type_function_param1_field3 weight:Number
      * @type_function_return object
      * @public
      */
@@ -536,9 +529,7 @@ export interface dxSankeyTooltip extends BaseWidgetTooltip {
     /**
      * @docid  dxSankeyOptions.tooltip.customizeNodeTooltip
      * @default undefined
-     * @type_function_param1_field1 title:string:deprecated(label)
-     * @type_function_param1_field3 weightIn:Number
-     * @type_function_param1_field4 weightOut:Number
+     * @type_function_param1_field title:string:deprecated(label)
      * @type_function_return object
      * @public
      */
@@ -551,7 +542,6 @@ export interface dxSankeyTooltip extends BaseWidgetTooltip {
     enabled?: boolean;
     /**
      * @docid dxSankeyOptions.tooltip.linkTooltipTemplate
-     * @type_function_param1_field3 weight:Number
      * @type_function_return string|Element|jQuery
      * @default undefined
      * @public
@@ -559,8 +549,6 @@ export interface dxSankeyTooltip extends BaseWidgetTooltip {
     linkTooltipTemplate?: template | ((info: { source?: string; target?: string; weight?: number }, element: DxElement) => string | UserDefinedElement);
     /**
      * @docid dxSankeyOptions.tooltip.nodeTooltipTemplate
-     * @type_function_param1_field2 weightIn:Number
-     * @type_function_param1_field3 weightOut:Number
      * @type_function_return string|Element|jQuery
      * @default undefined
      * @public

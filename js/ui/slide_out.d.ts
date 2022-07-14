@@ -26,6 +26,14 @@ import CollectionWidget, {
     SelectionChangedInfo,
 } from './collection/ui.collection_widget.base';
 
+import {
+    SlideOutMenuPosition,
+} from '../common';
+
+export {
+    SlideOutMenuPosition,
+};
+
 type ItemLike = string | Item | any;
 
 /** @public */
@@ -122,11 +130,10 @@ export interface dxSlideOutOptions<
     menuItemTemplate?: template | ((itemData: TItem, itemIndex: number, itemElement: DxElement) => string | UserDefinedElement);
     /**
      * @docid
-     * @type Enums.SlideOutMenuPosition
      * @default "normal"
      * @public
      */
-    menuPosition?: 'inverted' | 'normal';
+    menuPosition?: SlideOutMenuPosition;
     /**
      * @docid
      * @default false
@@ -136,9 +143,7 @@ export interface dxSlideOutOptions<
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxSlideOut
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxSlideOut
      * @default null
      * @action
      * @public
@@ -147,9 +152,7 @@ export interface dxSlideOutOptions<
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxSlideOut
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxSlideOut
      * @default null
      * @action
      * @public

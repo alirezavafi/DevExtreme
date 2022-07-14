@@ -21,6 +21,19 @@ import dxMenuBase, {
     dxMenuBaseOptions,
 } from './context_menu/ui.menu_base';
 
+import {
+    Orientation,
+    SubmenuShowMode,
+} from '../common';
+
+export {
+    Orientation,
+    SubmenuShowMode,
+};
+
+/** @public */
+export type SubmenuDirection = 'auto' | 'leftOrTop' | 'rightOrBottom';
+
 /** @public */
 export type ContentReadyEvent<TKey = any> = EventInfo<dxMenu<TKey>>;
 
@@ -102,10 +115,7 @@ export interface dxMenuOptions<
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 rootItem:DxElement
-     * @type_function_param1_field1 component:dxMenu
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxMenu
      * @action
      * @public
      */
@@ -114,11 +124,7 @@ export interface dxMenuOptions<
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 rootItem:DxElement
-     * @type_function_param1_field5 cancel:boolean
-     * @type_function_param1_field1 component:dxMenu
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxMenu
      * @action
      * @public
      */
@@ -127,10 +133,7 @@ export interface dxMenuOptions<
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 rootItem:DxElement
-     * @type_function_param1_field1 component:dxMenu
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxMenu
      * @action
      * @public
      */
@@ -139,24 +142,19 @@ export interface dxMenuOptions<
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 rootItem:DxElement
-     * @type_function_param1_field1 component:dxMenu
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxMenu
      * @action
      * @public
      */
     onSubmenuShown?: ((e: SubmenuShownEvent<TKey>) => void);
     /**
      * @docid
-     * @type Enums.Orientation
      * @default "horizontal"
      * @public
      */
-    orientation?: 'horizontal' | 'vertical';
+    orientation?: Orientation;
     /**
      * @docid
-     * @type Object|Enums.ShowSubmenuMode
      * @default { name: "onClick", delay: { show: 50, hide: 300 } }
      * @public
      */
@@ -179,18 +177,16 @@ export interface dxMenuOptions<
       } | number;
       /**
        * @docid
-       * @type Enums.ShowSubmenuMode
        * @default "onClick"
        */
-      name?: 'onClick' | 'onHover';
-    } | 'onClick' | 'onHover';
+      name?: SubmenuShowMode;
+    } | SubmenuShowMode;
     /**
      * @docid
-     * @type Enums.SubmenuDirection
      * @default "auto"
      * @public
      */
-    submenuDirection?: 'auto' | 'leftOrTop' | 'rightOrBottom';
+    submenuDirection?: SubmenuDirection;
 }
 /**
  * @docid

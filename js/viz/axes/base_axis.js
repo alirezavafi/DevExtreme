@@ -14,7 +14,6 @@ import {
 import { isDefined, isFunction, isPlainObject, type } from '../../core/utils/type';
 import constants from './axes_constants';
 import { extend } from '../../core/utils/extend';
-import { inArray } from '../../core/utils/array';
 import formatHelper from '../../format_helper';
 import { getParser } from '../components/parse_utils';
 import { tickGenerator } from './tick_generator';
@@ -484,8 +483,8 @@ Axis.prototype = {
             if(isDefined(startValue) && isDefined(endValue)) {
                 const parsedStartValue = this.parser(startValue);
                 const parsedEndValue = this.parser(endValue);
-                startCategoryIndex = inArray(isDefined(parsedStartValue) ? parsedStartValue.valueOf() : undefined, categories);
-                endCategoryIndex = inArray(isDefined(parsedEndValue) ? parsedEndValue.valueOf() : undefined, categories);
+                startCategoryIndex = categories.indexOf(parsedStartValue?.valueOf() ?? undefined);
+                endCategoryIndex = categories.indexOf(parsedEndValue?.valueOf() ?? undefined);
                 if(startCategoryIndex === -1 || endCategoryIndex === -1) {
                     return { from: 0, to: 0, outOfCanvas: true };
                 }
@@ -772,14 +771,19 @@ Axis.prototype = {
         return isFunction(labelOptions.customizeHint) ? labelOptions.customizeHint.call(formatObject, formatObject) : undefined;
     },
 
-    formatRange(startValue, endValue, interval) {
-        return formatRange(startValue, endValue, interval, this.getOptions());
+    formatRange(startValue, endValue, interval, argumentFormat) {
+        return formatRange({ startValue, endValue, tickInterval: interval, argumentFormat, axisOptions: this.getOptions() });
     },
 
     _setTickOffset: function() {
         const options = this._options;
         const discreteAxisDivisionMode = options.discreteAxisDivisionMode;
         this._tickOffset = +(discreteAxisDivisionMode !== 'crossLabels' || !discreteAxisDivisionMode);
+    },
+
+    // T1068023,T948359
+    aggregatedPointBetweenTicks() {
+        return this._options.aggregatedPointsPosition === 'crossTicks';
     },
 
     resetApplyingAnimation: function(isFirstDrawing) {

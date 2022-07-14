@@ -6,11 +6,6 @@ import {
 } from '../core/element';
 
 import {
-    PaletteType,
-    PaletteExtensionModeType,
-} from './palette';
-
-import {
     template,
 } from '../core/templates/template';
 
@@ -26,12 +21,35 @@ import BaseWidget, {
     BaseWidgetOptions,
     BaseWidgetTooltip,
     Font,
-    WordWrapType,
-    VizTextOverflowType,
     FileSavingEventInfo,
     ExportInfo,
     IncidentInfo,
 } from './core/base_widget';
+
+import {
+    SingleMultipleOrNone,
+} from '../common';
+
+import {
+    Palette,
+    PaletteExtensionMode,
+    TextOverflow,
+    WordWrap,
+} from '../common/charts';
+
+export {
+    Palette,
+    PaletteExtensionMode,
+    TextOverflow,
+    WordWrap,
+};
+
+/** @public */
+export type TreeMapColorizerType = 'discrete' | 'gradient' | 'none' | 'range';
+/** @public */
+export type TreeMapLayoutAlgorithm = 'sliceanddice' | 'squarified' | 'strip';
+/** @public */
+export type TreeMapLayoutDirection = 'leftBottomRightTop' | 'leftTopRightBottom' | 'rightBottomLeftTop' | 'rightTopLeftBottom';
 
 export interface InteractionInfo {
   readonly node: dxTreeMapNode;
@@ -122,15 +140,13 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
       /**
        * @docid
        * @default "Material"
-       * @type Array<string>|Enums.VizPalette
        */
-      palette?: Array<string> | PaletteType;
+      palette?: Array<string> | Palette;
       /**
        * @docid
-       * @type Enums.VizPaletteExtensionMode
        * @default 'blend'
        */
-      paletteExtensionMode?: PaletteExtensionModeType;
+      paletteExtensionMode?: PaletteExtensionMode;
       /**
        * @docid
        * @default undefined
@@ -138,10 +154,9 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
       range?: Array<number>;
       /**
        * @docid
-       * @type Enums.TreeMapColorizerType
        * @default undefined
        */
-      type?: 'discrete' | 'gradient' | 'none' | 'range';
+      type?: TreeMapColorizerType;
     };
     /**
      * @docid
@@ -227,10 +242,9 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
         font?: Font;
         /**
          * @docid
-         * @type Enums.VizTextOverflow
          * @default "ellipsis"
          */
-        textOverflow?: VizTextOverflowType;
+        textOverflow?: TextOverflow;
         /**
          * @docid
          * @default true
@@ -294,14 +308,13 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
      * @type_function_return void
      * @public
      */
-    layoutAlgorithm?: 'sliceanddice' | 'squarified' | 'strip' | ((e: { rect?: Array<number>; sum?: number; items?: Array<any> }) => any);
+    layoutAlgorithm?: TreeMapLayoutAlgorithm | ((e: { rect?: Array<number>; sum?: number; items?: Array<any> }) => any);
     /**
      * @docid
-     * @type Enums.TreeMapLayoutDirection
      * @default 'leftTopRightBottom'
      * @public
      */
-    layoutDirection?: 'leftBottomRightTop' | 'leftTopRightBottom' | 'rightBottomLeftTop' | 'rightTopLeftBottom';
+    layoutDirection?: TreeMapLayoutDirection;
     /**
      * @docid
      * @type object
@@ -319,11 +332,8 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
      * @default null
      * @type function
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxTreeMap
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 node:dxTreeMapNode
+     * @type_function_param1_field component:dxTreeMap
+     * @type_function_param1_field event:event
      * @notUsedInTheme
      * @action
      * @public
@@ -333,10 +343,7 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxTreeMap
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 node:dxTreeMapNode
+     * @type_function_param1_field component:dxTreeMap
      * @notUsedInTheme
      * @action
      * @public
@@ -346,10 +353,7 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxTreeMap
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 node:dxTreeMapNode
+     * @type_function_param1_field component:dxTreeMap
      * @notUsedInTheme
      * @action
      * @public
@@ -359,10 +363,7 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxTreeMap
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 root:dxTreeMapNode
+     * @type_function_param1_field component:dxTreeMap
      * @notUsedInTheme
      * @action
      * @public
@@ -372,10 +373,7 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxTreeMap
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 node:dxTreeMapNode
+     * @type_function_param1_field component:dxTreeMap
      * @notUsedInTheme
      * @action
      * @public
@@ -385,10 +383,7 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxTreeMap
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 node:dxTreeMapNode
+     * @type_function_param1_field component:dxTreeMap
      * @notUsedInTheme
      * @action
      * @public
@@ -402,11 +397,10 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
     parentField?: string;
     /**
      * @docid
-     * @type Enums.SelectionMode
      * @default undefined
      * @public
      */
-    selectionMode?: 'multiple' | 'none' | 'single';
+    selectionMode?: SingleMultipleOrNone;
     /**
      * @docid
      * @public
@@ -469,10 +463,9 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
         font?: Font;
         /**
          * @docid
-         * @type Enums.VizTextOverflow
          * @default "ellipsis"
          */
-        textOverflow?: VizTextOverflowType;
+        textOverflow?: TextOverflow;
         /**
          * @docid
          * @defaultValue true
@@ -480,10 +473,9 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
         visible?: boolean;
         /**
          * @docid
-         * @type Enums.VizWordWrap
          * @default "normal"
          */
-        wordWrap?: WordWrapType;
+        wordWrap?: WordWrap;
       };
       /**
        * @docid
@@ -528,7 +520,6 @@ export interface dxTreeMapOptions extends BaseWidgetOptions<dxTreeMap> {
 export interface dxTreeMapTooltip extends BaseWidgetTooltip {
     /**
      * @docid dxTreeMapOptions.tooltip.contentTemplate
-     * @type_function_param1_field1 value:Number
      * @type_function_return string|Element|jQuery
      * @default undefined
      * @public
@@ -537,7 +528,6 @@ export interface dxTreeMapTooltip extends BaseWidgetTooltip {
     /**
      * @docid dxTreeMapOptions.tooltip.customizeTooltip
      * @default undefined
-     * @type_function_param1_field1 value:Number
      * @type_function_return object
      * @public
      */

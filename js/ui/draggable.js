@@ -109,10 +109,8 @@ class ScrollHelper {
     }
 
     isScrollable($element) {
-        const that = this;
-
-        return ($element.css(that._overFlowAttr) === 'auto' || $element.hasClass('dx-scrollable-container'))
-            && $element.prop(that._scrollSizeProp) > (that._sizeAttr === 'width' ? getWidth($element) : getHeight($element));
+        return ($element.css(this._overFlowAttr) === 'auto' || $element.hasClass('dx-scrollable-container'))
+            && $element.prop(this._scrollSizeProp) > Math.ceil(this._sizeAttr === 'width' ? getWidth($element) : getHeight($element));
     }
 
     _trySetScrollable(element, mousePosition) {
@@ -633,6 +631,11 @@ const Draggable = DOMComponent.inherit({
             initialOffset: isFixedPosition && initialOffset
         }));
 
+        this._getAction('onDraggableElementShown')({
+            ...dragStartArgs,
+            dragElement: $dragElement
+        });
+
         const $area = this._getArea();
         const areaOffset = this._getAreaOffset($area);
         const boundOffset = this._getBoundOffset();
@@ -946,6 +949,7 @@ const Draggable = DOMComponent.inherit({
             case 'onDrop':
             case 'onDragEnter':
             case 'onDragLeave':
+            case 'onDraggableElementShown':
                 this['_' + name + 'Action'] = this._createActionByOption(name);
                 break;
             case 'dragTemplate':

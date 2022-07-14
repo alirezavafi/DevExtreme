@@ -263,7 +263,7 @@ const FocusController = core.ViewController.inherit((function() {
                 };
                 that.component.on('contentReady', triggerUpdateFocusedRow);
 
-                scrollable.scrollTo({ y: offset });
+                this.getView('rowsView').scrollTopPosition(offset);
             } else {
                 deferred.resolve(-1);
             }
@@ -343,19 +343,26 @@ const FocusController = core.ViewController.inherit((function() {
             const rowsView = that.getView('rowsView');
             let $tableElement;
 
+            let $mainRow;
+
             each(rowsView.getTableElements(), function(index, element) {
                 const isMainTable = index === 0;
                 $tableElement = $(element);
 
                 that._clearPreviousFocusedRow($tableElement, focusedRowIndex);
 
-                that._prepareFocusedRow({
+                const $row = that._prepareFocusedRow({
                     changedItem: that._dataController.getVisibleRows()[focusedRowIndex],
                     $tableElement: $tableElement,
                     focusedRowIndex: focusedRowIndex,
-                    isMainTable: isMainTable
                 });
+
+                if(isMainTable) {
+                    $mainRow = $row;
+                }
             });
+
+            $mainRow && rowsView.scrollToElementVertically($mainRow);
         },
         _clearPreviousFocusedRow: function($tableElement, focusedRowIndex) {
             const isNotMasterDetailFocusedRow = (_, focusedRow) => {
@@ -385,15 +392,11 @@ const FocusController = core.ViewController.inherit((function() {
             if(changedItem && (changedItem.rowType === 'data' || changedItem.rowType === 'group')) {
                 const focusedRowIndex = options.focusedRowIndex;
                 const $tableElement = options.$tableElement;
-                const isMainTable = options.isMainTable;
                 const tabIndex = this.option('tabindex') || 0;
                 const rowsView = this.getView('rowsView');
 
                 $row = $(rowsView._getRowElements($tableElement).eq(focusedRowIndex));
                 $row.addClass(ROW_FOCUSED_CLASS).attr('tabindex', tabIndex);
-                if(isMainTable) {
-                    rowsView.scrollToElementVertically($row);
-                }
             }
 
             return $row;
@@ -553,6 +556,8 @@ export const focusModule = {
                             this.processUpdateFocusedRow(e);
                         } else if(e.changeType === 'append' || e.changeType === 'prepend') {
                             this._updatePageIndexes();
+                        } else if(e.changeType === 'update' && e.repaintChangesOnly) {
+                            this.processUpdateFocusedRow(e);
                         }
                     }
                 },
@@ -798,7 +803,10 @@ export const focusModule = {
                 },
 
                 updateFocusElementTabIndex: function($cellElements, preventScroll) {
-                    if(this.option('focusedRowEnabled')) {
+                    const rowIndex = this.getController('keyboardNavigation').getVisibleRowIndex();
+                    const row = this._dataController.getVisibleRows()[rowIndex];
+
+                    if(this.option('focusedRowEnabled') && !row?.isNewRow) {
                         this._setFocusedRowElementTabIndex(preventScroll);
                     } else {
                         this.callBase($cellElements);
@@ -860,13 +868,13 @@ export const focusModule = {
                     if(scrollable && $row.length) {
                         const position = scrollable.getScrollElementPosition($row, 'vertical');
 
-                        return this._scrollTopPosition(position);
+                        return this.scrollTopPosition(position);
                     }
 
                     return (new Deferred()).resolve();
                 },
 
-                _scrollTopPosition: function(scrollTop) {
+                scrollTopPosition: function(scrollTop) {
                     const d = new Deferred();
                     const scrollable = this.getScrollable();
 
@@ -879,6 +887,7 @@ export const focusModule = {
 
                         if(scrollTop !== currentScrollTop) {
                             scrollable.on('scroll', scrollHandler);
+                            this._dataController.resetFilterApplying();
                             scrollable.scrollTo({ top: scrollTop });
 
                             return d.promise();

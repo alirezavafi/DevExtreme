@@ -405,10 +405,10 @@ export const rowsModule = {
                     }
                 },
 
-                _renderFreeSpaceRow: function($tableElement) {
+                _renderFreeSpaceRow: function($tableElement, change) {
                     let $freeSpaceRowElement = this._createEmptyRow(FREE_SPACE_CLASS);
 
-                    $freeSpaceRowElement = this._wrapRowIfNeed($tableElement, $freeSpaceRowElement);
+                    $freeSpaceRowElement = this._wrapRowIfNeed($tableElement, $freeSpaceRowElement, change?.changeType === 'refresh');
 
                     this._appendEmptyRow($tableElement, $freeSpaceRowElement);
                 },
@@ -593,7 +593,7 @@ export const rowsModule = {
 
                     that._checkRowKeys(options.change);
 
-                    that._renderFreeSpaceRow($table);
+                    that._renderFreeSpaceRow($table, options.change);
                     if(!that._hasHeight) {
                         that.updateFreeSpaceRowHeight($table);
                     }
@@ -647,7 +647,7 @@ export const rowsModule = {
                 _createTable: function() {
                     const $table = this.callBase.apply(this, arguments);
 
-                    if(this.option().rowTemplate && !this.option('dataRowTemplate')) {
+                    if(this.option().rowTemplate || this.option().dataRowTemplate) {
                         $table.appendTo(this.component.$element());
                     }
 
@@ -1070,7 +1070,7 @@ export const rowsModule = {
                         const rowElements = that._getRowElements(tableElement).filter(':visible');
 
                         if(!isTop) {
-                            const height = this._hasHeight ? getOuterHeight(this.element()) : $(getWindow()).outerHeight();
+                            const height = getOuterHeight(this._hasHeight ? this.element() : getWindow());
 
                             viewportBoundary += height;
                         }

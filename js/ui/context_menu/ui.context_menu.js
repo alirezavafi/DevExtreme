@@ -8,7 +8,6 @@ import { isObject, isRenderer, isWindow, isFunction, isPlainObject, isDefined } 
 import { contains } from '../../core/utils/dom';
 import { getPublicElement } from '../../core/element';
 import { each } from '../../core/utils/iterator';
-import { inArray } from '../../core/utils/array';
 import { extend } from '../../core/utils/extend';
 import { hasWindow } from '../../core/utils/window';
 import fx from '../../animation/fx';
@@ -35,6 +34,8 @@ const DX_HAS_CONTEXT_MENU_CLASS = 'dx-has-context-menu';
 const DX_STATE_DISABLED_CLASS = 'dx-state-disabled';
 const DX_STATE_FOCUSED_CLASS = 'dx-state-focused';
 const DX_STATE_HOVER_CLASS = 'dx-state-hover';
+
+const OVERLAY_CONTENT_CLASS = 'dx-overlay-content';
 
 const FOCUS_UP = 'up';
 const FOCUS_DOWN = 'down';
@@ -258,7 +259,7 @@ class ContextMenu extends MenuBase {
         const $activeItem = this._getActiveItem(true);
         let $items;
 
-        if(inArray(location, LOCAL_SUBMENU_DIRECTIONS) >= 0) {
+        if(LOCAL_SUBMENU_DIRECTIONS.includes(location)) {
             $items = $activeItem
                 .closest(`.${DX_MENU_ITEMS_CONTAINER_CLASS}`)
                 .children()
@@ -449,6 +450,10 @@ class ContextMenu extends MenuBase {
             .appendTo($holder)
             .addClass(DX_SUBMENU_CLASS)
             .css('visibility', submenuContainer ? 'hidden' : 'visible');
+
+        if(!$wrapper.parent().hasClass(OVERLAY_CONTENT_CLASS)) {
+            this._addCustomCssClass($wrapper);
+        }
 
         const $itemsContainer = super._renderContainer($wrapper);
 
@@ -647,7 +652,7 @@ class ContextMenu extends MenuBase {
                 this._shownSubmenus = [];
             }
 
-            if(inArray($submenu, this._shownSubmenus)) {
+            if(!this._shownSubmenus.includes($submenu)) {
                 this._shownSubmenus.push($submenu);
             }
 
@@ -725,13 +730,13 @@ class ContextMenu extends MenuBase {
             return;
         }
 
+        this._updateSelectedItemOnClick(actionArgs);
+
         // T238943. Give the workaround with e.cancel and remove this hack
         const notCloseMenuOnItemClick = itemData && itemData.closeMenuOnClick === false;
         if(!itemData || itemData.disabled || notCloseMenuOnItemClick) {
             return;
         }
-
-        this._updateSelectedItemOnClick(actionArgs);
 
         if($submenu.length === 0) {
             const $prevSubmenu = $($itemElement.parents(`.${DX_SUBMENU_CLASS}`)[0]);
@@ -762,7 +767,7 @@ class ContextMenu extends MenuBase {
     }
 
     _hideSubmenuCore($submenu) {
-        const index = inArray($submenu, this._shownSubmenus);
+        const index = this._shownSubmenus.indexOf($submenu);
         const animation = this.option('animation') ? this.option('animation').hide : null;
 
         if(index >= 0) {
@@ -796,7 +801,7 @@ class ContextMenu extends MenuBase {
     }
 
     _optionChanged(args) {
-        if(inArray(args.name, ACTIONS) > -1) {
+        if(ACTIONS.includes(args.name)) {
             this._initActions();
             return;
         }

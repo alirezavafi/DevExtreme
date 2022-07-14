@@ -654,7 +654,7 @@ supportedScrollingModes.forEach(scrollingMode => {
             this.clock.tick(300);
             scheduler.tooltip.clickOnItem();
 
-            assert.ok($('.dx-dialog.dx-overlay-modal').length, 'Dialog was shown');
+            assert.ok($('.dx-dialog').length, 'Dialog was shown');
             $('.dx-dialog-buttons .dx-button').eq(1).trigger('dxclick');
         });
 
@@ -797,7 +797,7 @@ supportedScrollingModes.forEach(scrollingMode => {
             $(scheduler.instance.$element()).find('.dx-scheduler-appointment').eq(2).trigger(dblclickEvent.name);
             this.clock.tick(300);
 
-            assert.ok($('.dx-dialog.dx-overlay-modal').length, 'Dialog was shown');
+            assert.ok($('.dx-dialog').length, 'Dialog was shown');
             $('.dx-dialog-buttons .dx-button').eq(1).trigger('dxclick');
         });
 
@@ -952,7 +952,7 @@ supportedScrollingModes.forEach(scrollingMode => {
             });
 
             scheduler.instance.option('currentDate', new Date(2015, 2, 23));
-            assert.equal(scheduler.instance.$element().find('.dx-scheduler-appointment-recurrence').length, 7, 'appointments are OK');
+            assert.equal(scheduler.instance.$element().find('.dx-scheduler-appointment-recurrence').length, 8, 'appointments are OK');
         });
 
         test('AllDay recurrence appointments should be rendered correctly after changing currentDate, day view', function(assert) {
@@ -1054,8 +1054,8 @@ supportedScrollingModes.forEach(scrollingMode => {
             const task = {
                 text: 'No Recruiting students',
                 roomId: [5],
-                startDate: new Date(2017, 4, 15, 11, 0),
-                endDate: new Date(2017, 4, 15, 12, 0),
+                startDate: new Date('2017-05-15T11:00:00.000Z'),
+                endDate: new Date('2017-05-15T12:00:00.000Z'),
                 recurrenceRule: 'FREQ=DAILY;COUNT=3',
                 recurrenceException: '20170516T070000Z'
             };

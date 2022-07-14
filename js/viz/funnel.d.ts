@@ -6,11 +6,6 @@ import {
 } from '../core/element';
 
 import {
-    PaletteType,
-    PaletteExtensionModeType,
-} from './palette';
-
-import {
     template,
 } from '../core/templates/template';
 
@@ -28,20 +23,47 @@ import {
 import {
     BaseLegend,
     BaseLegendItem,
-    DashStyleType,
-    HatchingDirectionType,
 } from './common';
 
 import BaseWidget, {
     BaseWidgetOptions,
     BaseWidgetTooltip,
     Font,
-    WordWrapType,
-    VizTextOverflowType,
     FileSavingEventInfo,
     ExportInfo,
     IncidentInfo,
 } from './core/base_widget';
+
+import {
+    HorizontalEdge,
+    SingleMultipleOrNone,
+} from '../common';
+
+import {
+    DashStyle,
+    HatchDirection,
+    LabelPosition,
+    Palette,
+    PaletteExtensionMode,
+    TextOverflow,
+    WordWrap,
+} from '../common/charts';
+
+export {
+    DashStyle,
+    HatchDirection,
+    HorizontalEdge,
+    LabelPosition,
+    Palette,
+    PaletteExtensionMode,
+    TextOverflow,
+    WordWrap,
+};
+
+/** @public */
+export type FunnelAlgorithm = 'dynamicHeight' | 'dynamicSlope';
+/** @public */
+export type FunnelLabelOverlap = 'hide' | 'none' | 'shift';
 
 /**
  * @public
@@ -130,11 +152,10 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
     };
     /**
      * @docid
-     * @type Enums.FunnelAlgorithm
      * @default 'dynamicSlope'
      * @public
      */
-    algorithm?: 'dynamicHeight' | 'dynamicSlope';
+    algorithm?: FunnelAlgorithm;
     /**
      * @docid
      * @default 'arg'
@@ -221,10 +242,9 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
         hatching?: {
           /**
            * @docid
-           * @type Enums.HatchingDirection
            * @default 'right'
            */
-          direction?: HatchingDirectionType;
+          direction?: HatchDirection;
           /**
            * @docid
            * @default 0.75
@@ -272,10 +292,9 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
         hatching?: {
           /**
            * @docid
-           * @type Enums.HatchingDirection
            * @default "right"
            */
-          direction?: HatchingDirectionType;
+          direction?: HatchDirection;
           /**
            * @docid
            * @default 0.5
@@ -314,10 +333,9 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
         color?: string;
         /**
          * @docid
-         * @type Enums.DashStyle
          * @default 'solid'
          */
-        dashStyle?: DashStyleType;
+        dashStyle?: DashStyle;
         /**
          * @docid
          * @default false
@@ -356,9 +374,7 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
       };
       /**
        * @docid
-       * @type_function_param1_field1 item:dxFunnelItem
-       * @type_function_param1_field2 value:Number
-       * @type_function_param1_field4 percent:Number
+       * @type_function_param1_field item:dxFunnelItem
        * @notUsedInTheme
        */
       customizeText?: ((itemInfo: { item?: Item; value?: number; valueText?: string; percent?: number; percentText?: string }) => string);
@@ -374,10 +390,9 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
       format?: Format;
       /**
        * @docid
-       * @type Enums.HorizontalEdge
        * @default 'right'
        */
-      horizontalAlignment?: 'left' | 'right';
+      horizontalAlignment?: HorizontalEdge;
       /**
        * @docid
        * @default 0
@@ -385,10 +400,9 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
       horizontalOffset?: number;
       /**
        * @docid
-       * @type Enums.FunnelLabelPosition
        * @default 'columns'
        */
-      position?: 'columns' | 'inside' | 'outside';
+      position?: LabelPosition;
       /**
        * @docid
        * @default false
@@ -396,10 +410,9 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
       showForZeroValues?: boolean;
       /**
        * @docid
-       * @type Enums.VizTextOverflow
        * @default 'ellipsis'
        */
-      textOverflow?: VizTextOverflowType;
+      textOverflow?: TextOverflow;
       /**
        * @docid
        * @default true
@@ -407,10 +420,9 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
       visible?: boolean;
       /**
        * @docid
-       * @type Enums.VizWordWrap
        * @default 'normal'
        */
-      wordWrap?: WordWrapType;
+      wordWrap?: WordWrap;
     };
     /**
      * @docid
@@ -435,10 +447,8 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxFunnel
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 item:dxFunnelItem
+     * @type_function_param1_field component:dxFunnel
+     * @type_function_param1_field item:dxFunnelItem
      * @notUsedInTheme
      * @action
      * @public
@@ -449,11 +459,9 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
      * @default null
      * @type function
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxFunnel
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 item:dxFunnelItem
+     * @type_function_param1_field component:dxFunnel
+     * @type_function_param1_field event:event
+     * @type_function_param1_field item:dxFunnelItem
      * @notUsedInTheme
      * @action
      * @public
@@ -464,11 +472,9 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
      * @default null
      * @type function
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxFunnel
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 item:dxFunnelItem
+     * @type_function_param1_field component:dxFunnel
+     * @type_function_param1_field event:event
+     * @type_function_param1_field item:dxFunnelItem
      * @notUsedInTheme
      * @action
      * @public
@@ -478,10 +484,8 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxFunnel
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 item:dxFunnelItem
+     * @type_function_param1_field component:dxFunnel
+     * @type_function_param1_field item:dxFunnelItem
      * @notUsedInTheme
      * @action
      * @public
@@ -490,31 +494,27 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
     /**
      * @docid
      * @default "Material"
-     * @type Array<string>|Enums.VizPalette
      * @public
      */
-    palette?: Array<string> | PaletteType;
+    palette?: Array<string> | Palette;
     /**
      * @docid
-     * @type Enums.VizPaletteExtensionMode
      * @default 'blend'
      * @public
      */
-    paletteExtensionMode?: PaletteExtensionModeType;
+    paletteExtensionMode?: PaletteExtensionMode;
     /**
      * @docid
-     * @type Enums.FunnelResolveLabelOverlapping
      * @default "shift"
      * @public
      */
-    resolveLabelOverlapping?: 'hide' | 'none' | 'shift';
+    resolveLabelOverlapping?: FunnelLabelOverlap;
     /**
      * @docid
-     * @type Enums.SelectionMode
      * @default 'single'
      * @public
      */
-    selectionMode?: 'multiple' | 'none' | 'single';
+    selectionMode?: SingleMultipleOrNone;
     /**
      * @docid
      * @default true
@@ -538,7 +538,7 @@ export interface dxFunnelOptions extends BaseWidgetOptions<dxFunnel> {
 export interface dxFunnelLegend extends BaseLegend {
     /**
      * @docid dxFunnelOptions.legend.customizeHint
-     * @type_function_param1_field1 item:dxFunnelItem
+     * @type_function_param1_field item:dxFunnelItem
      * @public
      */
     customizeHint?: ((itemInfo: { item?: Item; text?: string }) => string);
@@ -551,7 +551,7 @@ export interface dxFunnelLegend extends BaseLegend {
     customizeItems?: ((items: Array<LegendItem>) => Array<LegendItem>);
     /**
      * @docid dxFunnelOptions.legend.customizeText
-     * @type_function_param1_field1 item:dxFunnelItem
+     * @type_function_param1_field item:dxFunnelItem
      * @notUsedInTheme
      * @public
      */
@@ -575,9 +575,7 @@ export interface dxFunnelLegend extends BaseLegend {
 export interface dxFunnelTooltip extends BaseWidgetTooltip {
     /**
      * @docid dxFunnelOptions.tooltip.contentTemplate
-     * @type_function_param1_field1 item:dxFunnelItem
-     * @type_function_param1_field2 value:Number
-     * @type_function_param1_field4 percent:Number
+     * @type_function_param1_field item:dxFunnelItem
      * @type_function_return string|Element|jQuery
      * @default undefined
      * @public
@@ -586,9 +584,7 @@ export interface dxFunnelTooltip extends BaseWidgetTooltip {
     /**
      * @docid dxFunnelOptions.tooltip.customizeTooltip
      * @default undefined
-     * @type_function_param1_field1 item:dxFunnelItem
-     * @type_function_param1_field2 value:Number
-     * @type_function_param1_field4 percent:Number
+     * @type_function_param1_field item:dxFunnelItem
      * @type_function_return object
      * @public
      */

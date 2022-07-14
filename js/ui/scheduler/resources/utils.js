@@ -1,13 +1,14 @@
 import { normalizeDataSourceOptions } from '../../../data/data_source/utils';
 import { DataSource } from '../../../data/data_source/data_source';
 import { when, Deferred } from '../../../core/utils/deferred';
-import query from '../../../data/query';
 import { compileGetter, compileSetter } from '../../../core/utils/data';
 import { each } from '../../../core/utils/iterator';
 import { extend } from '../../../core/utils/extend';
 import { isDefined } from '../../../core/utils/type';
-import { wrapToArray, inArray } from '../../../core/utils/array';
+import { wrapToArray } from '../../../core/utils/array';
 import { deepExtendArraySafe } from '../../../core/utils/object';
+import { equalByValue } from '../../../core/utils/common';
+import { hasResourceValue } from '../../../renovation/ui/scheduler/resources/hasResourceValue';
 
 export const getValueExpr = resource => resource.valueExpr || 'id';
 export const getDisplayExpr = resource => resource.displayExpr || 'text';
@@ -218,31 +219,32 @@ export const getPaintedResources = (resources, groups) => {
 export const getOrLoadResourceItem = (resources, resourceLoaderMap, field, value) => {
     const result = new Deferred();
 
-    resources.forEach(resource => {
-        const resourceField = getFieldExpr(resource);
-
-        if(resourceField === field) {
-            const dataSource = getWrappedDataSource(resource.dataSource);
+    resources
+        .filter(resource =>
+            getFieldExpr(resource) === field &&
+            isDefined(resource.dataSource)
+        )
+        .forEach(resource => {
+            const wrappedDataSource = getWrappedDataSource(resource.dataSource);
             const valueExpr = getValueExpr(resource);
 
             if(!resourceLoaderMap.has(field)) {
-                resourceLoaderMap.set(field, dataSource.load());
+                resourceLoaderMap.set(field, wrappedDataSource.load());
             }
 
             resourceLoaderMap.get(field)
                 .done(data => {
-                    const filteredData = query(data)
-                        .filter(valueExpr, value)
-                        .toArray();
-
+                    const getter = compileGetter(valueExpr);
+                    const filteredData = data.filter(
+                        (resource) => equalByValue(getter(resource), value)
+                    );
                     result.resolve(filteredData[0]);
                 })
                 .fail(() => {
                     resourceLoaderMap.delete(field);
                     result.reject();
                 });
-        }
-    });
+        });
 
     return result.promise();
 };
@@ -250,39 +252,6 @@ export const getOrLoadResourceItem = (resources, resourceLoaderMap, field, value
 export const getDataAccessors = (dataAccessors, fieldName, type) => {
     const actions = dataAccessors[type];
     return actions[fieldName];
-};
-
-export const getResourcesFromItem = (resources = [], dataAccessors, itemData, wrapOnlyMultipleResources = false) => {
-    let result = null;
-    const resourceFields = resources.map(resource => getFieldExpr(resource));
-
-    resourceFields.forEach(field => {
-        each(itemData, (fieldName, fieldValue) => {
-            const tempObject = {};
-            tempObject[fieldName] = fieldValue;
-
-            let resourceData = getDataAccessors(dataAccessors, field, 'getter')(tempObject);
-            if(isDefined(resourceData)) {
-                if(!result) {
-                    result = {};
-                }
-                if(resourceData.length === 1) {
-                    resourceData = resourceData[0];
-                }
-                if(!wrapOnlyMultipleResources || (wrapOnlyMultipleResources && isResourceMultiple(resources, field))) {
-                    getDataAccessors(dataAccessors, field, 'setter')(tempObject, wrapToArray(resourceData));
-                } else {
-                    getDataAccessors(dataAccessors, field, 'setter')(tempObject, resourceData);
-                }
-
-                extend(result, tempObject);
-
-                return true;
-            }
-        });
-    });
-
-    return result;
 };
 
 export const groupAppointmentsByResources = (config, appointments, groups = []) => {
@@ -320,13 +289,7 @@ export const groupAppointmentsByResourcesCore = (config, appointments, resources
     const result = {};
 
     appointments.forEach(appointment => {
-        const appointmentResources = getResourcesFromItem(
-            config.resources,
-            config.dataAccessors,
-            appointment
-        );
-
-        const treeLeaves = getResourceTreeLeaves((field, action) => getDataAccessors(config.dataAccessors, field, action), tree, appointmentResources);
+        const treeLeaves = getResourceTreeLeaves((field, action) => getDataAccessors(config.dataAccessors, field, action), tree, appointment);
 
         for(let i = 0; i < treeLeaves.length; i++) {
             if(!result[treeLeaves[i]]) {
@@ -341,11 +304,11 @@ export const groupAppointmentsByResourcesCore = (config, appointments, resources
     return result;
 };
 
-export const getResourceTreeLeaves = (getDataAccessors, tree, appointmentResources, result) => {
+export const getResourceTreeLeaves = (getDataAccessors, tree, rawAppointment, result) => {
     result = result || [];
 
     for(let i = 0; i < tree.length; i++) {
-        if(!hasGroupItem(getDataAccessors, appointmentResources, tree[i].name, tree[i].value)) {
+        if(!hasGroupItem(getDataAccessors, rawAppointment, tree[i].name, tree[i].value)) {
             continue;
         }
 
@@ -354,22 +317,17 @@ export const getResourceTreeLeaves = (getDataAccessors, tree, appointmentResourc
         }
 
         if(tree[i].children) {
-            getResourceTreeLeaves(getDataAccessors, tree[i].children, appointmentResources, result);
+            getResourceTreeLeaves(getDataAccessors, tree[i].children, rawAppointment, result);
         }
     }
 
     return result;
 };
 
-const hasGroupItem = (getDataAccessors, appointmentResources, groupName, itemValue) => {
-    const group = getDataAccessors(groupName, 'getter')(appointmentResources);
+const hasGroupItem = (getDataAccessors, rawAppointment, groupName, itemValue) => {
+    const resourceValue = getDataAccessors(groupName, 'getter')(rawAppointment);
 
-    if(group) {
-        if(inArray(itemValue, group) > -1) {
-            return true;
-        }
-    }
-    return false;
+    return hasResourceValue(wrapToArray(resourceValue), itemValue);
 };
 
 export const createReducedResourcesTree = (loadedResources, getDataAccessors, appointments) => {
@@ -513,7 +471,8 @@ export const getAppointmentColor = (resourceConfig, appointmentConfig) => {
         const field = getFieldExpr(paintedResources);
 
         const cellGroups = getCellGroups(groupIndex, loadedResources);
-        const resourceValues = wrapToArray(getDataAccessors(dataAccessors, field, 'getter')(itemData));
+        const resourcesDataAccessors = getDataAccessors(dataAccessors, field, 'getter');
+        const resourceValues = wrapToArray(resourcesDataAccessors(itemData));
 
         let groupId = resourceValues[0];
 
@@ -527,7 +486,9 @@ export const getAppointmentColor = (resourceConfig, appointmentConfig) => {
         return getResourceColor(resources, resourceLoaderMap, field, groupId);
     }
 
-    return new Deferred().resolve().promise();
+    return new Deferred()
+        .resolve()
+        .promise();
 };
 
 export const createExpressions = (resources = []) => {
@@ -604,4 +565,22 @@ export const loadResources = (groups, resources, resourceLoaderMap) => {
     }).fail(() => result.reject());
 
     return result.promise();
+};
+
+export const getNormalizedResources = (rawAppointment, dataAccessors, resources) => {
+    const result = { };
+
+    each(dataAccessors.resources.getter, (fieldName) => {
+        const value = dataAccessors.resources.getter[fieldName](rawAppointment);
+
+        if(isDefined(value)) {
+            const isMultiple = isResourceMultiple(resources, fieldName);
+            const resourceValue = isMultiple
+                ? wrapToArray(value)
+                : value;
+            result[fieldName] = resourceValue;
+        }
+    });
+
+    return result;
 };

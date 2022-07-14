@@ -1,7 +1,7 @@
 import { getHeight } from '../../core/utils/size';
 import $ from '../../core/renderer';
-import { isDefined, isFunction } from '../../core/utils/type';
-import { when } from '../../core/utils/deferred';
+import { isDefined, isFunction, isString } from '../../core/utils/type';
+import { when, Deferred } from '../../core/utils/deferred';
 import sharedFiltering from '../shared/filtering';
 import { format } from '../../core/utils/string';
 import { each } from '../../core/utils/iterator';
@@ -14,6 +14,10 @@ import { normalizeSortingInfo as normalizeSortingInfoUtility } from '../../data/
 import formatHelper from '../../format_helper';
 import { getWindow } from '../../core/utils/window';
 import eventsEngine from '../../events/core/events_engine';
+import { DataSource } from '../../data/data_source/data_source';
+import ArrayStore from '../../data/array_store';
+import { normalizeDataSourceOptions } from '../../data/data_source/utils';
+import variableWrapper from '../../core/utils/variable_wrapper';
 
 const DATAGRID_SELECTION_DISABLED_CLASS = 'dx-selection-disabled';
 const DATAGRID_GROUP_OPENED_CLASS = 'dx-datagrid-group-opened';
@@ -148,6 +152,23 @@ const equalFilterParameters = function(filter1, filter2) {
     }
 };
 
+function normalizeGroupingLoadOptions(group) {
+    if(!Array.isArray(group)) {
+        group = [group];
+    }
+
+    return group.map((item, i) => {
+        if(isString(item)) {
+            return {
+                selector: item,
+                isExpanded: i < group.length - 1,
+            };
+        }
+
+        return item;
+    });
+}
+
 export default {
     renderNoDataText: function($element) {
         const that = this;
@@ -234,7 +255,16 @@ export default {
         operation = operation || 'and';
 
         for(let i = 0; i < filters.length; i++) {
-            if(!filters[i]) continue;
+            if(!filters[i]) {
+                continue;
+            }
+            if(filters[i]?.length === 1 && filters[i][0] === '!') {
+                if(operation === 'and') {
+                    return ['!'];
+                } else if(operation === 'or') {
+                    continue;
+                }
+            }
             if(resultFilter.length) {
                 resultFilter.push(operation);
             }
@@ -514,9 +544,9 @@ export default {
 
         if(that.option(LEGACY_SCROLLING_MODE) === false && (isVirtualMode || isAppendMode)) {
             return true;
-        } else {
-            return rowRenderingMode === SCROLLING_MODE_VIRTUAL;
         }
+
+        return rowRenderingMode === SCROLLING_MODE_VIRTUAL;
     },
 
     getPixelRatio: function(window) {
@@ -535,5 +565,97 @@ export default {
         }
 
         return 15000000 / this.getPixelRatio(getWindow());
-    }
+    },
+
+    normalizeLookupDataSource(lookup) {
+        let lookupDataSourceOptions;
+        if(lookup.items) {
+            lookupDataSourceOptions = lookup.items;
+        } else {
+            lookupDataSourceOptions = lookup.dataSource;
+            if(isFunction(lookupDataSourceOptions) && !variableWrapper.isWrapped(lookupDataSourceOptions)) {
+                lookupDataSourceOptions = lookupDataSourceOptions({});
+            }
+        }
+
+        return normalizeDataSourceOptions(lookupDataSourceOptions);
+    },
+
+    getWrappedLookupDataSource(column, dataSource, filter) {
+        const lookupDataSourceOptions = this.normalizeLookupDataSource(column.lookup);
+
+        const hasLookupOptimization = column.displayField && isString(column.displayField);
+        const group = normalizeGroupingLoadOptions(
+            hasLookupOptimization ? [column.dataField, column.displayField] : column.dataField
+        );
+
+        const lookupDataSource = {
+            load: (loadOptions) => {
+                const d = new Deferred();
+                dataSource.load({
+                    filter,
+                    group,
+                }).done((items) => {
+                    if(items.length === 0) {
+                        d.resolve([]);
+                    }
+
+                    let newDataSource;
+
+                    if(hasLookupOptimization) {
+                        const lookupItems = items.map(item => ({
+                            [column.lookup.valueExpr]: item.key,
+                            [column.lookup.displayExpr]: column.displayValueMap[item.key] ?? item.items[0].key
+                        }));
+
+                        newDataSource = new DataSource({
+                            ...lookupDataSourceOptions,
+                            ...loadOptions,
+                            store: new ArrayStore({
+                                data: lookupItems,
+                                key: column.lookup.valueExpr,
+                            })
+                        });
+                    } else {
+                        const filter = this.combineFilters(
+                            items.map((data => [
+                                column.lookup.valueExpr, data.key,
+                            ])),
+                            'or'
+                        );
+
+                        newDataSource = new DataSource({
+                            ...lookupDataSourceOptions,
+                            ...loadOptions,
+                            filter: this.combineFilters([filter, loadOptions.filter], 'and'),
+                        });
+                    }
+
+                    newDataSource.on('customizeStoreLoadOptions', (e) => {
+                        e.storeLoadOptions.take = loadOptions.take;
+                        e.storeLoadOptions.skip = loadOptions.skip;
+                    });
+
+                    newDataSource
+                        .load()
+                        .done(d.resolve)
+                        .fail(d.fail);
+                }).fail(d.fail);
+                return d;
+            },
+            key: column.lookup.valueExpr,
+            byKey(key) {
+                const d = Deferred();
+                this.load({
+                    filter: [column.lookup.valueExpr, '=', key],
+                }).done(arr => {
+                    d.resolve(arr[0]);
+                });
+
+                return d.promise();
+            }
+        };
+
+        return lookupDataSource;
+    },
 };

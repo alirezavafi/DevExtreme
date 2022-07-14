@@ -4213,6 +4213,154 @@ QUnit.module('Header Filter with real columnsController', {
         assert.deepEqual(spy.getCall(0).args[0].filter, ['date', '=', '2018/01/01']);
     });
 
+    [true, false].forEach((hasLookupOptimization) => {
+        QUnit.test(`Header filter should show only relevant values with syncLookupFilterValues = true, lookupOptimization = ${hasLookupOptimization}`, function(assert) {
+            // arrange
+            this.options.columns = [{
+                dataField: 'column1',
+                allowFiltering: true,
+                lookup: {
+                    dataSource: [{ id: 1, value: 'value1' }, { id: 2, value: 'value2' }],
+                    valueExpr: 'id',
+                    displayExpr: 'value',
+                },
+                calculateDisplayValue: hasLookupOptimization ? 'text' : undefined,
+                filterValues: [1],
+            }, {
+                dataField: 'column2',
+                allowFiltering: true,
+                lookup: {
+                    dataSource: [{ id: 1, value: 'value1' }, { id: 2, value: 'value2' }],
+                    valueExpr: 'id',
+                    displayExpr: 'value',
+                },
+                calculateDisplayValue: hasLookupOptimization ? 'text' : undefined,
+            }];
+
+            this.options.dataSource = [
+                { column1: 1, column2: 1, text: 'value1' },
+                { column1: 2, column2: 2, text: 'value2' },
+            ];
+
+            this.options.syncLookupFilterValues = true;
+
+            const $testElement = $('#container');
+
+            this.setupDataGrid();
+            this.columnHeadersView.render($testElement);
+            this.headerFilterView.render($testElement);
+
+            // act
+            this.headerFilterController.showHeaderFilterMenu(1);
+
+            // assert
+            const $popupContent = this.headerFilterView.getPopupContainer().$content();
+            const $listItemElements = $popupContent.find('.dx-list-item-content');
+            assert.equal($listItemElements.length, 2, 'count list item');
+            assert.strictEqual($listItemElements.eq(0).text(), '(Blanks)');
+            assert.strictEqual($listItemElements.eq(1).text(), 'value1');
+        });
+
+        QUnit.test(`Header filter search should work with syncLookupFilterValues = true, lookupOptimization = ${hasLookupOptimization}`, function(assert) {
+            // arrange
+            this.options.columns = [{
+                dataField: 'column1',
+                allowFiltering: true,
+                lookup: {
+                    dataSource: [{ id: 1, value: 'value1' }, { id: 2, value: 'value2' }],
+                    valueExpr: 'id',
+                    displayExpr: 'value',
+                },
+                calculateDisplayValue: hasLookupOptimization ? 'text' : undefined,
+            }];
+
+            this.options.dataSource = [
+                { column1: 1, column2: 1, text: 'value1' },
+                { column1: 2, column2: 2, text: 'value2' },
+            ];
+
+            this.options.syncLookupFilterValues = true;
+
+            const $testElement = $('#container');
+
+            this.setupDataGrid();
+            this.columnHeadersView.render($testElement);
+            this.headerFilterView.render($testElement);
+
+            // act
+            this.headerFilterController.showHeaderFilterMenu(0);
+
+            // assert
+
+            const $popupContent = this.headerFilterView.getPopupContainer().$content();
+            let $listItemElements = $popupContent.find('.dx-list-item-content');
+            assert.equal($listItemElements.length, 3, 'count list item');
+            assert.strictEqual($listItemElements.eq(0).text(), '(Blanks)');
+            assert.strictEqual($listItemElements.eq(1).text(), 'value1');
+            assert.strictEqual($listItemElements.eq(2).text(), 'value2');
+
+            // act
+            const list = $popupContent.find('.dx-list').dxList('instance');
+            list.option('searchValue', 'value1');
+
+            // assert
+            $listItemElements = $popupContent.find('.dx-list-item-content');
+            assert.equal($listItemElements.length, 1, 'count list item');
+            assert.strictEqual($listItemElements.eq(0).text(), 'value1');
+        });
+
+        // T1100536
+        QUnit.test(`Lookup header filter should pass correct load options (skip, take, filter) for lookup dataSource, lookupOptimization = ${hasLookupOptimization}`, function(assert) {
+            // arrange
+            this.options.columns = [{
+                dataField: 'column1',
+                allowFiltering: true,
+                lookup: {
+                    dataSource: [...new Array(100).keys()].map(i => ({ id: i, value: `value${i}` })),
+                    valueExpr: 'id',
+                    displayExpr: 'value',
+                },
+                calculateDisplayValue: hasLookupOptimization ? 'text' : undefined,
+            }];
+
+            this.options.dataSource = [...new Array(100).keys()].map(i => ({
+                column1: i, text: `value${i}`
+            }));
+
+
+            this.options.syncLookupFilterValues = true;
+
+            const $testElement = $('#container');
+
+            this.setupDataGrid();
+            this.columnHeadersView.render($testElement);
+            this.headerFilterView.render($testElement);
+
+            // act
+            this.headerFilterController.showHeaderFilterMenu(0);
+
+            // assert
+            const $popupContent = this.headerFilterView.getPopupContainer().$content();
+            let $listItemElements = $popupContent.find('.dx-list-item-content');
+            assert.equal($listItemElements.length, 21, 'count list item');
+            assert.strictEqual($listItemElements.eq(0).text(), '(Blanks)');
+            assert.strictEqual($listItemElements.eq(1).text(), 'value0');
+            assert.strictEqual($listItemElements.eq(-1).text(), 'value19');
+
+            // act
+            const list = $popupContent.find('.dx-list').dxList('instance');
+            list.scrollBy(100);
+            this.clock.tick();
+
+            // assert
+            $listItemElements = $popupContent.find('.dx-list-item-content');
+            assert.equal($listItemElements.length, 41, 'count list item');
+            assert.strictEqual($listItemElements.eq(0).text(), '(Blanks)');
+            assert.strictEqual($listItemElements.eq(1).text(), 'value0');
+            assert.strictEqual($listItemElements.eq(-1).text(), 'value39');
+        });
+    });
+
     // T938460
     QUnit.test('The selection should work correctly after searching when calculateDisplayValue is used and when a lookup\'s key is specified', function(assert) {
         // arrange

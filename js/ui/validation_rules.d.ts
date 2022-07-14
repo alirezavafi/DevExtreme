@@ -1,8 +1,10 @@
+export type ComparisonOperator = '!=' | '!==' | '<' | '<=' | '==' | '===' | '>' | '>=';
+
 /**
  * @public
  */
 export interface ValidationCallbackData {
-    value?: string | number;
+    value?: any;
     rule: any;
     validator: any;
     data?: any;
@@ -45,12 +47,12 @@ export interface AsyncRule {
      * @docid
      * @type_function_return Promise<any>
      * @type_function_param1 options:object
-     * @type_function_param1_field1 value:string|number
-     * @type_function_param1_field2 rule:object
-     * @type_function_param1_field3 validator:object
-     * @type_function_param1_field4 data:object
-     * @type_function_param1_field5 column:object
-     * @type_function_param1_field6 formItem:object
+     * @type_function_param1_field value:string|number
+     * @type_function_param1_field rule:object
+     * @type_function_param1_field validator:object
+     * @type_function_param1_field data:object
+     * @type_function_param1_field column:object
+     * @type_function_param1_field formItem:object
      * @public
      */
     validationCallback?: ((options: ValidationCallbackData) => PromiseLike<any>);
@@ -71,11 +73,10 @@ export interface CompareRule {
     comparisonTarget?: (() => any);
     /**
      * @docid
-     * @type Enums.ComparisonOperator
      * @default '=='
      * @public
      */
-    comparisonType?: '!=' | '!==' | '<' | '<=' | '==' | '===' | '>' | '>=';
+    comparisonType?: ComparisonOperator;
     /**
      * @docid
      * @default false
@@ -130,12 +131,12 @@ export interface CustomRule {
     /**
      * @docid
      * @type_function_param1 options:object
-     * @type_function_param1_field1 value:string|number
-     * @type_function_param1_field2 rule:object
-     * @type_function_param1_field3 validator:object
-     * @type_function_param1_field4 data:object
-     * @type_function_param1_field5 column:object
-     * @type_function_param1_field6 formItem:object
+     * @type_function_param1_field value:string|number
+     * @type_function_param1_field rule:object
+     * @type_function_param1_field validator:object
+     * @type_function_param1_field data:object
+     * @type_function_param1_field column:object
+     * @type_function_param1_field formItem:object
      * @public
      */
     validationCallback?: ((options: ValidationCallbackData) => boolean);
@@ -216,7 +217,6 @@ export interface PatternRule {
     message?: string;
     /**
      * @docid
-     * @type regexp|string
      * @public
      */
     pattern?: RegExp | string;
@@ -341,4 +341,7 @@ export interface StringLengthRule {
     type: 'stringLength';
 }
 
+/** @public */
 export type ValidationRule = AsyncRule | CompareRule | CustomRule | EmailRule | NumericRule | PatternRule | RangeRule | RequiredRule | StringLengthRule;
+/** @public */
+export type ValidationRuleType = 'required' | 'numeric' | 'range' | 'stringLength' | 'custom' | 'compare' | 'pattern' | 'email' | 'async';

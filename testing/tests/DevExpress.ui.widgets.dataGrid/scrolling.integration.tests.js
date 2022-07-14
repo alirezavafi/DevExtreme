@@ -1311,7 +1311,7 @@ QUnit.module('Scrolling', baseModuleConfig, () => {
         assert.equal(visibleRows[10].key, 11, 'last visible row key on the first page after srolling up to top');
     });
 
-    QUnit.test('New mode. Rows should be rendered properly when the page size is changed, rowRenderingMode is virtual and max height (T1054920)', function(assert) {
+    QUnit.test('New mode. No data text should not be shown when rowRenderingMode is virtual and max height (T1054920)', function(assert) {
         // arrange
         const getData = function() {
             const items = [];
@@ -1323,6 +1323,7 @@ QUnit.module('Scrolling', baseModuleConfig, () => {
             }
             return items;
         };
+
         $('#dataGrid').css('max-height', '600px');
         const dataGrid = createDataGrid({
             dataSource: getData(),
@@ -1342,7 +1343,6 @@ QUnit.module('Scrolling', baseModuleConfig, () => {
                 showPageSizeSelector: true
             },
         });
-
         this.clock.tick(300);
         let visibleRows = dataGrid.getVisibleRows();
 
@@ -1377,16 +1377,59 @@ QUnit.module('Scrolling', baseModuleConfig, () => {
         // assert
         assert.ok(!$noDataElement.is(':visible'), 'No data element is hidden');
 
+        $('#dataGrid').css('max-height', '');
+    });
+
+    // T1083488
+    QUnit.testInActiveWindow('Virtual scrolling should work with validation and fixed columns', function(assert) {
+        // arrange
+        const dataGrid = createDataGrid({
+            dataSource: [],
+            editing: {
+                mode: 'batch',
+            },
+            scrolling: {
+                mode: 'virtual',
+            },
+            columnFixing: {
+                enabled: true,
+            },
+            columns: [
+                {
+                    dataField: '1',
+                    fixed: true,
+                    validationRules: [
+                        {
+                            type: 'required',
+                            message: 'Product is required'
+                        }
+                    ],
+                },
+                {
+                    dataField: '2',
+                },
+            ],
+        });
+        this.clock.tick();
+
         // act
-        this.clock.tick(300);
-        visibleRows = dataGrid.getVisibleRows();
-        $virtualRowElement = $(dataGrid.element()).find('.dx-virtual-row');
+        dataGrid.addRow();
+        this.clock.tick();
+
+        dataGrid.getController('validating').validate(true);
+        this.clock.tick();
+
+        $('td').trigger('focus');
+        this.clock.tick();
+
+        dataGrid.addRow();
+        this.clock.tick();
 
         // assert
-        assert.equal(visibleRows.length, 10, 'visible row count after switch to 10 page size');
-        assert.equal(dataGrid.pageIndex(), 0, 'page index');
-        assert.equal($virtualRowElement.length, 0, 'no virtual rows');
+        const table = $('.dx-datagrid-rowsview .dx-datagrid-content:not(.dx-datagrid-content-fixed) tbody');
+        const tableFixed = $('.dx-datagrid-rowsview .dx-datagrid-content.dx-datagrid-content-fixed tbody');
 
-        $('#dataGrid').css('max-height', '');
+        assert.strictEqual(table.find('tr').length, 3);
+        assert.strictEqual(tableFixed.find('tr').length, 3);
     });
 });

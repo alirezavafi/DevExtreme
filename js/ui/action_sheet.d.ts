@@ -21,7 +21,17 @@ import CollectionWidget, {
     CollectionWidgetOptions,
 } from './collection/ui.collection_widget.base';
 
+import {
+    ButtonType,
+    ButtonStyle,
+} from '../common';
+
 type ItemLike<TKey> = string | Item<TKey> | any;
+
+export {
+    ButtonType,
+    ButtonStyle,
+};
 
 /** @public */
 export type CancelClickEvent<TItem extends ItemLike<TKey> = any, TKey = any> = Cancelable & EventInfo<dxActionSheet<TItem, TKey>>;
@@ -84,10 +94,7 @@ export interface dxActionSheetOptions<
      * @default null
      * @type function
      * @type_function_param1 e:object
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field1 component:dxActionSheet
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxActionSheet
      * @action
      * @public
      */
@@ -182,28 +189,25 @@ export interface dxActionSheetItem<TKey = any> extends CollectionWidgetItem {
     /**
      * @docid
      * @default null
-     * @type_function_param1_field1 component:dxActionSheet
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:object
-     * @type_function_param1_field4 event:event
+     * @type_function_param1_field component:dxActionSheet
+     * @type_function_param1_field model:object
+     * @type_function_param1_field event:event
      * @type function
      * @public
      */
     onClick?: ((e: NativeEventInfo<dxActionSheet<this, TKey>, MouseEvent | PointerEvent>) => void) | string;
     /**
      * @docid
-     * @type Enums.ButtonType
      * @default 'normal'
      * @public
      */
-    type?: 'back' | 'danger' | 'default' | 'normal' | 'success';
+    type?: ButtonType;
     /**
      * @docid
-     * @type Enums.ButtonStylingMode
      * @default 'outlined'
      * @public
      */
-    stylingMode?: 'text' | 'outlined' | 'contained' ;
+    stylingMode?: ButtonStyle;
 }
 
 /** @public */

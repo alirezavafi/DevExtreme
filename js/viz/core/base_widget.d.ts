@@ -17,15 +17,22 @@ import {
 } from '../../localization';
 
 import {
-    DashStyleType,
-} from '../common';
-
-import {
     DefaultOptionsRule,
 } from '../../core/options';
 
-export type WordWrapType = 'normal' | 'breakWord' | 'none';
-export type VizTextOverflowType = 'ellipsis' | 'hide' | 'none';
+import {
+    ExportFormat,
+    HorizontalAlignment,
+    VerticalEdge,
+} from '../../common';
+
+import {
+    AnnotationType,
+    DashStyle,
+    TextOverflow,
+    Theme,
+    WordWrap,
+} from '../../common/charts';
 
 export interface ExportInfo {
   readonly fileName: string;
@@ -80,9 +87,7 @@ export interface BaseWidgetOptions<TComponent> extends DOMComponentOptions<TComp
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:this
      * @notUsedInTheme
      * @action
      * @public
@@ -92,9 +97,7 @@ export interface BaseWidgetOptions<TComponent> extends DOMComponentOptions<TComp
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -102,12 +105,7 @@ export interface BaseWidgetOptions<TComponent> extends DOMComponentOptions<TComp
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 fileName:string
-     * @type_function_param1_field5 cancel:boolean
-     * @type_function_param1_field6 format:string
+     * @type_function_param1_field component:this
      * @default null
      * @action
      * @public
@@ -116,12 +114,7 @@ export interface BaseWidgetOptions<TComponent> extends DOMComponentOptions<TComp
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 fileName:string
-     * @type_function_param1_field4 format:string
-     * @type_function_param1_field5 data:BLOB
-     * @type_function_param1_field6 cancel:boolean
+     * @type_function_param1_field component:this
      * @default null
      * @action
      * @public
@@ -131,10 +124,7 @@ export interface BaseWidgetOptions<TComponent> extends DOMComponentOptions<TComp
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 target:any
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -169,11 +159,10 @@ export interface BaseWidgetOptions<TComponent> extends DOMComponentOptions<TComp
     size?: BaseWidgetSize;
     /**
      * @docid
-     * @type Enums.VizTheme
      * @default 'generic.light'
      * @public
      */
-    theme?: 'generic.dark' | 'generic.light' | 'generic.contrast' | 'generic.carmine' | 'generic.darkmoon' | 'generic.darkviolet' | 'generic.greenmist' | 'generic.softblue' | 'material.blue.light' | 'material.lime.light' | 'material.orange.light' | 'material.purple.light' | 'material.teal.light';
+    theme?: Theme;
     /**
      * @docid
      * @type object|string
@@ -214,11 +203,10 @@ export interface BaseWidgetExport {
     fileName?: string;
     /**
      * @docid BaseWidgetOptions.export.formats
-     * @type Array<Enums.ExportFormat>
      * @default ['PNG', 'PDF', 'JPEG', 'SVG', 'GIF']
      * @public
      */
-    formats?: Array<'GIF' | 'JPEG' | 'PDF' | 'PNG' | 'SVG'>;
+    formats?: Array<ExportFormat>;
     /**
      * @docid BaseWidgetOptions.export.margin
      * @default 10
@@ -335,11 +323,10 @@ export interface BaseWidgetTitle {
     font?: Font;
     /**
      * @docid BaseWidgetOptions.title.horizontalAlignment
-     * @type Enums.HorizontalAlignment
      * @default 'center'
      * @public
      */
-    horizontalAlignment?: 'center' | 'left' | 'right';
+    horizontalAlignment?: HorizontalAlignment;
     /**
      * @docid BaseWidgetOptions.title.margin
      * @default 10
@@ -398,16 +385,14 @@ export interface BaseWidgetTitle {
       text?: string;
       /**
        * @docid BaseWidgetOptions.title.subtitle.textOverflow
-       * @type Enums.VizTextOverflow
        * @default "ellipsis"
        */
-      textOverflow?: VizTextOverflowType;
+      textOverflow?: TextOverflow;
       /**
        * @docid BaseWidgetOptions.title.subtitle.wordWrap
-       * @type Enums.VizWordWrap
        * @default "normal"
        */
-      wordWrap?: WordWrapType;
+      wordWrap?: WordWrap;
     } | string;
     /**
      * @docid BaseWidgetOptions.title.text
@@ -417,25 +402,22 @@ export interface BaseWidgetTitle {
     text?: string;
     /**
      * @docid BaseWidgetOptions.title.textOverflow
-     * @type Enums.VizTextOverflow
      * @default "ellipsis"
      * @public
      */
-    textOverflow?: VizTextOverflowType;
+    textOverflow?: TextOverflow;
     /**
      * @docid BaseWidgetOptions.title.verticalAlignment
-     * @type Enums.VerticalEdge
      * @default 'top'
      * @public
      */
-    verticalAlignment?: 'bottom' | 'top';
+    verticalAlignment?: VerticalEdge;
     /**
      * @docid BaseWidgetOptions.title.wordWrap
-     * @type Enums.VizWordWrap
      * @default "normal"
      * @public
      */
-    wordWrap?: WordWrapType;
+    wordWrap?: WordWrap;
 }
 /** @namespace DevExpress.viz */
 export interface BaseWidgetTooltip {
@@ -457,10 +439,9 @@ export interface BaseWidgetTooltip {
       color?: string;
       /**
        * @docid BaseWidgetOptions.tooltip.border.dashStyle
-       * @type Enums.DashStyle
        * @default 'solid'
        */
-      dashStyle?: DashStyleType;
+      dashStyle?: DashStyle;
       /**
        * @docid BaseWidgetOptions.tooltip.border.opacity
        * @default undefined
@@ -582,8 +563,8 @@ export default class BaseWidget<TProperties> extends DOMComponent<TProperties> {
      * @static
      * @publicName defaultOptions(rule)
      * @param1 rule:Object
-     * @param1_field1 device:Device|Array<Device>|function
-     * @param1_field2 options:Object
+     * @param1_field device:Device|Array<Device>|function
+     * @param1_field options:Object
      * @hidden
      */
     static defaultOptions<TProperties>(rule: DefaultOptionsRule<TProperties>): void;
@@ -712,10 +693,9 @@ export interface BaseWidgetAnnotationConfig {
       cornerRadius?: number;
       /**
        * @docid
-       * @type Enums.DashStyle
        * @default 'solid'
        */
-      dashStyle?: DashStyleType;
+      dashStyle?: DashStyle;
       /**
        * @docid
        * @default undefined
@@ -851,11 +831,10 @@ export interface BaseWidgetAnnotationConfig {
     text?: string;
     /**
      * @docid
-     * @type Enums.VizTextOverflow
      * @default "ellipsis"
      * @public
      */
-    textOverflow?: VizTextOverflowType;
+    textOverflow?: TextOverflow;
     /**
      * @docid
      * @default true
@@ -864,11 +843,10 @@ export interface BaseWidgetAnnotationConfig {
     tooltipEnabled?: boolean;
     /**
      * @docid
-     * @type Enums.AnnotationType
      * @default undefined
      * @public
      */
-    type?: 'text' | 'image' | 'custom';
+    type?: AnnotationType;
     /**
      * @docid
      * @default undefined
@@ -877,11 +855,10 @@ export interface BaseWidgetAnnotationConfig {
     width?: number;
     /**
      * @docid
-     * @type Enums.VizWordWrap
      * @default "normal"
      * @public
      */
-    wordWrap?: WordWrapType;
+    wordWrap?: WordWrap;
     /**
      * @docid
      * @default undefined

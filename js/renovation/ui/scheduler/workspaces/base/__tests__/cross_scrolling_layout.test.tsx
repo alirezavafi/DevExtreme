@@ -10,7 +10,7 @@ import { GroupPanel } from '../group_panel/group_panel';
 import { AllDayPanelLayout, AllDayPanelLayoutProps } from '../date_table/all_day_panel/layout';
 import { AllDayPanelTitle } from '../date_table/all_day_panel/title';
 import { HeaderPanelEmptyCell } from '../header_panel_empty_cell';
-import { Semaphore } from '../../../semaphore';
+import { ScrollSemaphore } from '../../../utils/semaphore/scrollSemaphore';
 import { HeaderPanelLayout } from '../header_panel/layout';
 import { TimelineHeaderPanelLayout } from '../../timeline/header_panel/layout';
 import { DateTableLayoutBase, DateTableLayoutProps } from '../date_table/layout';
@@ -189,7 +189,7 @@ describe('OrdinaryLayout', () => {
 
       expect(headerScrollable.props())
         .toEqual({
-          className: 'dx-scheduler-header-scrollable',
+          classes: 'dx-scheduler-header-scrollable',
           useKeyboard: false,
           showScrollbar: 'never',
           direction: 'horizontal',
@@ -269,7 +269,7 @@ describe('OrdinaryLayout', () => {
         .toEqual({
           useKeyboard: false,
           bounceEnabled: false,
-          className: 'dx-scheduler-date-table-scrollable',
+          classes: 'dx-scheduler-date-table-scrollable',
           children: expect.anything(),
           direction: 'both',
           onScroll: onDateTableScroll,
@@ -337,7 +337,7 @@ describe('OrdinaryLayout', () => {
 
       expect(scrollable.props())
         .toEqual({
-          className: 'dx-scheduler-sidebar-scrollable',
+          classes: 'dx-scheduler-sidebar-scrollable',
           useKeyboard: false,
           showScrollbar: 'never',
           direction: 'vertical',
@@ -495,10 +495,10 @@ describe('OrdinaryLayout', () => {
 
       expect(container.exists())
         .toBe(true);
-      expect(container.childAt(0).hasClass('dx-scheduler-sidebar-scrollable'))
-        .toBe(true);
-      expect(container.childAt(1).hasClass('dx-scheduler-date-table-scrollable'))
-        .toBe(true);
+      expect(container.childAt(0).prop('classes'))
+        .toBe('dx-scheduler-sidebar-scrollable');
+      expect(container.childAt(1).prop('classes'))
+        .toBe('dx-scheduler-date-table-scrollable');
     });
   });
 
@@ -614,11 +614,11 @@ describe('OrdinaryLayout', () => {
         it('should initialize semaphores correctly', () => {
           const layout = new CrossScrollingLayout({} as any);
 
-          expect(layout.dateTableSemaphore instanceof Semaphore)
+          expect(layout.dateTableSemaphore instanceof ScrollSemaphore)
             .toBe(true);
-          expect(layout.sideBarSemaphore instanceof Semaphore)
+          expect(layout.sideBarSemaphore instanceof ScrollSemaphore)
             .toBe(true);
-          expect(layout.headerSemaphore instanceof Semaphore)
+          expect(layout.headerSemaphore instanceof ScrollSemaphore)
             .toBe(true);
         });
       });

@@ -36,6 +36,16 @@ import {
     TitleRenderedInfo,
 } from './popup';
 
+import {
+    ApplyValueMode,
+    PageLoadMode,
+} from '../common';
+
+export {
+    ApplyValueMode,
+    PageLoadMode,
+};
+
 /** @public */
 export type ClosedEvent = EventInfo<dxLookup>;
 
@@ -88,11 +98,10 @@ export interface dxLookupOptions extends dxDropDownListOptions<dxLookup> {
     applyButtonText?: string;
     /**
      * @docid
-     * @type Enums.EditorApplyValueMode
      * @hidden false
      * @public
      */
-    applyValueMode?: 'instantly' | 'useButtons';
+    applyValueMode?: ApplyValueMode;
     /**
      * @docid
      * @default "Cancel"
@@ -158,9 +167,7 @@ export interface dxLookupOptions extends dxDropDownListOptions<dxLookup> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxLookup
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxLookup
      * @action
      * @public
      */
@@ -169,9 +176,7 @@ export interface dxLookupOptions extends dxDropDownListOptions<dxLookup> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxLookup
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxLookup
      * @action
      * @public
      */
@@ -180,15 +185,9 @@ export interface dxLookupOptions extends dxDropDownListOptions<dxLookup> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 scrollOffset:object
-     * @type_function_param1_field6 reachedLeft:boolean
-     * @type_function_param1_field7 reachedRight:boolean
-     * @type_function_param1_field8 reachedTop:boolean
-     * @type_function_param1_field9 reachedBottom:boolean
-     * @type_function_param1_field1 component:dxLookup
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field scrollOffset:object
+     * @type_function_param1_field component:dxLookup
      * @action
      * @public
      */
@@ -197,23 +196,20 @@ export interface dxLookupOptions extends dxDropDownListOptions<dxLookup> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 value:object
-     * @type_function_param1_field5 previousValue:object
-     * @type_function_param1_field6 event:event
-     * @type_function_param1_field1 component:dxLookup
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field value:object
+     * @type_function_param1_field previousValue:object
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:dxLookup
      * @action
      * @public
      */
     onValueChanged?: ((e: ValueChangedEvent) => void);
     /**
      * @docid
-     * @type Enums.ListPageLoadMode
      * @default "scrollBottom"
      * @public
      */
-    pageLoadMode?: 'nextButton' | 'scrollBottom';
+    pageLoadMode?: PageLoadMode;
     /**
      * @docid
      * @default "Loading..."
@@ -280,6 +276,12 @@ export interface dxLookupOptions extends dxDropDownListOptions<dxLookup> {
     showClearButton?: boolean;
     /**
      * @docid
+     * @default "input change keyup"
+     * @public
+     */
+    searchStartEvent?: string;
+    /**
+     * @docid
      * @default true
      * @default false &for(desktop except Mac)
      * @public
@@ -294,6 +296,13 @@ export interface dxLookupOptions extends dxDropDownListOptions<dxLookup> {
      * @public
      */
     usePopover?: boolean;
+    /**
+     * @docid
+     * @deprecated
+     * @default "input change keyup"
+     * @public
+     */
+    valueChangeEvent?: string;
     /**
      * @docid
      * @default false

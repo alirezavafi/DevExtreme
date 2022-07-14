@@ -21,6 +21,10 @@ import {
 
 import dxSortable from './sortable';
 
+import {
+    DragDirection,
+} from '../common';
+
 /**
  * @namespace DevExpress.ui
  */
@@ -67,11 +71,10 @@ export interface DraggableBaseOptions<TComponent> extends DOMComponentOptions<TC
     data?: any;
     /**
      * @docid
-     * @type Enums.DragDirection
      * @default "both"
      * @public
      */
-    dragDirection?: 'both' | 'horizontal' | 'vertical';
+    dragDirection?: DragDirection;
     /**
      * @docid
      * @default undefined
@@ -162,8 +165,6 @@ export interface dxDraggableOptions extends DraggableBaseOptions<dxDraggable> {
     /**
      * @docid
      * @type_function_param1 dragInfo:object
-     * @type_function_param1_field1 itemData:any
-     * @type_function_param1_field2 itemElement:DxElement
      * @type_function_return string|Element|jQuery
      * @default undefined
      * @public
@@ -173,17 +174,8 @@ export interface dxDraggableOptions extends DraggableBaseOptions<dxDraggable> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxDraggable
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 cancel:boolean
-     * @type_function_param1_field6 itemData:any
-     * @type_function_param1_field7 itemElement:DxElement
-     * @type_function_param1_field8 fromComponent:dxSortable|dxDraggable
-     * @type_function_param1_field9 toComponent:dxSortable|dxDraggable
-     * @type_function_param1_field10 fromData:any
-     * @type_function_param1_field11 toData:any
+     * @type_function_param1_field component:dxDraggable
+     * @type_function_param1_field event:event
      * @action
      * @public
      */
@@ -192,17 +184,8 @@ export interface dxDraggableOptions extends DraggableBaseOptions<dxDraggable> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxDraggable
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 cancel:boolean
-     * @type_function_param1_field6 itemData:any
-     * @type_function_param1_field7 itemElement:DxElement
-     * @type_function_param1_field8 fromComponent:dxSortable|dxDraggable
-     * @type_function_param1_field9 toComponent:dxSortable|dxDraggable
-     * @type_function_param1_field10 fromData:any
-     * @type_function_param1_field11 toData:any
+     * @type_function_param1_field component:dxDraggable
+     * @type_function_param1_field event:event
      * @action
      * @public
      */
@@ -211,14 +194,8 @@ export interface dxDraggableOptions extends DraggableBaseOptions<dxDraggable> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxDraggable
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 cancel:boolean
-     * @type_function_param1_field6 itemData:any
-     * @type_function_param1_field7 itemElement:DxElement
-     * @type_function_param1_field8 fromData:any
+     * @type_function_param1_field component:dxDraggable
+     * @type_function_param1_field event:event
      * @action
      * @public
      */

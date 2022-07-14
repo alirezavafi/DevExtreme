@@ -19,11 +19,22 @@ import Editor, {
     EditorOptions,
 } from './editor/editor';
 
+import {
+    FirstDayOfWeek,
+} from '../common';
+
+export {
+    FirstDayOfWeek,
+};
+
 export interface ComponentDisabledDate<T> {
     component: T;
     readonly date: Date;
     readonly view: string;
 }
+
+/** @public */
+export type CalendarZoomLevel = 'century' | 'decade' | 'month' | 'year';
 
 /** @public */
 export type ContentReadyEvent = EventInfo<dxCalendar>;
@@ -65,9 +76,6 @@ export interface dxCalendarOptions extends EditorOptions<dxCalendar> {
      * @docid
      * @default "cell"
      * @type_function_param1 itemData:object
-     * @type_function_param1_field1 date:Date
-     * @type_function_param1_field2 view:string
-     * @type_function_param1_field3 text:string
      * @type_function_return string|Element|jQuery
      * @public
      */
@@ -82,19 +90,16 @@ export interface dxCalendarOptions extends EditorOptions<dxCalendar> {
      * @docid
      * @default null
      * @type_function_param1 data:object
-     * @type_function_param1_field1 component:object
-     * @type_function_param1_field2 date:Date
-     * @type_function_param1_field3 view:string
+     * @type_function_param1_field component:object
      * @public
      */
     disabledDates?: Array<Date> | ((data: DisabledDate) => boolean);
     /**
      * @docid
-     * @type Enums.FirstDayOfWeek
      * @default undefined
      * @public
      */
-    firstDayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+    firstDayOfWeek?: FirstDayOfWeek;
     /**
      * @docid
      * @default true &for(desktop)
@@ -115,11 +120,10 @@ export interface dxCalendarOptions extends EditorOptions<dxCalendar> {
     max?: Date | number | string;
     /**
      * @docid
-     * @type Enums.CalendarZoomLevel
      * @default 'month'
      * @public
      */
-    maxZoomLevel?: 'century' | 'decade' | 'month' | 'year';
+    maxZoomLevel?: CalendarZoomLevel;
     /**
      * @docid
      * @default new Date(1000, 0)
@@ -128,11 +132,10 @@ export interface dxCalendarOptions extends EditorOptions<dxCalendar> {
     min?: Date | number | string;
     /**
      * @docid
-     * @type Enums.CalendarZoomLevel
      * @default 'century'
      * @public
      */
-    minZoomLevel?: 'century' | 'decade' | 'month' | 'year';
+    minZoomLevel?: CalendarZoomLevel;
     /**
      * @docid
      * @hidden false
@@ -153,12 +156,11 @@ export interface dxCalendarOptions extends EditorOptions<dxCalendar> {
     value?: Date | number | string;
     /**
      * @docid
-     * @type Enums.CalendarZoomLevel
      * @default 'month'
      * @fires dxCalendarOptions.onOptionChanged
      * @public
      */
-    zoomLevel?: 'century' | 'decade' | 'month' | 'year';
+    zoomLevel?: CalendarZoomLevel;
 }
 /**
  * @docid
