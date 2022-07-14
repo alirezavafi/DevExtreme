@@ -5,7 +5,6 @@ import { each } from '../../core/utils/iterator';
 import { extend } from '../../core/utils/extend';
 import { AGENDA_LAST_IN_DATE_APPOINTMENT_CLASS } from './classes';
 import { utils } from './utils';
-import { getTimeZoneCalculator } from './instanceFactory';
 import { createAppointmentAdapter } from './appointmentAdapter';
 import { getFormatType, formatDates } from './appointments/textUtils';
 
@@ -13,7 +12,7 @@ const toMs = dateUtils.dateToMilliseconds;
 
 const subscribes = {
     isCurrentViewAgenda: function() {
-        return this.option('currentView') === 'agenda';
+        return this.currentViewType === 'agenda';
     },
     currentViewUpdated: function(currentView) {
         this.option('currentView', currentView);
@@ -39,7 +38,7 @@ const subscribes = {
         this._workSpace.setCellDataCacheAlias(appointment, geometry);
     },
 
-    isGroupedByDate: function() { // TODO replace with ModelProvider
+    isGroupedByDate: function() {
         return this.getWorkSpace().isGroupedByDate();
     },
 
@@ -75,11 +74,11 @@ const subscribes = {
     updateAppointmentAfterDrag: function({ event, element, rawAppointment, coordinates }) {
         const info = utils.dataAccessors.getAppointmentInfo(element);
 
-        const appointment = createAppointmentAdapter(rawAppointment, this._dataAccessors, getTimeZoneCalculator(this.key));
+        const appointment = createAppointmentAdapter(rawAppointment, this._dataAccessors, this.timeZoneCalculator);
         const targetedAppointment = createAppointmentAdapter(
             extend({}, rawAppointment, this._getUpdatedData(rawAppointment)),
             this._dataAccessors,
-            getTimeZoneCalculator(this.key)
+            this.timeZoneCalculator,
         );
         const targetedRawAppointment = targetedAppointment.source();
 
@@ -91,8 +90,9 @@ const subscribes = {
 
         const movedBetweenAllDayAndSimple = this._workSpace.supportAllDayRow() &&
             (wasAllDay && !becomeAllDay || !wasAllDay && becomeAllDay);
+        const isDragAndDropBetweenComponents = event.fromComponent !== event.toComponent;
 
-        if((newCellIndex !== oldCellIndex) || movedBetweenAllDayAndSimple) {
+        if((newCellIndex !== oldCellIndex) || isDragAndDropBetweenComponents || movedBetweenAllDayAndSimple) {
             this._checkRecurringAppointment(rawAppointment, targetedRawAppointment, info.sourceAppointment.exceptionDate, (function() {
 
                 this._updateAppointment(rawAppointment, targetedRawAppointment, function() {
@@ -112,19 +112,18 @@ const subscribes = {
     },
 
     getTextAndFormatDate(appointmentRaw, targetedAppointmentRaw, format) { // TODO: rename to createFormattedDateText
-        const appointmentAdapter = createAppointmentAdapter(appointmentRaw, this._dataAccessors, getTimeZoneCalculator(this.key));
+        const appointmentAdapter = createAppointmentAdapter(appointmentRaw, this._dataAccessors, this.timeZoneCalculator);
         const targetedAdapter = createAppointmentAdapter(
             (targetedAppointmentRaw || appointmentRaw),
             this._dataAccessors,
-            getTimeZoneCalculator(this.key)
+            this.timeZoneCalculator
         );
-        const timeZoneCalculator = getTimeZoneCalculator(this.key);
 
         // TODO pull out time zone converting from appointment adapter for knockout(T947938)
-        const startDate = timeZoneCalculator.createDate(targetedAdapter.startDate, { path: 'toGrid' });
-        const endDate = timeZoneCalculator.createDate(targetedAdapter.endDate, { path: 'toGrid' });
+        const startDate = this.timeZoneCalculator.createDate(targetedAdapter.startDate, { path: 'toGrid' });
+        const endDate = this.timeZoneCalculator.createDate(targetedAdapter.endDate, { path: 'toGrid' });
 
-        const formatType = format || getFormatType(startDate, endDate, targetedAdapter.allDay, this.option('currentView') !== 'month');
+        const formatType = format || getFormatType(startDate, endDate, targetedAdapter.allDay, this.currentViewType !== 'month');
 
         return {
             text: targetedAdapter.text || appointmentAdapter.text,
@@ -209,25 +208,6 @@ const subscribes = {
 
     getRenderingStrategyDirection: function() {
         return this.getRenderingStrategyInstance().getDirection();
-    },
-
-    updateAppointmentStartDate: function(options) {
-        const appointment = options.appointment;
-        const firstViewDate = this._workSpace.getStartViewDate();
-        let startDate = new Date(options.startDate);
-        const startDayHour = this._getCurrentViewOption('startDayHour');
-        let updatedStartDate;
-
-        if(this.appointmentTakesAllDay(appointment)) {
-            updatedStartDate = dateUtils.normalizeDate(startDate, firstViewDate);
-        } else {
-            if(startDate < firstViewDate) {
-                startDate = firstViewDate;
-            }
-            updatedStartDate = dateUtils.normalizeDate(options.startDate, new Date(startDate));
-        }
-
-        return dateUtils.roundDateByStartDayHour(updatedStartDate, startDayHour);
     },
 
     updateAppointmentEndDate: function(options) {

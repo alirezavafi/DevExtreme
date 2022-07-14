@@ -22,6 +22,7 @@ const STATE_FOCUSED_CLASS = 'dx-state-focused';
 const EMPTY_INPUT_CLASS = 'dx-texteditor-empty';
 const CLEAR_BUTTON_SELECTOR = '.dx-clear-button-area';
 const PLACEHOLDER_CLASS = 'dx-placeholder';
+const LABEL_CLASS = 'dx-texteditor-label';
 const INVISIBLE_STATE_CLASS = 'dx-state-invisible';
 
 const BUTTONS_CONTAINER_CLASS = 'dx-texteditor-buttons-container';
@@ -346,6 +347,25 @@ QUnit.module('general', {}, () => {
         assert.strictEqual(blurStub.callCount, 0, 'FocusOut event has not been triggered');
     });
 
+    QUnit.testInActiveWindow('text editor should be focused out after focus is moved from custom button outside of editor (T1066348)', function(assert) {
+        const focusOutStub = sinon.stub();
+
+        const $textEditor = $('#texteditor').dxTextEditor({
+            onFocusOut: focusOutStub,
+            buttons: [{ name: 'test' }]
+        });
+        const textEditor = $textEditor.dxTextEditor('instance');
+        const actionButton = textEditor.getButton('test');
+
+        textEditor.focus();
+        actionButton.focus();
+
+        $(actionButton.$element()).trigger('focusout');
+
+        assert.notOk($textEditor.hasClass(STATE_FOCUSED_CLASS), 'input is not focused');
+        assert.strictEqual(focusOutStub.callCount, 1, 'focusout was triggered');
+    });
+
     QUnit.testInActiveWindow('input should be focused even after focus from inner button move (T963822)', function(assert) {
         const $textEditor = $('#texteditor').dxTextEditor({
             buttons: [{
@@ -587,7 +607,7 @@ QUnit.module('label integration', {
             assert.strictEqual(updateModeCall.args[0], newLabelMode);
         });
 
-        QUnit.test('buttons', function(assert) {
+        QUnit.test('before buttons', function(assert) {
             this.textEditor.option('buttons', [{
                 name: 'button',
                 location: 'before',
@@ -604,6 +624,18 @@ QUnit.module('label integration', {
             assert.strictEqual(updateContainsButtonsBeforeCall.args[0], true);
         });
 
+        QUnit.test('after buttons', function(assert) {
+            this.textEditor.option('buttons', [{
+                name: 'button',
+                location: 'after',
+            }]);
+            const updateBeforeWidthCall = this.labelMock.updateBeforeWidth.getCall(0);
+            const updateContainsButtonsBeforeCall = this.labelMock.updateContainsButtonsBefore.getCall(0);
+
+            assert.strictEqual(updateBeforeWidthCall.args[0], 0);
+            assert.strictEqual(updateContainsButtonsBeforeCall.args[0], false);
+        });
+
         QUnit.test('stylingMode', function(assert) {
             this.textEditor.option('stylingMode', 'underlined');
 
@@ -616,6 +648,40 @@ QUnit.module('label integration', {
             assert.strictEqual(updateMaxWidthCall.args[0], newLabelMaxWidth);
             assert.strictEqual(updateBeforeWidthCall.args[0], newLabelBeforeWidth);
         });
+    });
+});
+
+QUnit.module('check aria-labelledby attribute', {
+    beforeEach: function() {
+        this.$textEditor = $('#texteditor');
+        this.textEditor = this.$textEditor
+            .dxTextEditor({
+                label: 'some'
+            })
+            .dxTextEditor('instance');
+        this.$input = this.$textEditor.find(`.${INPUT_CLASS}`);
+        this.$label = this.$textEditor.find(`.${LABEL_CLASS}`);
+    }
+}, () => {
+    QUnit.test('if label is defined', function(assert) {
+        const inputAttr = this.$input.attr('aria-labelledby');
+        const labelId = this.$label.attr('id');
+
+        assert.strictEqual(labelId, inputAttr);
+    });
+
+    QUnit.test('if label is not defined', function(assert) {
+        this.textEditor.option('label', '');
+        const inputAttr = this.$input.attr('aria-labelledby');
+
+        assert.notOk(inputAttr);
+    });
+
+    QUnit.test('if label mode has value "hidden"', function(assert) {
+        this.textEditor.option('labelMode', 'hidden');
+        const inputAttr = this.$input.attr('aria-labelledby');
+
+        assert.notOk(inputAttr);
     });
 });
 

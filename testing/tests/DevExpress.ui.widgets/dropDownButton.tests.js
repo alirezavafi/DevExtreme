@@ -71,6 +71,16 @@ QUnit.module('button group integration', {}, () => {
         const newButtonGroupWrapper = buttonGroup.$element().find(`.${BUTTON_GROUP_WRAPPER}`);
         assert.strictEqual(getHeight(newButtonGroupWrapper.eq(0)), 450, 'height after option change in runtime is right');
     });
+
+    QUnit.test('accessKey option should be passed to buttonGroup (T1089414)', function(assert) {
+        const accessKey = 't';
+        const dropDownButton = $('#dropDownButton').dxDropDownButton({
+            accessKey
+        }).dxDropDownButton('instance');
+
+        const buttonGroup = getButtonGroup(dropDownButton);
+        assert.strictEqual(buttonGroup.option('accessKey'), accessKey, 'accessKey is passed to buttonGroup');
+    });
 });
 
 QUnit.module('popup integration', {
@@ -371,7 +381,7 @@ QUnit.module('popup integration', {
             assert.strictEqual(overlayContentWidth, overlayWrapperWidth, 'width is correct');
         });
 
-        QUnit.test('should be equal to wrapper width if dropDownOptions.width is "100%" and container is defined', function(assert) {
+        QUnit.test('should be equal to wrapper width if dropDownOptions.width is "100%" and visualContainer is defined', function(assert) {
             const $container = $('<div>')
                 .css({ width: 150 })
                 .appendTo('#qunit-fixture');
@@ -381,7 +391,7 @@ QUnit.module('popup integration', {
                 width: 100,
                 dropDownOptions: {
                     width: '100%',
-                    container: $container
+                    visualContainer: $container
                 }
             });
 
@@ -452,7 +462,7 @@ QUnit.module('popup integration', {
             assert.roughEqual(overlayContentWidth, 450, 0.1, 'width is correct');
         });
 
-        QUnit.test('should be calculated relative to wrapper width when container is defined', function(assert) {
+        QUnit.test('should be calculated relative to wrapper width when visualContainer is defined', function(assert) {
             const $container = $('<div>')
                 .css({ width: 500 })
                 .appendTo('#qunit-fixture');
@@ -462,7 +472,7 @@ QUnit.module('popup integration', {
                 width: 300,
                 dropDownOptions: {
                     width: '150%',
-                    container: $container
+                    visualContainer: $container
                 }
             });
 

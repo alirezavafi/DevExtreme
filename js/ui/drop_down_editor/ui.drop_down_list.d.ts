@@ -27,6 +27,10 @@ import dxDropDownEditor, {
     dxDropDownEditorOptions,
 } from './ui.drop_down_editor';
 
+import {
+    SimplifiedSearchMode,
+} from '../../common';
+
 export interface SelectionChangedInfo<T = any> {
     readonly selectedItem: T;
 }
@@ -71,13 +75,11 @@ export interface dxDropDownListOptions<TComponent> extends DataExpressionMixinOp
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 itemData:object
-     * @type_function_param1_field5 itemElement:object
-     * @type_function_param1_field6 itemIndex:number | object
-     * @type_function_param1_field7 event:event
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field itemData:object
+     * @type_function_param1_field itemElement:object
+     * @type_function_param1_field itemIndex:number | object
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -86,10 +88,8 @@ export interface dxDropDownListOptions<TComponent> extends DataExpressionMixinOp
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 selectedItem:object
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field selectedItem:object
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -98,12 +98,10 @@ export interface dxDropDownListOptions<TComponent> extends DataExpressionMixinOp
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 value:object
-     * @type_function_param1_field5 previousValue:object
-     * @type_function_param1_field6 event:event
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field value:object
+     * @type_function_param1_field previousValue:object
+     * @type_function_param1_field event:event
+     * @type_function_param1_field component:this
      * @action
      * @public
      */
@@ -123,11 +121,10 @@ export interface dxDropDownListOptions<TComponent> extends DataExpressionMixinOp
     searchExpr?: string | Function | Array<string | Function>;
     /**
      * @docid
-     * @type Enums.DropDownSearchMode
      * @default "contains"
      * @public
      */
-    searchMode?: 'contains' | 'startswith';
+    searchMode?: SimplifiedSearchMode;
     /**
      * @docid
      * @default 500

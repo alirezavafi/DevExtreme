@@ -4,7 +4,6 @@ import eventsEngine from '../../events/core/events_engine';
 import { focused } from '../widget/selectors';
 import { isDefined } from '../../core/utils/type';
 import { extend } from '../../core/utils/extend';
-import { inArray } from '../../core/utils/array';
 import { each } from '../../core/utils/iterator';
 import { current, isMaterial } from '../themes';
 import devices from '../../core/devices';
@@ -291,7 +290,7 @@ const TextEditorBase = Editor.inherit({
     _clean() {
         this._buttonCollection.clean();
         this._disposePendingIndicator();
-        this._cleanLabelObservable();
+        this._unobserveLabelContainerResize();
         this._$beforeButtonsContainer = null;
         this._$afterButtonsContainer = null;
         this._$textEditorContainer = null;
@@ -444,8 +443,7 @@ const TextEditorBase = Editor.inherit({
         this._input().prop('spellcheck', this.option('spellcheck'));
     },
 
-
-    _cleanLabelObservable: function() {
+    _unobserveLabelContainerResize: function() {
         if(this._labelContainerElement) {
             resizeObserverSingleton.unobserve(this._labelContainerElement);
 
@@ -472,8 +470,12 @@ const TextEditorBase = Editor.inherit({
         this._label.updateMaxWidth(this._getLabelContainerWidth());
     },
 
+    _setLabelContainerAria: function() {
+        this.setAria('labelledby', this._label.getId(), this._getLabelContainer());
+    },
+
     _renderLabel: function() {
-        this._cleanLabelObservable();
+        this._unobserveLabelContainerResize();
 
         this._labelContainerElement = $(this._getLabelContainer()).get(0);
 
@@ -491,7 +493,9 @@ const TextEditorBase = Editor.inherit({
 
         this._label = new TextEditorLabelCreator(labelConfig);
 
-        if(this._labelContainerElement) {
+        this._setLabelContainerAria();
+
+        if(this._labelContainerElement) { // NOTE: element can be not in DOM yet in React and Vue
             resizeObserverSingleton.observe(this._labelContainerElement, this._updateLabelWidth.bind(this));
         }
     },
@@ -632,14 +636,16 @@ const TextEditorBase = Editor.inherit({
             return true;
         }
 
-        let result = this._isNestedTarget(event.relatedTarget);
+        let shouldPrevent = this._isNestedTarget(event.relatedTarget);
 
         if(event.type === 'focusin') {
-            result = result && this._isNestedTarget(event.target) && !this._isInput(event.target);
+            shouldPrevent = shouldPrevent && this._isNestedTarget(event.target) && !this._isInput(event.target);
+        } else if(!shouldPrevent) {
+            this._toggleFocusClass(false, this.$element());
         }
 
-        result && event.preventDefault();
-        return result;
+        shouldPrevent && event.preventDefault();
+        return shouldPrevent;
     },
 
     _isNestedTarget: function(target) {
@@ -726,13 +732,14 @@ const TextEditorBase = Editor.inherit({
     },
 
     _hasActiveElement: function() {
-        return this._input().is(domAdapter.getActiveElement());
+        return this._input().is(domAdapter.getActiveElement(this._input()[0]));
     },
 
     _optionChanged: function(args) {
         const { name, fullName, value } = args;
 
-        if(inArray(name.replace('on', ''), EVENTS_LIST) > -1) {
+        const eventName = name.replace('on', '');
+        if(EVENTS_LIST.includes(eventName)) {
             this._refreshEvents();
             return;
         }
@@ -764,12 +771,14 @@ const TextEditorBase = Editor.inherit({
                 break;
             case 'label':
                 this._label.updateText(value);
+                this._setLabelContainerAria();
                 break;
             case 'labelMark':
                 this._label.updateMark(value);
                 break;
             case 'labelMode':
                 this._label.updateMode(value);
+                this._setLabelContainerAria();
                 break;
             case 'width':
                 this.callBase(args);
@@ -804,7 +813,7 @@ const TextEditorBase = Editor.inherit({
                 this._renderButtonContainers();
                 this._updateButtonsStyling(this.option('stylingMode'));
                 this._updateLabelWidth();
-                this._label.updateContainsButtonsBefore(value.length !== 0);
+                this._label.updateContainsButtonsBefore(!!this._$beforeButtonsContainer);
                 break;
             case 'visible':
                 this.callBase(args);

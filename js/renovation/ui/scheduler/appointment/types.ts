@@ -2,6 +2,7 @@ import type { AppointmentCollectorTemplateData, AppointmentTemplateData } from '
 import { BaseTemplateProps, Direction } from '../types';
 
 export type ReduceType = 'head' | 'body' | 'tail';
+export type AppointmentKindType = 'allDay' | 'allDayCompact' | 'regular' | 'regularCompact';
 
 export interface AppointmentGeometry {
   empty: boolean; // TODO
@@ -14,37 +15,46 @@ export interface AppointmentGeometry {
 }
 
 export interface AppointmentData {
+  text: string;
   startDate: Date;
   endDate: Date;
-  text: string;
+  allDay?: boolean;
+  description?: string;
+  startDateTimeZone?: string;
+  endDateTimeZone?: string;
 }
 
-export interface AppointmentViewModel {
+export interface AppointmentInfo {
+  allDay: boolean;
+  direction: Direction;
+  isRecurrent: boolean;
+  appointmentReduced?: ReduceType;
+  groupIndex: number;
+  appointment: {
+    startDate: Date;
+    endDate: Date;
+  };
+  sourceAppointment: {
+    groupIndex: number;
+  };
+  dateText: string;
+}
+
+export interface IAppointmentViewModelBase {
   key: string;
+  focused?: boolean;
+}
+
+export interface AppointmentViewModel extends IAppointmentViewModelBase {
   appointment: AppointmentData;
   geometry: AppointmentGeometry;
-  info: {
-    allDay: boolean;
-    direction: Direction;
-    isRecurrent: boolean;
-    appointmentReduced?: ReduceType;
-    appointment: {
-      startDate: Date;
-      endDate: Date;
-    };
-    sourceAppointment: {
-      groupIndex: number;
-    };
-    dateText: string;
-    resourceColor?: string;
-  };
+  info: AppointmentInfo;
 }
 
-export interface OverflowIndicatorViewModel {
-  key: string;
+export interface OverflowIndicatorViewModel extends IAppointmentViewModelBase {
   isAllDay: boolean;
   isCompact: boolean;
-  color: string;
+  groupIndex: number;
   geometry: {
     top: number;
     left: number;
@@ -82,4 +92,9 @@ export interface AppointmentClickData {
 export interface ReducedIconHoverData {
   target: HTMLDivElement;
   endDate?: Date | string;
+}
+
+export interface IAppointmentFocusState {
+  index: number;
+  type: AppointmentKindType;
 }

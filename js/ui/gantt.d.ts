@@ -14,7 +14,7 @@ import {
 } from '../events/index';
 
 import {
-    Column,
+    Column as TreeListColumn,
 } from './tree_list';
 
 import Widget, {
@@ -36,6 +36,23 @@ import {
 import {
     DxPromise,
 } from '../core/utils/deferred';
+import { Skip } from '../core/index';
+
+import {
+    FirstDayOfWeek,
+    SingleMultipleOrNone,
+    ToolbarItemLocation,
+} from '../common';
+
+export type GanttPdfExportDateRange = 'all' | 'visible';
+export type GanttPdfExportMode = 'all' | 'treeList' | 'chart';
+/** @public */
+export type GanttPredefinedContextMenuItem = 'undo' | 'redo' | 'expandAll' | 'collapseAll' | 'addTask' | 'deleteTask' | 'zoomIn' | 'zoomOut' | 'deleteDependency' | 'taskDetails' | 'resourceManager';
+/** @public */
+export type GanttPredefinedToolbarItem = 'separator' | 'undo' | 'redo' | 'expandAll' | 'collapseAll' | 'addTask' | 'deleteTask' | 'zoomIn' | 'zoomOut' | 'taskDetails' | 'fullScreen' | 'resourceManager' | 'showResources' | 'showDependencies';
+export type GanttRenderScaleType = 'minutes' | 'hours' | 'sixHours' | 'days' | 'weeks' | 'months' | 'quarters' | 'years' | 'fiveYears';
+export type GanttScaleType = 'auto' | 'minutes' | 'hours' | 'sixHours' | 'days' | 'weeks' | 'months' | 'quarters' | 'years';
+export type GanttTaskTitlePosition = 'inside' | 'outside' | 'none';
 
 /** @public */
 export type ContentReadyEvent = EventInfo<dxGantt>;
@@ -180,7 +197,7 @@ export type ResourceManagerDialogShowingEvent = Cancelable & EventInfo<dxGantt> 
 
 /** @public */
 export type TaskInsertedEvent = EventInfo<dxGantt> & {
-    readonly value?: any;
+    readonly values?: any;
     readonly key: any;
 };
 
@@ -207,6 +224,15 @@ export type TaskUpdatingEvent = Cancelable & EventInfo<dxGantt> & {
     readonly newValues: any;
     readonly values: any;
     readonly key: any;
+};
+/** @public */
+export type ScaleCellPreparedEvent = InitializedEventInfo<dxGantt> & {
+    readonly scaleIndex: number;
+    readonly scaleType: GanttRenderScaleType;
+    readonly scaleElement: DxElement;
+    readonly separatorElement: DxElement;
+    readonly startDate: Date;
+    readonly endDate: Date;
 };
 
 /** @public */
@@ -244,7 +270,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
     allowSelection?: boolean;
     /**
      * @docid
-     * @type Array<dxTreeListColumn|string>
+     * @type Array<dxGanttColumn|string>
      * @default undefined
      * @public
      */
@@ -378,10 +404,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 selectedRowKey:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -390,9 +413,6 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 name:String
      * @action
      * @public
      */
@@ -401,14 +421,8 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 cancel:boolean
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 targetKey:any
-     * @type_function_param1_field6 targetType:string
-     * @type_function_param1_field7 data:any
-     * @type_function_param1_field8 items:Array<object>
+     * @type_function_param1_field event:event
+     * @type_function_param1_field items:Array<object>
      * @action
      * @public
      */
@@ -417,11 +431,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 values:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -430,11 +440,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 values:any
-     * @type_function_param1_field5 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -443,12 +449,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 values:any
-     * @type_function_param1_field6 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -457,11 +458,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 values:any
-     * @type_function_param1_field5 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -470,13 +467,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 newValues:any
-     * @type_function_param1_field6 values:any
-     * @type_function_param1_field7 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -485,11 +476,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 values:any
-     * @type_function_param1_field5 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -498,13 +485,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 newValues:any
-     * @type_function_param1_field6 values:any
-     * @type_function_param1_field7 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -513,14 +494,9 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 values:any
-     * @type_function_param1_field6 key:any
-     * @type_function_param1_field7 readOnlyFields:Array<string>
-     * @type_function_param1_field8 hiddenFields:Array<string>
+     * @type_function_param1_field component:dxGantt
+     * @type_function_param1_field readOnlyFields:Array<string>
+     * @type_function_param1_field hiddenFields:Array<string>
      * @action
      * @public
      */
@@ -529,10 +505,8 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 cancel:boolean
-     * @type_function_param1_field4 values:Array<any>
+     * @type_function_param1_field component:dxGantt
+     * @type_function_param1_field values:Array<any>
      * @action
      * @public
      */
@@ -541,11 +515,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 values:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -554,11 +524,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 values:any
-     * @type_function_param1_field5 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -567,12 +533,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 values:any
-     * @type_function_param1_field6 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -581,11 +542,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 values:any
-     * @type_function_param1_field5 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -594,11 +551,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 values:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -607,11 +560,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 values:any
-     * @type_function_param1_field5 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -620,12 +569,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 values:any
-     * @type_function_param1_field6 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -634,11 +578,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 values:any
-     * @type_function_param1_field5 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -647,11 +587,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 values:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -660,11 +596,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 values:any
-     * @type_function_param1_field5 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -673,12 +605,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 values:any
-     * @type_function_param1_field6 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -687,11 +614,7 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 values:any
-     * @type_function_param1_field5 key:any
+     * @type_function_param1_field component:dxGantt
      * @action
      * @public
      */
@@ -700,12 +623,8 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 key:any
-     * @type_function_param1_field6 data:any
+     * @type_function_param1_field component:dxGantt
+     * @type_function_param1_field event:event
      * @action
      * @public
      */
@@ -714,17 +633,23 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxGantt
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 cancel:boolean
-     * @type_function_param1_field5 event:event
-     * @type_function_param1_field6 key:any
-     * @type_function_param1_field7 data:any
+     * @type_function_param1_field component:dxGantt
+     * @type_function_param1_field event:event
      * @action
      * @public
      */
     onTaskDblClick?: ((e: TaskDblClickEvent) => void);
+    /**
+     * @docid
+     * @default null
+     * @type_function_param1 e:object
+     * @type_function_param1_field component:dxGantt
+     * @type_function_param1_field scaleType:Enums.GanttRenderScaleType
+     * @action
+     * @public
+     */
+    onScaleCellPrepared?: ((e: ScaleCellPreparedEvent) => void);
+
     /**
      * @docid
      * @default null
@@ -783,11 +708,10 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
     };
     /**
      * @docid
-     * @type Enums.GanttScaleType
      * @default "auto"
      * @public
      */
-    scaleType?: 'auto' | 'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'quarters' | 'years';
+    scaleType?: GanttScaleType;
     /**
      * @docid
      * @public
@@ -795,16 +719,14 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
     scaleTypeRange?: {
         /**
          * @docid
-         * @type Enums.GanttScaleType
          * @default "minutes"
          */
-        min?: 'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'quarters' | 'years';
+        min?: GanttScaleType;
         /**
          * @docid
-         * @type Enums.GanttScaleType
          * @default "years"
          */
-        max?: 'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'quarters' | 'years';
+        max?: GanttScaleType;
     };
     /**
      * @docid
@@ -838,18 +760,16 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
     taskListWidth?: number;
     /**
      * @docid
-     * @type Enums.GanttTaskTitlePosition
      * @default "inside"
      * @public
      */
-    taskTitlePosition?: 'inside' | 'outside' | 'none';
+    taskTitlePosition?: GanttTaskTitlePosition;
     /**
      * @docid
-     * @type Enums.FirstDayOfWeek
      * @default undefined
      * @public
      */
-    firstDayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+    firstDayOfWeek?: FirstDayOfWeek;
     /**
      * @docid
      * @default null
@@ -924,8 +844,6 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
     /**
      * @docid
      * @type_function_param2 item:object
-     * @type_function_param2_field1 start:Date
-     * @type_function_param2_field2 end:Date
      * @type_function_return string|Element|jQuery
      * @public
      */
@@ -933,7 +851,6 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
     /**
      * @docid
      * @type_function_param2 item:object
-     * @type_function_param2_field1 progress:number
      * @type_function_return string|Element|jQuery
      * @public
      */
@@ -941,13 +858,12 @@ export interface dxGanttOptions extends WidgetOptions<dxGantt> {
     /**
      * @docid
      * @type_function_param2 item:object
-     * @type_function_param2_field1 cellSize:object
-     * @type_function_param2_field2 isMilestone:boolean
-     * @type_function_param2_field3 taskData:object
-     * @type_function_param2_field4 taskHTML:object
-     * @type_function_param2_field5 taskPosition:object
-     * @type_function_param2_field6 taskResources:Array<object>
-     * @type_function_param2_field7 taskSize:object
+     * @type_function_param2_field cellSize:object
+     * @type_function_param2_field taskData:object
+     * @type_function_param2_field taskHTML:object
+     * @type_function_param2_field taskPosition:object
+     * @type_function_param2_field taskResources:Array<object>
+     * @type_function_param2_field taskSize:object
      * @type_function_return string|Element|jQuery
      * @public
      */
@@ -1146,7 +1062,6 @@ export default class dxGantt extends Widget<dxGanttOptions> {
     /**
      * @docid
      * @publicName expandAllToLevel(level)
-     * @param1 level: Number
      * @public
      */
     expandAllToLevel(level: Number): void;
@@ -1226,10 +1141,10 @@ export default class dxGantt extends Widget<dxGanttOptions> {
 export interface dxGanttToolbar {
     /**
      * @docid
-     * @type Array<dxGanttToolbarItem,Enums.GanttToolbarItem>
+     * @type Array<dxGanttToolbarItem,Enums.GanttPredefinedToolbarItem>
      * @public
      */
-    items?: Array<ToolbarItem | 'separator' | 'undo' | 'redo' | 'expandAll' | 'collapseAll' | 'addTask' | 'deleteTask' | 'zoomIn' | 'zoomOut' | 'taskDetails' | 'fullScreen' | 'resourceManager' | 'showResources' | 'showDependencies'>;
+    items?: Array<ToolbarItem | GanttPredefinedToolbarItem>;
 }
 
 /**
@@ -1246,10 +1161,10 @@ export interface dxGanttContextMenu {
     enabled?: boolean;
     /**
      * @docid
-     * @type Array<dxGanttContextMenuItem,Enums.GanttContextMenuItem>
+     * @type Array<dxGanttContextMenuItem,Enums.GanttPredefinedContextMenuItem>
      * @public
      */
-    items?: Array<ContextMenuItem | 'undo' | 'redo' | 'expandAll' | 'collapseAll' | 'addTask' | 'deleteTask' | 'zoomIn' | 'zoomOut' | 'deleteDependency' | 'taskDetails' | 'resourceManager'>;
+    items?: Array<ContextMenuItem | GanttPredefinedContextMenuItem>;
 }
 
 /**
@@ -1265,17 +1180,15 @@ export type ToolbarItem = dxGanttToolbarItem;
 export interface dxGanttToolbarItem extends dxToolbarItem {
     /**
      * @docid
-     * @type Enums.GanttToolbarItem|string
      * @public
      */
-    name?: 'separator' | 'undo' | 'redo' | 'expandAll' | 'collapseAll' | 'addTask' | 'deleteTask' | 'zoomIn' | 'zoomOut' | 'taskDetails' | 'fullScreen' | 'resourceManager' | 'toggleResources' | 'toggleDependencies' | string;
+    name?: GanttPredefinedToolbarItem | string;
     /**
      * @docid
      * @default "before"
-     * @type Enums.ToolbarItemLocation
      * @public
      */
-    location?: 'after' | 'before' | 'center';
+    location?: ToolbarItemLocation;
 }
 
 /**
@@ -1291,10 +1204,10 @@ export type ContextMenuItem = dxGanttContextMenuItem;
 export interface dxGanttContextMenuItem extends dxContextMenuItem {
     /**
      * @docid
-     * @type Enums.GanttContextMenuItem|string
+     * @type Enums.GanttPredefinedContextMenuItem|string
      * @public
      */
-    name?: 'undo' | 'redo' | 'expandAll' | 'collapseAll' | 'addTask' | 'deleteTask' | 'zoomIn' | 'zoomOut' | 'deleteDependency' | 'taskDetails' | 'resourceManager' | string;
+    name?: GanttPredefinedContextMenuItem | string;
 }
 
 /**
@@ -1352,10 +1265,9 @@ export interface dxGanttSorting {
     descendingText?: string;
     /**
      * @docid
-     * @type Enums.GanttSortingMode|string
      * @default "single"
      */
-    mode?: 'multiple' | 'none' | 'single';
+    mode?: SingleMultipleOrNone | string;
     /**
      * @docid
      * @default false
@@ -1534,3 +1446,147 @@ export type Properties = dxGanttOptions;
 
 /** @deprecated use Properties instead */
 export type Options = dxGanttOptions;
+
+/** @public */
+export type Column<TRowData = any, TKey = any> = dxGanttColumn<TRowData, TKey>;
+
+/**
+ * @namespace DevExpress.ui
+ * @deprecated Use the Column type instead
+ */
+export type dxGanttColumn<TRowData = any, TKey = any> = Skip<dxGanttColumnBlank<TRowData, TKey>, 'allowEditing' | 'allowFixing' | 'allowHiding' | 'allowReordering' | 'allowResizing' | 'allowSearch' | 'buttons' | 'columns' | 'editCellTemplate' | 'editorOptions' | 'fixed' | 'fixedPosition' | 'formItem' | 'hidingPriority' | 'isBand' | 'lookup' | 'name' | 'ownerBand' | 'renderAsync' | 'setCellValue' | 'showEditorAlways' | 'showInColumnChooser' | 'type' | 'validationRules' | 'visible' >;
+
+/**
+ * @docid dxGanttColumn
+ * @export dxGanttColumn
+ * @inherits dxTreeListColumn
+ * @namespace DevExpress.ui
+ */
+ interface dxGanttColumnBlank<TRowData = any, TKey = any> extends TreeListColumn<TRowData, TKey> {
+    /**
+     * @hidden
+     * @docid dxGanttColumn.allowEditing
+     */
+     allowEditing: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.allowFixing
+     */
+     allowFixing: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.allowHiding
+     */
+     allowHiding: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.allowReordering
+     */
+     allowReordering: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.allowResizing
+     */
+     allowResizing: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.allowSearch
+     */
+     allowSearch: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.buttons
+     */
+    buttons: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.columns
+     */
+    columns: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.editorOptions
+     */
+    editorOptions: any;
+    /**
+     * @hidden
+     * @type template
+     * @docid dxGanttColumn.editCellTemplate
+     */
+    editCellTemplate: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.fixed
+     */
+    fixed: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.fixedPosition
+     */
+    fixedPosition: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.formItem
+     */
+     formItem: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.hidingPriority
+     */
+     hidingPriority: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.isBand
+     */
+     isBand: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.lookup
+     */
+     lookup: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.name
+     */
+     name: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.ownerBand
+     */
+     ownerBand: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.renderAsync
+     */
+     renderAsync: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.setCellValue
+     */
+     setCellValue: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.showEditorAlways
+     */
+     showEditorAlways: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.showInColumnChooser
+     */
+     showInColumnChooser: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.validationRules
+     */
+     validationRules: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.visible
+     */
+     visible: any;
+    /**
+     * @hidden
+     * @docid dxGanttColumn.type
+     */
+    type: any;
+ }

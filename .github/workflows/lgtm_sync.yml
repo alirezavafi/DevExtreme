@@ -6,7 +6,7 @@ on:
 
 jobs:
   lgtm-sync:
-    runs-on: shr-ubuntu-c5-docker-cpu0d5ram1
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       # NOTE: The LGTM.com doesn't scan forks
@@ -30,7 +30,7 @@ jobs:
           sarif_file: lgtm.sarif
 
   notify:
-    runs-on: shr-ubuntu-c5-docker-cpu0d5ram1
+    runs-on: ubuntu-latest
     name: Send notifications
     needs: [lgtm-sync]
     if: always() && contains(needs.*.result, 'failure')
@@ -43,4 +43,4 @@ jobs:
           run_id: ${{github.run_id}}
           bearer_token: ${{secrets.GITHUB_TOKEN}}
           specific_repo: DevExpress/DevExtreme
-          specific_branch: 22_1
+          specific_branch: 22_2

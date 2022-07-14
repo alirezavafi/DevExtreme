@@ -8,7 +8,6 @@ import domAdapter from '../../core/dom_adapter';
 import { isPlainObject, isFunction, isDefined } from '../../core/utils/type';
 import { when } from '../../core/utils/deferred';
 import { extend } from '../../core/utils/extend';
-import { inArray } from '../../core/utils/array';
 import { each } from '../../core/utils/iterator';
 import Action from '../../core/action';
 import Guid from '../../core/guid';
@@ -127,6 +126,7 @@ const CollectionWidget = Widget.inherit({
             noDataText: messageLocalization.format('dxCollectionWidget-noDataText'),
 
             dataSource: null,
+            _dataController: null,
 
             _itemAttributes: {},
             itemTemplateProperty: 'template',
@@ -148,6 +148,7 @@ const CollectionWidget = Widget.inherit({
 
     _init: function() {
         this._compileDisplayGetter();
+        this._initDataController();
         this.callBase();
 
         this._cleanRenderedItems();
@@ -256,7 +257,7 @@ const CollectionWidget = Widget.inherit({
     _focusInHandler: function(e) {
         this.callBase.apply(this, arguments);
 
-        if(inArray(e.target, this._focusTarget()) === -1) {
+        if(!this._isFocusTarget(e.target)) {
             return;
         }
 
@@ -535,12 +536,9 @@ const CollectionWidget = Widget.inherit({
     },
 
     _loadNextPage: function() {
-        const dataSource = this._dataSource;
-
         this._expectNextPageLoading();
-        dataSource.pageIndex(1 + dataSource.pageIndex());
 
-        return dataSource.load();
+        return this._dataController.loadNextPage();
     },
 
     _expectNextPageLoading: function() {
@@ -712,7 +710,7 @@ const CollectionWidget = Widget.inherit({
             const $closestItem = $target.closest(this._itemElements());
             const $closestFocusable = this._closestFocusable($target);
 
-            if($closestItem.length && $closestFocusable && inArray($closestFocusable.get(0), this._focusTarget()) !== -1) {
+            if($closestItem.length && this._isFocusTarget($closestFocusable?.get(0))) {
                 this.option('focusedElement', getPublicElement($closestItem));
             }
         }.bind(this);
@@ -980,7 +978,7 @@ const CollectionWidget = Widget.inherit({
     _renderEmptyMessage: function(items) {
         items = items || this.option('items');
         const noDataText = this.option('noDataText');
-        const hideNoData = !noDataText || (items && items.length) || this._isDataSourceLoading();
+        const hideNoData = !noDataText || (items && items.length) || this._dataController.isLoading();
 
         if(hideNoData && this._$noData) {
             this._$noData.remove();

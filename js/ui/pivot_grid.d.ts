@@ -22,6 +22,32 @@ import Widget, {
     WidgetOptions,
 } from './widget/ui.widget';
 
+import {
+    Mode,
+    FieldChooserLayout,
+    ScrollMode,
+} from '../common';
+
+import {
+    ApplyChangesMode,
+    StateStoreType,
+} from '../common/grids';
+
+export {
+    ApplyChangesMode,
+    FieldChooserLayout,
+    Mode,
+    ScrollMode,
+    StateStoreType,
+};
+
+/** @public */
+export type PivotGridDataFieldArea = 'column' | 'row';
+/** @public */
+export type PivotGridRowHeaderLayout = 'standard' | 'tree';
+/** @public */
+export type PivotGridTotalDisplayMode = 'both' | 'columns' | 'none' | 'rows';
+
 /** @public */
 export type CellClickEvent = Cancelable & NativeEventInfo<dxPivotGrid, MouseEvent | PointerEvent> & {
     readonly area?: string;
@@ -117,11 +143,10 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
     allowSortingBySummary?: boolean;
     /**
      * @docid
-     * @type Enums.PivotGridDataFieldArea
      * @default "column"
      * @public
      */
-    dataFieldArea?: 'column' | 'row';
+    dataFieldArea?: PivotGridDataFieldArea;
     /**
      * @docid
      * @default null
@@ -175,10 +200,9 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
       allowSearch?: boolean;
       /**
        * @docid
-       * @type Enums.ApplyChangesMode
        * @default "instantly"
        */
-      applyChangesMode?: 'instantly' | 'onDemand';
+      applyChangesMode?: ApplyChangesMode;
       /**
        * @docid
        * @default true
@@ -191,10 +215,9 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
       height?: number;
       /**
        * @docid
-       * @type Enums.PivotGridFieldChooserLayout
        * @default 0
        */
-      layout?: 0 | 1 | 2;
+      layout?: FieldChooserLayout;
       /**
        * @docid
        * @default 500
@@ -413,20 +436,13 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
     /**
      * @docid
      * @type_function_param1 e:Object
-     * @type_function_param1_field4 area:string
-     * @type_function_param1_field5 cellElement:DxElement
-     * @type_function_param1_field6 cell:dxPivotGridPivotGridCell
-     * @type_function_param1_field7 rowIndex:number
-     * @type_function_param1_field8 columnIndex:number
-     * @type_function_param1_field9 columnFields:Array<PivotGridDataSourceOptions.fields>
-     * @type_function_param1_field10 rowFields:Array<PivotGridDataSourceOptions.fields>
-     * @type_function_param1_field11 dataFields:Array<PivotGridDataSourceOptions.fields>
-     * @type_function_param1_field12 event:event
-     * @type_function_param1_field13 cancel:boolean
      * @default null
-     * @type_function_param1_field1 component:dxPivotGrid
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxPivotGrid
+     * @type_function_param1_field event:event
+     * @type_function_param1_field cell:dxPivotGridPivotGridCell
+     * @type_function_param1_field columnFields:Array<PivotGridDataSourceOptions.fields>
+     * @type_function_param1_field rowFields:Array<PivotGridDataSourceOptions.fields>
+     * @type_function_param1_field dataFields:Array<PivotGridDataSourceOptions.fields>
      * @action
      * @public
      */
@@ -434,15 +450,9 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field4 area:string
-     * @type_function_param1_field5 cellElement:DxElement
-     * @type_function_param1_field6 cell:dxPivotGridPivotGridCell
-     * @type_function_param1_field7 rowIndex:number
-     * @type_function_param1_field8 columnIndex:number
+     * @type_function_param1_field cell:dxPivotGridPivotGridCell
      * @default null
-     * @type_function_param1_field1 component:dxPivotGrid
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxPivotGrid
      * @action
      * @public
      */
@@ -450,20 +460,14 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
     /**
      * @docid
      * @type_function_param1 e:Object
-     * @type_function_param1_field4 items:Array<Object>
-     * @type_function_param1_field5 area:string
-     * @type_function_param1_field6 cell:dxPivotGridPivotGridCell
-     * @type_function_param1_field7 cellElement:DxElement
-     * @type_function_param1_field8 columnIndex:number
-     * @type_function_param1_field9 rowIndex:number
-     * @type_function_param1_field10 dataFields:Array<PivotGridDataSourceOptions.fields>
-     * @type_function_param1_field11 rowFields:Array<PivotGridDataSourceOptions.fields>
-     * @type_function_param1_field12 columnFields:Array<PivotGridDataSourceOptions.fields>
-     * @type_function_param1_field13 field:PivotGridDataSourceOptions.fields
+     * @type_function_param1_field component:dxPivotGrid
+     * @type_function_param1_field cell:dxPivotGridPivotGridCell
+     * @type_function_param1_field dataFields:Array<PivotGridDataSourceOptions.fields>
+     * @type_function_param1_field rowFields:Array<PivotGridDataSourceOptions.fields>
+     * @type_function_param1_field columnFields:Array<PivotGridDataSourceOptions.fields>
+     * @type_function_param1_field field:PivotGridDataSourceOptions.fields
+     * @type_function_param1_field items:Array<Object>
      * @default null
-     * @type_function_param1_field1 component:dxPivotGrid
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
      * @action
      * @public
      */
@@ -472,9 +476,7 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxPivotGrid
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxPivotGrid
      * @action
      * @public
      * @deprecated
@@ -483,12 +485,8 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field4 fileName:string
-     * @type_function_param1_field5 cancel:boolean
      * @default null
-     * @type_function_param1_field1 component:dxPivotGrid
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxPivotGrid
      * @action
      * @public
      */
@@ -496,13 +494,7 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field3 fileName:string
-     * @type_function_param1_field4 format:string
-     * @type_function_param1_field5 data:BLOB
-     * @type_function_param1_field6 cancel:boolean
      * @default null
-     * @type_function_param1_field1 component:dxPivotGrid
-     * @type_function_param1_field2 element:DxElement
      * @action
      * @public
      * @deprecated
@@ -510,11 +502,10 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
     onFileSaving?: ((e: FileSavingEvent) => void);
     /**
      * @docid
-     * @type Enums.PivotGridRowHeadersLayout
      * @default "standard"
      * @public
      */
-    rowHeaderLayout?: 'standard' | 'tree';
+    rowHeaderLayout?: PivotGridRowHeaderLayout;
     /**
      * @docid
      * @public
@@ -522,16 +513,14 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
     scrolling?: {
       /**
        * @docid
-       * @type Enums.PivotGridScrollingMode
        * @default "standard"
        */
-      mode?: 'standard' | 'virtual';
+      mode?: ScrollMode;
       /**
        * @docid
-       * @type boolean|Enums.Mode
        * @default "auto"
        */
-      useNative?: boolean | 'auto';
+      useNative?: boolean | Mode;
     };
     /**
      * @docid
@@ -565,11 +554,10 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
     showRowTotals?: boolean;
     /**
      * @docid
-     * @type Enums.PivotGridTotalsDisplayMode
      * @default "none"
      * @public
      */
-    showTotalsPrior?: 'both' | 'columns' | 'none' | 'rows';
+    showTotalsPrior?: PivotGridTotalDisplayMode;
     /**
      * @docid
      * @public
@@ -603,10 +591,9 @@ export interface dxPivotGridOptions extends WidgetOptions<dxPivotGrid> {
       storageKey?: string;
       /**
        * @docid
-       * @type Enums.StateStoringType
        * @default "localStorage"
        */
-      type?: 'custom' | 'localStorage' | 'sessionStorage';
+      type?: StateStoreType;
     };
     /**
      * @docid
@@ -687,10 +674,9 @@ export default class dxPivotGrid extends Widget<dxPivotGridOptions> {
      * @docid
      * @publicName bindChart(chart, integrationOptions)
      * @param1 chart:string|jQuery|object
-     * @param2_field5 processCell:function(cellData)
-     * @param2_field6 customizeChart:function(chartOptions)
-     * @param2_field7 customizeSeries:function(seriesName, seriesOptions)
-     * @return function | null
+     * @param2_field processCell:function(cellData)
+     * @param2_field customizeChart:function(chartOptions)
+     * @param2_field customizeSeries:function(seriesName, seriesOptions)
      * @public
      */
     bindChart(chart: string | DxElement | any, integrationOptions: { inverted?: boolean; dataFieldsDisplayMode?: string; putDataFieldsInto?: string; alternateDataFields?: boolean; processCell?: Function; customizeChart?: Function; customizeSeries?: Function }): Function & null;
@@ -739,7 +725,6 @@ export interface dxPivotGridPivotGridCell {
     columnPath?: Array<string | number | Date>;
     /**
      * @docid
-     * @acceptValues "D" | "T" | "GT"
      * @public
      */
     columnType?: 'D' | 'T' | 'GT';
@@ -765,7 +750,6 @@ export interface dxPivotGridPivotGridCell {
     rowPath?: Array<string | number | Date>;
     /**
      * @docid
-     * @acceptValues "D" | "T" | "GT"
      * @public
      */
     rowType?: 'D' | 'T' | 'GT';
@@ -776,7 +760,6 @@ export interface dxPivotGridPivotGridCell {
     text?: string;
     /**
      * @docid
-     * @acceptValues "D" | "T" | "GT"
      * @public
      */
     type?: 'D' | 'T' | 'GT';

@@ -53,19 +53,23 @@ export class VirtualScrollingDispatcher {
 
     get outlineCount() { return this.options.getScrolling().outlineCount; }
 
-    get viewportHeight() {
-        return this.height
-            ? this.options.getViewHeight()
-            : this.options.getWindowHeight();
-    }
-
     get cellWidth() { return this._cellWidth; }
     set cellWidth(value) { this._cellWidth = value; }
 
     get viewportWidth() {
-        return this.width
-            ? this.options.getViewWidth()
+        const width = this.width && this.options.getViewWidth();
+
+        return width > 0
+            ? width
             : this.options.getWindowWidth();
+    }
+
+    get viewportHeight() {
+        const height = this.height && this.options.getViewHeight();
+
+        return height > 0
+            ? height
+            : this.options.getWindowHeight();
     }
 
     get cellCountInsideTopVirtualRow() { return this.verticalScrollingState?.virtualItemCountBefore || 0; }
@@ -639,7 +643,7 @@ class HorizontalVirtualScrolling extends VirtualScrollingBase {
 export class VirtualScrollingRenderer {
     constructor(workspace) {
         this._workspace = workspace;
-        this._renderAppointmentTimeout = null;
+        this._renderAppointmentTimeoutID = null;
     }
 
     getRenderTimeout() {
@@ -664,9 +668,9 @@ export class VirtualScrollingRenderer {
 
         if(renderTimeout >= 0) {
 
-            clearTimeout(this._renderAppointmentTimeout);
+            clearTimeout(this._renderAppointmentTimeoutID);
 
-            this._renderAppointmentTimeout = setTimeout(
+            this._renderAppointmentTimeoutID = setTimeout(
                 () => this.workspace.updateAppointments(),
                 renderTimeout
             );

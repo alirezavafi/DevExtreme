@@ -3,7 +3,6 @@ import devices from '../../core/devices';
 import { getPublicElement } from '../../core/element';
 import $ from '../../core/renderer';
 import { EmptyTemplate } from '../../core/templates/empty_template';
-import { inArray } from '../../core/utils/array';
 import browser from '../../core/utils/browser';
 import { noop } from '../../core/utils/common';
 import { extend } from '../../core/utils/extend';
@@ -31,6 +30,7 @@ import Overlay from '../overlay/ui.overlay';
 import { isMaterial, current as currentTheme } from '../themes';
 import '../toolbar/ui.toolbar.base';
 import resizeObserverSingleton from '../../core/resize_observer';
+import * as zIndexPool from '../overlay/z_index';
 import { PopupPositionController } from './popup_position_controller';
 
 const window = getWindow();
@@ -89,7 +89,7 @@ const getButtonPlace = name => {
                 location = 'after';
                 break;
         }
-    } else if(platform === 'android' && device.version && parseInt(device.version[0]) > 4) {
+    } else if(platform === 'android') {
         switch(name) {
             case 'cancel':
                 location = 'after';
@@ -109,10 +109,10 @@ const getButtonPlace = name => {
 const Popup = Overlay.inherit({
     _supportedKeys: function() {
         return extend(this.callBase(), {
-            upArrow: (e) => { this._drag.moveUp(e); },
-            downArrow: (e) => { this._drag.moveDown(e); },
-            leftArrow: (e) => { this._drag.moveLeft(e); },
-            rightArrow: (e) => { this._drag.moveRight(e); }
+            upArrow: (e) => { this._drag?.moveUp(e); },
+            downArrow: (e) => { this._drag?.moveDown(e); },
+            leftArrow: (e) => { this._drag?.moveLeft(e); },
+            rightArrow: (e) => { this._drag?.moveRight(e); }
         });
     },
 
@@ -497,7 +497,7 @@ const Popup = Overlay.inherit({
         const that = this;
         const itemType = data.shortcut;
 
-        if(inArray(itemType, ALLOWED_TOOLBAR_ITEM_ALIASES) < 0) {
+        if(!ALLOWED_TOOLBAR_ITEM_ALIASES.includes(itemType)) {
             return false;
         }
 
@@ -554,7 +554,7 @@ const Popup = Overlay.inherit({
         each(aliases, (_, alias) => {
             const className = POPUP_CLASS + '-' + alias;
 
-            if(inArray(className, this._toolbarItemClasses) >= 0) {
+            if(this._toolbarItemClasses.includes(className)) {
                 this.$wrapper().addClass(className + '-visible');
                 this._$bottom.addClass(className);
             } else {
@@ -562,6 +562,19 @@ const Popup = Overlay.inherit({
                 this._$bottom.removeClass(className);
             }
         });
+    },
+
+    _toggleFocusClass(isFocused, $element) {
+        this.callBase(isFocused, $element);
+
+        if(isFocused && !zIndexPool.isLastZIndexInStack(this._zIndex)) {
+            const zIndex = zIndexPool.create(this._zIndexInitValue());
+            zIndexPool.remove(this._zIndex);
+            this._zIndex = zIndex;
+
+            this._$wrapper.css('zIndex', zIndex);
+            this._$content.css('zIndex', zIndex);
+        }
     },
 
     _getPositionControllerConfig() {
@@ -685,7 +698,8 @@ const Popup = Overlay.inherit({
             },
             minHeight: 100,
             minWidth: 100,
-            area: this._positionController.$dragResizeContainer
+            area: this._positionController.$dragResizeContainer,
+            keepAspectRatio: false
         });
     },
 
@@ -756,7 +770,7 @@ const Popup = Overlay.inherit({
                 };
             }
         } else {
-            const container = $(this._positionController._$wrapperCoveredElement).get(0);
+            const container = $(this._positionController.$visualContainer).get(0);
             const maxHeightValue = addOffsetToMaxHeight(contentMaxHeight, -toolbarsAndVerticalOffsetsHeight, container);
             const minHeightValue = addOffsetToMinHeight(contentMinHeight, -toolbarsAndVerticalOffsetsHeight, container);
 

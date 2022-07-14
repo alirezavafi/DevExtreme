@@ -112,6 +112,7 @@ export const VirtualScrollController = Class.inherit((function() {
             this._viewportItemSize = 20;
             this._viewportItemIndex = 0;
             this._position = 0;
+            this._isScrollingBack = false;
             this._contentSize = 0;
             this._itemSizes = {};
             this._sizeRatio = 1;
@@ -217,12 +218,16 @@ export const VirtualScrollController = Class.inherit((function() {
         },
 
         isScrollingBack: function() {
-            return this._position < this._prevPosition;
+            return this._isScrollingBack;
         },
 
         _setViewportPositionCore: function(position) {
-            this._prevPosition = this._position || 0;
+            const prevPosition = this._position || 0;
             this._position = position;
+
+            if(prevPosition !== this._position) {
+                this._isScrollingBack = this._position < prevPosition;
+            }
 
             const itemIndex = this.getItemIndexByPosition();
             const result = this.setViewportItemIndex(itemIndex);
@@ -354,7 +359,8 @@ export const VirtualScrollController = Class.inherit((function() {
         getViewportParams: function() {
             const virtualMode = this.option('scrolling.mode') === SCROLLING_MODE_VIRTUAL;
             const totalItemsCount = this._dataOptions.totalItemsCount();
-            const topIndex = this._viewportItemIndex;
+            const hasKnownLastPage = this._dataOptions.hasKnownLastPage();
+            const topIndex = hasKnownLastPage && this._viewportItemIndex > totalItemsCount ? totalItemsCount : this._viewportItemIndex;
             const bottomIndex = this._viewportSize + topIndex;
             const maxGap = this.option('scrolling.prerenderedRowChunkSize') || 1;
             const isScrollingBack = this.isScrollingBack();

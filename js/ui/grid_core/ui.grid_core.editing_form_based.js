@@ -9,6 +9,7 @@ import Button from '../button';
 import devices from '../../core/devices';
 import Form from '../form';
 import { Deferred } from '../../core/utils/deferred';
+import { equalByValue } from '../../core/utils/common';
 import Scrollable from '../scroll_view/ui.scrollable';
 import Popup from '../popup';
 import {
@@ -25,6 +26,7 @@ const isRenovatedScrollable = !!Scrollable.IS_RENOVATED_WIDGET;
 
 const EDIT_FORM_ITEM_CLASS = 'edit-form-item';
 const EDIT_POPUP_CLASS = 'edit-popup';
+const EDIT_POPUP_FORM_CLASS = 'edit-popup-form';
 const FOCUSABLE_ELEMENT_CLASS = isRenovatedScrollable ? 'dx-scrollable' : 'dx-scrollable-container';
 const BUTTON_CLASS = 'dx-button';
 
@@ -96,10 +98,13 @@ export const editingFormBasedModule = {
                 },
 
                 _handleDataChanged: function(args) {
-                    const editForm = this._editForm;
+                    if(this.isPopupEditMode()) {
+                        const editRowKey = this.option('editing.editRowKey');
+                        const hasEditRow = args?.items?.some((item) => equalByValue(item.key, editRowKey));
 
-                    if(args.changeType === 'refresh' && this.isPopupEditMode() && editForm?.option('visible')) {
-                        this._repaintEditPopup();
+                        if(args.changeType === 'refresh' || hasEditRow) {
+                            this._repaintEditPopup();
+                        }
                     }
 
                     this.callBase.apply(this, arguments);
@@ -135,6 +140,7 @@ export const editingFormBasedModule = {
                     if(this.isPopupEditMode()) {
                         if(this.option('repaintChangesOnly')) {
                             row.update?.(row);
+                            this._rowsView.renderDelayedTemplates();
                         } else if(editForm) {
                             this._updateEditFormDeferred = new Deferred().done(() => editForm.repaint());
                             if(!this._updateLockCount) {
@@ -189,6 +195,7 @@ export const editingFormBasedModule = {
                     const row = this.component.getVisibleRows()[rowIndex];
                     const templateOptions = {
                         row: row,
+                        values: row.values,
                         rowType: row.rowType,
                         key: row.key,
                         rowIndex
@@ -202,7 +209,7 @@ export const editingFormBasedModule = {
 
                         this._$popupContent = $(scrollable.content());
 
-                        formTemplate(this._$popupContent, templateOptions, { renderFormOnly: true });
+                        formTemplate(this._$popupContent, templateOptions, { isPopupForm: true });
                         this._rowsView.renderDelayedTemplates();
                     };
                 },
@@ -405,18 +412,24 @@ export const editingFormBasedModule = {
                     return ($container, detailOptions, options) => {
                         const editFormOptions = this.option(EDITING_FORM_OPTION_NAME);
                         const baseEditFormOptions = this.getEditFormOptions(detailOptions);
+                        const $formContainer = $('<div>').appendTo($container);
+                        const isPopupForm = options?.isPopupForm;
 
                         this._firstFormItem = undefined;
 
-                        this._editForm = this._createComponent($('<div>').appendTo($container), Form, extend({}, editFormOptions, baseEditFormOptions));
+                        if(isPopupForm) {
+                            $formContainer.addClass(this.addWidgetPrefix(EDIT_POPUP_FORM_CLASS));
+                        }
+                        this._editForm = this._createComponent($formContainer, Form, extend({}, editFormOptions, baseEditFormOptions));
 
-                        if(!options?.renderFormOnly) {
+                        if(!isPopupForm) {
                             const $buttonsContainer = $('<div>').addClass(this.addWidgetPrefix(FORM_BUTTONS_CONTAINER_CLASS)).appendTo($container);
                             this._createComponent($('<div>').appendTo($buttonsContainer), Button, this._getSaveButtonConfig());
                             this._createComponent($('<div>').appendTo($buttonsContainer), Button, this._getCancelButtonConfig());
                         }
 
                         this._editForm.on('contentReady', () => {
+                            this._rowsView.renderDelayedTemplates();
                             this._editPopup?.repaint();
                         });
                     };
@@ -446,11 +459,13 @@ export const editingFormBasedModule = {
                     this.callBase.apply(this, arguments);
                 },
 
-                _editRowFromOptionChangedCore: function(rowIndices, rowIndex, oldRowIndex) {
-                    if(this.isPopupEditMode()) {
+                _editRowFromOptionChangedCore: function(rowIndices, rowIndex) {
+                    const isPopupEditMode = this.isPopupEditMode();
+
+                    this.callBase(rowIndices, rowIndex, isPopupEditMode);
+
+                    if(isPopupEditMode) {
                         this._showEditPopup(rowIndex);
-                    } else {
-                        this.callBase.apply(this, arguments);
                     }
                 }
             },
@@ -459,6 +474,14 @@ export const editingFormBasedModule = {
                     if(this._editingController.isFormEditMode()) {
                         item.rowType = 'detail';
                     }
+                },
+
+                _getChangedColumnIndices: function(oldItem, newItem, visibleRowIndex, isLiveUpdate) {
+                    if(isLiveUpdate === false && newItem.isEditing && this._editingController.isFormEditMode()) {
+                        return;
+                    }
+
+                    return this.callBase.apply(this, arguments);
                 }
             }
         },

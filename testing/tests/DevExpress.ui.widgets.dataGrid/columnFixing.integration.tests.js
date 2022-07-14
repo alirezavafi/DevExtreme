@@ -637,4 +637,59 @@ QUnit.module('Fixed columns', baseModuleConfig, () => {
         // assert
         assert.equal(dataGrid.getScrollable().scrollTop(), 50, 'scroll top on mousewheel');
     });
+
+    QUnit.test('Column should be fixed on column fixed option change inside onContentReady if scrolling mode is virtual (T1066060)', function(assert) {
+        // arrange, act
+        const dataGrid = createDataGrid({
+            dataSource: [{
+                ID: 1,
+                FirstName: 'John'
+            }],
+            scrolling: {
+                mode: 'virtual',
+            },
+            columnFixing: {
+                enabled: true
+            },
+            selection: {
+                mode: 'multiple'
+            },
+            onContentReady: function(e) {
+                e.component.columnOption(0, 'fixed', true);
+            },
+        });
+        this.clock.tick();
+
+        // act
+        const $rows = $(dataGrid.getRowElement(0));
+        assert.equal($rows.eq(1).children().eq(1).text(), '1');
+    });
+
+    // Regression after T1090735
+    QUnit.test('The fixed cell value should not be empty when columns are generated from data and scrolling.columnRenderingMode is \'virtual\'', function(assert) {
+        // arrange, act
+        const data = {};
+
+        for(let i = 1; i <= 50; i++) {
+            data[`field${i}`] = i;
+        }
+
+        const dataGrid = $('#dataGrid').dxDataGrid({
+            width: 900,
+            columnWidth: 100,
+            dataSource: [data],
+            customizeColumns: function(columns) {
+                columns[0].fixed = true;
+            },
+            scrolling: {
+                columnRenderingMode: 'virtual',
+            }
+        }).dxDataGrid('instance');
+
+        this.clock.tick(100);
+
+        // assert
+        const $fixedCell = $(dataGrid.getCellElement(0, 0));
+        assert.strictEqual($fixedCell.text(), '1', 'fixed cell value');
+    });
 });

@@ -427,8 +427,13 @@
       & > tr > td {
         vertical-align: top;
 
-        &:first-child {
+        &:first-child,
+        &.dx-first-child {
           border-left: 0;
+        }
+
+        &.dx-last-child {
+          border-right: 0;
         }
 
         &.dx-#{$widget-name}-group-space {
@@ -859,6 +864,10 @@
 
       &.dx-scrollable-container {
         width: auto;
+      }
+
+      &.dx-#{$widget-name}-content-fixed.dx-scrollable-container {
+        height: auto;
       }
     }
 

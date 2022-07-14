@@ -6,7 +6,6 @@ import { ensureDefined } from '../../core/utils/common';
 import config from '../../core/config';
 import { isDefined, isEmptyObject, isObject, isString } from '../../core/utils/type';
 import { each } from '../../core/utils/iterator';
-import { inArray } from '../../core/utils/array';
 import { extend } from '../../core/utils/extend';
 import { triggerResizeEvent, triggerShownEvent } from '../../events/visibility_change';
 import { getPublicElement } from '../../core/element';
@@ -549,7 +548,7 @@ const Form = Widget.inherit({
             this._itemsRunTimeInfo && this._itemsRunTimeInfo.extendRunTimeItemInfoByKey(item.guid, { layoutManager });
 
             colCount = layoutManager._getColCount();
-            if(inArray(colCount, this._groupsColCount) === -1) {
+            if(!this._groupsColCount.includes(colCount)) {
                 this._groupsColCount.push(colCount);
             }
             $group.addClass(GROUP_COL_COUNT_CLASS + colCount);
@@ -578,6 +577,9 @@ const Form = Widget.inherit({
                 const nestedItemsRunTimeInfo = component.getItemsRunTimeInfo();
                 this._itemsRunTimeInfo.removeItemsByItems(nestedItemsRunTimeInfo);
             },
+            onFieldItemRendered: () => {
+                this._validationSummary?.refreshValidationGroup();
+            }
         });
     },
 
@@ -720,13 +722,6 @@ const Form = Widget.inherit({
                 this._rootLayoutManager.option(args.name, args.value);
                 this._alignLabels(this._rootLayoutManager, this._rootLayoutManager.isSingleColumnMode());
                 break;
-            case 'visible':
-                this.callBase(args);
-
-                if(args.value) {
-                    triggerShownEvent(this.$element());
-                }
-                break;
             case 'validationGroup':
                 ValidationEngine.removeGroup(args.previousValue || this);
                 this._invalidate();
@@ -792,7 +787,7 @@ const Form = Widget.inherit({
         if(ITEM_OPTIONS_FOR_VALIDATION_UPDATING.indexOf(optionName) > -1) {
             ValidationEngine.addGroup(this._getValidationGroup());
             if(this.option('showValidationSummary')) {
-                this._validationSummary && this._validationSummary._initGroupRegistration();
+                this._validationSummary?.refreshValidationGroup();
             }
         }
     },

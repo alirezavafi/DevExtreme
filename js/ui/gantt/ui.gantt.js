@@ -1,6 +1,6 @@
 import { getHeight } from '../../core/utils/size';
 import $ from '../../core/renderer';
-import { compileGetter, compileSetter } from '../../core/utils/data';
+import { compileGetter } from '../../core/utils/data';
 import { extend } from '../../core/utils/extend';
 import { getWindow } from '../../core/utils/window';
 import { isDefined } from '../../core/utils/type';
@@ -91,6 +91,18 @@ class Gantt extends Widget {
         this._isGanttRendered = false;
         super._refresh();
     }
+    _dimensionChanged() {
+        this._ganttView?._onDimensionChanged();
+    }
+    _visibilityChanged(visible) {
+        if(visible) {
+            this._refreshGantt();
+        }
+    }
+    _refreshGantt() {
+        this._refreshDataSources();
+        this._refresh();
+    }
     _refreshDataSources() {
         this._refreshDataSource(GANTT_TASKS);
         this._refreshDataSource(GANTT_DEPENDENCIES);
@@ -170,6 +182,7 @@ class Gantt extends Widget {
             onScroll: (e) => { this._ganttTreeList.scrollBy(e.scrollTop); },
             onDialogShowing: this._showDialog.bind(this),
             onPopupMenuShowing: this._showPopupMenu.bind(this),
+            onPopupMenuHiding: this._hidePopupMenu.bind(this),
             onExpandAll: this._expandAll.bind(this),
             onCollapseAll: this._collapseAll.bind(this),
             modelChangesListener: ModelChangesListener.create(this),
@@ -285,13 +298,11 @@ class Gantt extends Widget {
             });
         }
     }
-    _onRecordUpdated(optionName, key, fieldName, value) {
+    _onRecordUpdated(optionName, key, values) {
         const dataOption = this[`_${optionName}Option`];
         const isTaskUpdated = optionName === GANTT_TASKS;
         if(dataOption) {
-            const setter = compileSetter(this.option(`${optionName}.${fieldName}Expr`));
-            const data = {};
-            setter(data, value);
+            const data = this._mappingHelper.convertCoreToMappedData(optionName, values);
             const hasCustomFieldsData = isTaskUpdated && this._customFieldsManager.cache.hasData(key);
             if(hasCustomFieldsData) {
                 this._customFieldsManager.addCustomFieldsDataFromCache(key, data);
@@ -319,7 +330,8 @@ class Gantt extends Widget {
         if(!this.isSieving) {
             const setters = GanttHelper.compileSettersByOption(this.option(GANTT_TASKS));
             const treeDataSource = this._customFieldsManager.appendCustomFields(data.map(GanttHelper.prepareSetterMapHandler(setters)));
-            this._ganttTreeList?.setOption('dataSource', treeDataSource);
+            // split threads for treelist filter|sort and datasource update (T1082108)
+            setTimeout(() => this._ganttTreeList?.setDataSource(treeDataSource));
         }
         this.isSieving = false;
     }
@@ -389,6 +401,9 @@ class Gantt extends Widget {
             }
         }
     }
+    _hidePopupMenu() {
+        this._contextMenuBar.hide();
+    }
 
     _getLoadPanel() {
         if(!this._loadPanel) {
@@ -403,6 +418,11 @@ class Gantt extends Widget {
 
     _getTaskKeyGetter() {
         return compileGetter(this.option(`${GANTT_TASKS}.keyExpr`));
+    }
+    _findTaskByKey(key) {
+        const tasks = this._tasksOption?._getItems();
+        const keyGetter = this._getTaskKeyGetter();
+        return tasks.find(t => keyGetter(t) === key);
     }
     _setGanttViewOption(optionName, value) {
         this._ganttView && this._ganttView.option(optionName, value);
@@ -596,8 +616,7 @@ class Gantt extends Widget {
     refresh() {
         return new Promise((resolve, reject) => {
             try {
-                this._refreshDataSources();
-                this._refresh();
+                this._refreshGantt();
                 resolve();
             } catch(e) {
                 reject(e.message);
@@ -762,6 +781,9 @@ class Gantt extends Widget {
                 break;
             case 'onContextMenuPreparing':
                 this._actionsManager?.createContextMenuPreparingAction();
+                break;
+            case 'onScaleCellPrepared':
+                this._actionsManager?.createScaleCellPreparedAction();
                 break;
             case 'allowSelection':
                 this._ganttTreeList?.setOption('selection.mode', GanttHelper.getSelectionMode(args.value));

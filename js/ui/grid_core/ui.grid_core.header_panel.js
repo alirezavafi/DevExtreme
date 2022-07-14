@@ -4,14 +4,14 @@ import { ColumnsView } from './ui.grid_core.columns_view';
 import { noop } from '../../core/utils/common';
 import { isDefined, isString } from '../../core/utils/type';
 import messageLocalization from '../../localization/message';
-
-import '../drop_down_menu';
 import { extend } from '../../core/utils/extend';
 import { getPathParts } from '../../core/utils/data';
 const HEADER_PANEL_CLASS = 'header-panel';
 const TOOLBAR_BUTTON_CLASS = 'toolbar-button';
 
 const TOOLBAR_ARIA_LABEL = '-ariaToolbar';
+
+const DEFAULT_TOOLBAR_ITEM_NAMES = ['addRowButton', 'applyFilterButton', 'columnChooserButton', 'exportButton', 'groupPanel', 'revertButton', 'saveButton', 'searchPanel'];
 
 const HeaderPanel = ColumnsView.inherit({
     _getToolbarItems: function() {
@@ -60,6 +60,12 @@ const HeaderPanel = ColumnsView.inherit({
     },
 
     _normalizeToolbarItems(defaultItems, userItems) {
+        defaultItems.forEach(button => {
+            if(!DEFAULT_TOOLBAR_ITEM_NAMES.includes(button.name)) {
+                throw new Error(`Default toolbar item '${button.name}' is not added to DEFAULT_TOOLBAR_ITEM_NAMES`);
+            }
+        });
+
         const defaultProps = {
             location: 'after',
         };
@@ -80,18 +86,15 @@ const HeaderPanel = ColumnsView.inherit({
         });
 
         const normalizedItems = userItems.map(button => {
-            let needHideButton = false;
-
             if(isString(button)) {
                 button = { name: button };
-                needHideButton = true;
             }
 
             if(isDefined(button.name)) {
                 if(isDefined(defaultButtonsByNames[button.name])) {
                     button = extend(true, {}, defaultButtonsByNames[button.name], button);
-                } else if(needHideButton) {
-                    button.visible = false;
+                } else if(DEFAULT_TOOLBAR_ITEM_NAMES.includes(button.name)) {
+                    button = { ...button, visible: false };
                 }
             }
 

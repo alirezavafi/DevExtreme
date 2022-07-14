@@ -18,6 +18,16 @@ import Widget, {
     WidgetOptions,
 } from './widget/ui.widget';
 
+import {
+    ButtonType,
+    ButtonStyle,
+} from '../common';
+
+export {
+    ButtonType,
+    ButtonStyle,
+};
+
 /** @public */
 export type ClickEvent = NativeEventInfo<dxButton, KeyboardEvent | MouseEvent | PointerEvent> & {
     validationGroup?: any;
@@ -74,28 +84,23 @@ export interface dxButtonOptions extends WidgetOptions<dxButton> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 validationGroup:object
-     * @type_function_param1_field1 component:dxButton
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field event:event
+     * @type_function_param1_field validationGroup:object
+     * @type_function_param1_field component:dxButton
      * @action
      * @public
      */
     onClick?: ((e: ClickEvent) => void);
     /**
      * @docid
-     * @type Enums.ButtonStylingMode
      * @default 'contained'
      * @public
      */
-    stylingMode?: 'text' | 'outlined' | 'contained';
+    stylingMode?: ButtonStyle;
     /**
      * @docid
      * @default "content"
      * @type_function_param1 buttonData:object
-     * @type_function_param1_field1 text:string
-     * @type_function_param1_field2 icon:string
      * @type_function_return string|Element|jQuery
      * @public
      */
@@ -108,11 +113,10 @@ export interface dxButtonOptions extends WidgetOptions<dxButton> {
     text?: string;
     /**
      * @docid
-     * @type Enums.ButtonType
      * @default 'normal'
      * @public
      */
-    type?: 'back' | 'danger' | 'default' | 'normal' | 'success';
+    type?: ButtonType;
     /**
      * @docid
      * @default false

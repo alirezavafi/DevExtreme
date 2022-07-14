@@ -1,5 +1,4 @@
 import {
-  CSSAttributes,
   Component,
   ComponentBindings,
   JSXComponent,
@@ -9,6 +8,10 @@ import {
   RefObject,
   Event,
   ForwardRef,
+  Consumer,
+  InternalState,
+  Effect,
+  CSSAttributes,
 } from '@devextreme-generator/declarations';
 import {
   AppointmentTemplateProps,
@@ -16,11 +19,14 @@ import {
   AppointmentClickData,
   ReducedIconHoverData,
 } from './types';
-import { getAppointmentStyles } from './utils';
+import { getAppointmentStyles, mergeStylesWithColor } from './utils';
 import { AppointmentContent } from './content/layout';
 import { Widget } from '../../common/widget';
 import { combineClasses } from '../../../utils/combine_classes';
 import type { AppointmentTemplateData } from '../../../../ui/scheduler';
+import { getAppointmentColor } from '../resources/utils';
+import { AppointmentsContext, IAppointmentContext } from '../appointments_context';
+import { EffectReturn } from '../../../utils/effect_return';
 
 export const viewFunction = ({
   text,
@@ -44,12 +50,18 @@ export const viewFunction = ({
   },
 }: Appointment): JSX.Element => (
   <Widget
+    focusStateEnabled
     onClick={onItemClick}
     rootElementRef={ref}
     style={styles}
     classes={classes}
     hint={text}
-    {...{ role: 'button' }}
+    {
+      ...{
+        role: 'button',
+        'data-index': index,
+      }
+    }
   >
     <AppointmentContent
       text={text}
@@ -75,23 +87,45 @@ export class AppointmentProps {
 
   @OneWay() hideReducedIconTooltip!: () => void;
 
+  @OneWay() groups!: string[];
+
   @Template() appointmentTemplate?: JSXTemplate<AppointmentTemplateProps>;
 
   @Event() onItemClick!: (e: AppointmentClickData) => void;
+
+  @Event() onItemDoubleClick!: (e: AppointmentClickData) => void;
 }
 
 @Component({
   defaultOptionRules: null,
   view: viewFunction,
 })
-export class Appointment extends JSXComponent<AppointmentProps, 'viewModel' | 'onItemClick' | 'showReducedIconTooltip' | 'hideReducedIconTooltip'>() {
-  @ForwardRef() ref!: RefObject<HTMLDivElement>;
+export class Appointment extends JSXComponent<
+AppointmentProps,
+'viewModel' | 'onItemClick' | 'onItemDoubleClick' |
+'showReducedIconTooltip' | 'hideReducedIconTooltip' | 'groups'
+>() {
+  @Consumer(AppointmentsContext)
+  appointmentsContextValue!: IAppointmentContext;
 
-  get text(): string { return this.props.viewModel.appointment.text; }
+  @ForwardRef()
+  ref!: RefObject<HTMLDivElement>;
 
-  get styles(): CSSAttributes {
+  @InternalState()
+  color?: string;
+
+  get appointmentStyles(): CSSAttributes | undefined {
     return getAppointmentStyles(this.props.viewModel);
   }
+
+  get styles(): CSSAttributes | undefined {
+    return mergeStylesWithColor(
+      this.color,
+      this.appointmentStyles,
+    );
+  }
+
+  get text(): string { return this.props.viewModel.appointment.text; }
 
   get isReduced(): boolean {
     const { appointmentReduced } = this.props.viewModel.info;
@@ -100,14 +134,18 @@ export class Appointment extends JSXComponent<AppointmentProps, 'viewModel' | 'o
 
   get classes(): string {
     const {
-      direction,
-      isRecurrent,
-      allDay,
-      appointmentReduced,
-    } = this.props.viewModel.info;
+      focused,
+      info: {
+        direction,
+        isRecurrent,
+        allDay,
+        appointmentReduced,
+      },
+    } = this.props.viewModel;
     const isVerticalDirection = direction === 'vertical';
 
     return combineClasses({
+      'dx-state-focused': !!focused,
       'dx-scheduler-appointment': true,
       'dx-scheduler-appointment-horizontal': !isVerticalDirection,
       'dx-scheduler-appointment-vertical': isVerticalDirection,
@@ -129,6 +167,38 @@ export class Appointment extends JSXComponent<AppointmentProps, 'viewModel' | 'o
     };
   }
 
+  @Effect()
+  updateStylesEffect(): void {
+    const { viewModel } = this.props;
+    const groupIndex = viewModel.info.groupIndex ?? 0;
+    const { appointment } = viewModel;
+
+    getAppointmentColor({
+      resources: this.appointmentsContextValue.resources,
+      resourceLoaderMap: this.appointmentsContextValue.resourceLoaderMap,
+      resourcesDataAccessors: this.appointmentsContextValue.dataAccessors.resources,
+      loadedResources: this.appointmentsContextValue.loadedResources,
+    }, {
+      itemData: appointment,
+      groupIndex,
+      groups: this.props.groups,
+    })
+      .then((color) => { this.color = color; })
+      .catch(() => '');
+  }
+
+  @Effect({ run: 'once' })
+  bindDoubleClickEffect(): EffectReturn {
+    /* istanbul ignore next: Tested */
+    const onDoubleClick = (): void => this.onItemDoubleClick();
+
+    this.ref.current?.addEventListener('dblclick', onDoubleClick);
+
+    return (): void => {
+      this.ref.current?.removeEventListener('dblclick', onDoubleClick);
+    };
+  }
+
   onItemClick(): void {
     const e = {
       data: [this.props.viewModel],
@@ -137,5 +207,15 @@ export class Appointment extends JSXComponent<AppointmentProps, 'viewModel' | 'o
     };
 
     this.props.onItemClick(e);
+  }
+
+  onItemDoubleClick(): void {
+    const e = {
+      data: [this.props.viewModel],
+      target: this.ref.current as HTMLDivElement,
+      index: this.props.index,
+    };
+
+    this.props.onItemDoubleClick(e);
   }
 }

@@ -24,6 +24,18 @@ import Widget, {
     WidgetOptions,
 } from './widget/ui.widget';
 
+import {
+    ButtonType,
+    ButtonStyle,
+    SingleMultipleOrNone,
+} from '../common';
+
+export {
+    ButtonType,
+    ButtonStyle,
+    SingleMultipleOrNone,
+};
+
 /** @public */
 export type ContentReadyEvent = EventInfo<dxButtonGroup>;
 
@@ -83,13 +95,9 @@ export interface dxButtonGroupOptions extends WidgetOptions<dxButtonGroup> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxButtonGroup
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 itemData:object
-     * @type_function_param1_field5 itemElement:DxElement
-     * @type_function_param1_field6 itemIndex:number
-     * @type_function_param1_field7 event:event
+     * @type_function_param1_field component:dxButtonGroup
+     * @type_function_param1_field itemData:object
+     * @type_function_param1_field event:event
      * @action
      * @public
      */
@@ -98,12 +106,9 @@ export interface dxButtonGroupOptions extends WidgetOptions<dxButtonGroup> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxButtonGroup
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 value:any
-     * @type_function_param1_field4 addedItems:array<any>
-     * @type_function_param1_field5 removedItems:array<any>
+     * @type_function_param1_field component:dxButtonGroup
+     * @type_function_param1_field addedItems:array<any>
+     * @type_function_param1_field removedItems:array<any>
      * @action
      * @public
      */
@@ -122,18 +127,16 @@ export interface dxButtonGroupOptions extends WidgetOptions<dxButtonGroup> {
     selectedItems?: Array<any>;
     /**
      * @docid
-     * @type Enums.ButtonGroupSelectionMode
      * @default 'single'
      * @public
      */
-    selectionMode?: 'multiple' | 'single' | 'none';
+    selectionMode?: SingleMultipleOrNone;
     /**
      * @docid
-     * @type Enums.ButtonStylingMode
      * @default 'contained'
      * @public
      */
-    stylingMode?: 'text' | 'outlined' | 'contained';
+    stylingMode?: ButtonStyle;
 }
 /**
  * @docid
@@ -166,11 +169,10 @@ export interface dxButtonGroupItem extends CollectionWidgetItem {
     icon?: string;
     /**
      * @docid
-     * @type Enums.ButtonType
      * @default 'normal'
      * @public
      */
-    type?: 'back' | 'danger' | 'default' | 'normal' | 'success';
+    type?: ButtonType;
 
     /**
      * @docid

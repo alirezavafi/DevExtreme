@@ -41,6 +41,7 @@ const SELECT_ALL_CHECKBOX_CLASS = 'dx-list-select-all-checkbox';
 const POPUP_DONE_BUTTON_CLASS = 'dx-popup-done';
 const TEXTBOX_CLASS = 'dx-texteditor-input';
 const EMPTY_INPUT_CLASS = 'dx-texteditor-empty';
+const DROP_DOWN_EDITOR_INPUT_WRAPPER = 'dx-dropdowneditor-input-wrapper';
 const TAGBOX_TAG_CONTAINER_CLASS = 'dx-tag-container';
 const TAGBOX_TAG_CONTENT_CLASS = 'dx-tag-content';
 const TAGBOX_TAG_CLASS = 'dx-tag';
@@ -175,21 +176,6 @@ QUnit.module('rendering', moduleSetup, () => {
         assert.ok(!$tagBox.hasClass(EMPTY_INPUT_CLASS), 'empty class not present');
         tagBox.option('value', []);
         assert.ok($tagBox.hasClass(EMPTY_INPUT_CLASS), 'empty class present');
-    });
-
-    QUnit.test('skip gesture event class attach only when popup is opened', function(assert) {
-        const SKIP_GESTURE_EVENT_CLASS = 'dx-skip-gesture-event';
-        const $tagBox = $('#tagBox').dxTagBox({
-            items: [1, 2, 3]
-        });
-
-        assert.equal($tagBox.hasClass(SKIP_GESTURE_EVENT_CLASS), false, 'skip gesture event class was not added when popup is closed');
-
-        $tagBox.dxTagBox('option', 'opened', true);
-        assert.equal($tagBox.hasClass(SKIP_GESTURE_EVENT_CLASS), true, 'skip gesture event class was added after popup was opened');
-
-        $tagBox.dxTagBox('option', 'opened', false);
-        assert.equal($tagBox.hasClass(SKIP_GESTURE_EVENT_CLASS), false, 'skip gesture event class was removed after popup was closed');
     });
 });
 
@@ -702,6 +688,51 @@ QUnit.module('tags', moduleSetup, () => {
             const $tag = $tagBox.find(`.${TAGBOX_TAG_CLASS}`);
             assert.equal($tag.text(), 'updated', 'tag has updated text');
         });
+    });
+
+    QUnit.test('Tags should be rendered on start if fieldTemplate is async (T1056792)', function(assert) {
+        const done = assert.async();
+        assert.expect(1);
+        this.clock.restore();
+
+        let rendered = false;
+        const $tagBox = $('#tagBox').dxTagBox({
+            items: [{ name: 'one', value: 1 }, { name: 'two', value: 2 }],
+            displayExpr: 'name',
+            valueExpr: 'value',
+            value: [1],
+            fieldTemplate: 'fieldTemplate',
+            templatesRenderAsynchronously: true,
+            integrationOptions: {
+                templates: {
+                    fieldTemplate: {
+                        render: (data) => {
+                            const text = $('<div>');
+                            if(!rendered) {
+                                setTimeout(() => {
+                                    text.dxTextBox({});
+                                    data.container.append(text.get(0));
+                                    data.onRendered();
+                                    rendered = true;
+                                }, TIME_TO_WAIT / 2);
+                            } else {
+                                text.dxTextBox({});
+                                data.container.append(text);
+                                data.onRendered();
+                            }
+
+                            return text;
+                        }
+                    }
+                }
+            },
+        });
+
+        setTimeout(() => {
+            const $tag = $tagBox.find(`.${TAGBOX_TAG_CLASS}`);
+            assert.equal($tag.length, 1, 'tag was rendered');
+            done();
+        }, TIME_TO_WAIT);
     });
 });
 
@@ -5484,6 +5515,7 @@ QUnit.module('applyValueMode = \'useButtons\'', {
 
 QUnit.module('the \'onSelectAllValueChanged\' option', {
     beforeEach: function() {
+        this.clock = sinon.useFakeTimers();
         this.items = [1, 2, 3];
 
         this._init = (options) => {
@@ -5510,6 +5542,7 @@ QUnit.module('the \'onSelectAllValueChanged\' option', {
         });
     },
     afterEach: function() {
+        this.clock.restore();
         this.$element.remove();
     }
 }, () => {
@@ -5575,6 +5608,49 @@ QUnit.module('the \'onSelectAllValueChanged\' option', {
         $selectAllElement.trigger('dxclick');
 
         assert.equal(spy.callCount, 1, 'count is correct');
+    });
+
+    QUnit.test('only all filtered items are selected if popup is closed on selectAllValueChanged (T1066477)', function(assert) {
+        const loadTimeout = 200;
+
+        this.reinit({
+            opened: false,
+            dataSource: {
+                load: ({ searchValue, filter }) => {
+                    const deferred = $.Deferred();
+
+                    setTimeout(() => {
+                        if(searchValue || filter) {
+                            deferred.resolve({ data: [1], totalCount: 1 });
+                        } else {
+                            deferred.resolve({ data: [1, 2, 3], totalCount: 3 });
+                        }
+                    }, loadTimeout);
+
+                    return deferred.promise();
+                }
+            },
+            onSelectAllValueChanged: (e) => {
+                if(e.value) {
+                    e.component.close();
+                }
+            },
+            selectAllMode: 'allPages',
+            searchTimeout: 0,
+            searchEnabled: true,
+            animation: null
+        });
+
+        const $input = this.$element.find(`.${TEXTBOX_CLASS}`);
+        keyboardMock($input).type('1').change();
+
+        this.clock.tick(loadTimeout);
+        const $list = getList(this.instance);
+
+        $($list.find(`.${LIST_ITEM_CLASS}`).eq(0)).trigger('dxclick');
+        this.clock.tick(loadTimeout);
+
+        assert.deepEqual(this.instance.option('selectedItems'), [1], 'selected items are correct');
     });
 });
 
@@ -5834,9 +5910,7 @@ QUnit.module('single line mode', {
     });
 
     QUnit.test('focusOut should be prevented when tagContainer clicked - T454876', function(assert) {
-        assert.expect(1);
-
-        const $inputWrapper = this.$element.find('.dx-dropdowneditor-input-wrapper');
+        const $inputWrapper = this.$element.find(`.${DROP_DOWN_EDITOR_INPUT_WRAPPER}`);
 
         $inputWrapper.on('mousedown', e => {
             // note: you should not prevent pointerdown because it will prevent click on ios real devices
@@ -5845,6 +5919,17 @@ QUnit.module('single line mode', {
         });
 
         $inputWrapper.trigger('mousedown');
+    });
+
+    QUnit.test('mousedown should not be prevented when input field clicked (T1046705)', function(assert) {
+        const $inputWrapper = this.$element.find(`.${DROP_DOWN_EDITOR_INPUT_WRAPPER}`);
+        const $input = this.$element.find(`.${TEXTBOX_CLASS}`);
+
+        $inputWrapper.on('mousedown', e => {
+            assert.notOk(e.isDefaultPrevented(), 'mousedown was not prevented');
+        });
+
+        $input.trigger('mousedown');
     });
 });
 

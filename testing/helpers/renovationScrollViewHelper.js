@@ -3,28 +3,12 @@ const RenovatedScrollView = require('renovation/ui/scroll_view/scroll_view.j.js'
 const reRender = require('inferno').rerender;
 const Deferred = require('core/utils/deferred').Deferred;
 
-// default export not supported
 exports.WrappedWidget = class WrappedWidget extends RenovatedScrollView {
 
     _initMarkup() {
         super._initMarkup.apply(this, arguments);
 
         const scrollable = this._viewRef.current.scrollableRef.current.scrollableRef;
-
-        const setContainerDimensions = scrollable.setContainerDimensions;
-
-        scrollable.setContainerDimensions = function() {
-            setContainerDimensions.apply(this, arguments);
-            reRender();
-        };
-
-        const setContentDimensions = scrollable.setContentDimensions;
-
-        scrollable.setContentDimensions = function() {
-            setContentDimensions.apply(this, arguments);
-            reRender();
-        };
-
         const handleScroll = scrollable.handleScroll;
 
         scrollable.handleScroll = function() {

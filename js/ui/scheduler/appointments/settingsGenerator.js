@@ -3,7 +3,7 @@ import { isEmptyObject } from '../../../core/utils/type';
 import { extend } from '../../../core/utils/extend';
 import { getRecurrenceProcessor } from '../recurrence';
 import timeZoneUtils from '../utils.timeZone';
-import { createResourcesTree, getDataAccessors, getGroupCount, getResourcesFromItem, getResourceTreeLeaves } from '../resources/utils';
+import { createResourcesTree, getDataAccessors, getGroupCount, getResourceTreeLeaves } from '../resources/utils';
 import { createAppointmentAdapter } from '../appointmentAdapter';
 import { CellPositionCalculator } from './cellPositionCalculator';
 import { ExpressionUtils } from '../expressionUtils';
@@ -18,7 +18,6 @@ export class DateGeneratorBaseStrategy {
         this.options = options;
     }
 
-    get key() { return this.options.key; }
     get rawAppointment() { return this.options.rawAppointment; }
     get timeZoneCalculator() { return this.options.timeZoneCalculator; }
     get viewDataProvider() { return this.options.viewDataProvider; }
@@ -47,13 +46,7 @@ export class DateGeneratorBaseStrategy {
     }
 
     generate(appointmentAdapter) {
-        const itemResources = getResourcesFromItem(
-            this.options.resources,
-            this.dataAccessors.resources,
-            this.rawAppointment
-        );
-
-        const itemGroupIndices = this._getGroupIndices(itemResources);
+        const itemGroupIndices = this._getGroupIndices(this.rawAppointment);
 
         let appointmentList = this._createAppointments(appointmentAdapter, itemGroupIndices);
 
@@ -340,6 +333,11 @@ export class DateGeneratorBaseStrategy {
 
             start: appointment.startDate,
             end: appointment.endDate,
+            appointmentTimezoneOffset: this.timeZoneCalculator.getOriginStartDateOffsetInMs(
+                appointment.startDate,
+                appointment.rawAppointment.startDateTimeZone,
+                true,
+            ),
 
             getPostProcessedException: date => {
                 if(isEmptyObject(this.timeZone) || timeZoneUtils.isEqualLocalTimeZone(this.timeZone, date)) {
@@ -442,15 +440,15 @@ export class DateGeneratorBaseStrategy {
         );
     }
 
-    _getGroupIndices(appointmentResources) {
+    _getGroupIndices(rawAppointment) {
         let result = [];
-        if(appointmentResources && this.loadedResources.length) {
+        if(rawAppointment && this.loadedResources.length) {
             const tree = createResourcesTree(this.loadedResources);
 
             result = getResourceTreeLeaves(
                 (field, action) => getDataAccessors(this.options.dataAccessors.resources, field, action),
                 tree,
-                appointmentResources
+                rawAppointment
             );
         }
 
@@ -607,8 +605,6 @@ export class AppointmentSettingsGenerator {
                 isRecurrent,
             };
 
-            this._setResourceColor(info, coordinates.groupIndex);
-
             infos.push({
                 ...coordinates,
                 info
@@ -625,15 +621,5 @@ export class AppointmentSettingsGenerator {
             allDay,
             format: APPOINTMENT_DATE_TEXT_FORMAT
         });
-    }
-
-    _setResourceColor(info, groupIndex) {
-        const appointmentConfig = {
-            itemData: this.rawAppointment,
-            groupIndex,
-            groups: this.groups
-        };
-
-        this.options.getAppointmentColor(appointmentConfig).done((color) => info.resourceColor = color);
     }
 }

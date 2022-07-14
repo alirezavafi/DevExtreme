@@ -3,7 +3,6 @@ import { getImageContainer } from '../../core/utils/icon';
 import { hasWindow as hasWindowFn } from '../../core/utils/window';
 import { isDefined } from '../../core/utils/type';
 import { extend } from '../../core/utils/extend';
-import { inArray } from '../../core/utils/array';
 import { each } from '../../core/utils/iterator';
 import localizationMessage from '../../localization/message';
 import registerComponent from '../../core/component_registrator';
@@ -97,6 +96,7 @@ const FieldChooser = BaseFieldChooser.inherit({
             height: 400,
             layout: 0,
             dataSource: null,
+            encodeHtml: true,
             onContextMenuPreparing: null,
             allowSearch: false,
             searchTimeout: 500,
@@ -181,6 +181,7 @@ const FieldChooser = BaseFieldChooser.inherit({
             case 'texts':
             case 'allowSearch':
             case 'searchTimeout':
+            case 'encodeHtml':
                 that._invalidate();
                 break;
             case 'onContextMenuPreparing':
@@ -403,7 +404,7 @@ const FieldChooser = BaseFieldChooser.inherit({
                         text: groupName,
                         path: currentPath,
                         isMeasure: items.isMeasure,
-                        expanded: inArray(currentPath, that._expandedPaths) >= 0,
+                        expanded: that._expandedPaths.includes(currentPath),
                         items: items
                     });
                 } else {
@@ -455,13 +456,13 @@ const FieldChooser = BaseFieldChooser.inherit({
                     .appendTo(itemElement);
             },
             onItemCollapsed: function(e) {
-                const index = inArray(e.itemData.path, that._expandedPaths);
+                const index = that._expandedPaths.indexOf(e.itemData.path);
                 if(index >= 0) {
                     that._expandedPaths.splice(index, 1);
                 }
             },
             onItemExpanded: function(e) {
-                const index = inArray(e.itemData.path, that._expandedPaths);
+                const index = that._expandedPaths.indexOf(e.itemData.path);
                 if(index < 0) {
                     that._expandedPaths.push(e.itemData.path);
                 }

@@ -15,6 +15,10 @@ import {
     NativeEventInfo,
 } from '../../events/index';
 
+import {
+    ScrollDirection,
+} from '../../common';
+
 export interface ScrollEventInfo<T> extends NativeEventInfo<T, WheelEvent | MouseEvent | Event> {
     readonly scrollOffset?: any;
     readonly reachedLeft?: boolean;
@@ -34,11 +38,10 @@ export interface dxScrollableOptions<TComponent> extends DOMComponentOptions<TCo
     bounceEnabled?: boolean;
     /**
      * @docid
-     * @type Enums.ScrollDirection
      * @default "vertical"
      * @public
      */
-    direction?: 'both' | 'horizontal' | 'vertical';
+    direction?: ScrollDirection;
     /**
      * @docid
      * @default false
@@ -49,15 +52,9 @@ export interface dxScrollableOptions<TComponent> extends DOMComponentOptions<TCo
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 scrollOffset:object
-     * @type_function_param1_field6 reachedLeft:boolean
-     * @type_function_param1_field7 reachedRight:boolean
-     * @type_function_param1_field8 reachedTop:boolean
-     * @type_function_param1_field9 reachedBottom:boolean
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field scrollOffset:object
+     * @type_function_param1_field component:this
+     * @type_function_param1_field event:event
      * @action
      * @public
      */
@@ -66,15 +63,9 @@ export interface dxScrollableOptions<TComponent> extends DOMComponentOptions<TCo
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 event:event
-     * @type_function_param1_field5 scrollOffset:object
-     * @type_function_param1_field6 reachedLeft:boolean
-     * @type_function_param1_field7 reachedRight:boolean
-     * @type_function_param1_field8 reachedTop:boolean
-     * @type_function_param1_field9 reachedBottom:boolean
-     * @type_function_param1_field1 component:this
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field scrollOffset:object
+     * @type_function_param1_field component:this
+     * @type_function_param1_field event:event
      * @action
      * @public
      */

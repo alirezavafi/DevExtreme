@@ -4,11 +4,6 @@ import {
 } from '../core/element';
 
 import {
-    PaletteType,
-    PaletteExtensionModeType,
-} from './palette';
-
-import {
     template,
 } from '../core/templates/template';
 
@@ -36,6 +31,18 @@ import BaseWidget, {
     ExportInfo,
     IncidentInfo,
 } from './core/base_widget';
+
+import {
+    LabelOverlap,
+    Palette,
+    PaletteExtensionMode,
+} from '../common/charts';
+
+export {
+    LabelOverlap,
+    Palette,
+    PaletteExtensionMode,
+};
 
 /**
  * @docid
@@ -182,7 +189,6 @@ export interface dxBarGaugeOptions extends BaseWidgetOptions<dxBarGauge> {
       connectorWidth?: number;
       /**
        * @docid
-       * @type_function_param1_field1 value:Number
        * @notUsedInTheme
        */
       customizeText?: ((barValue: { value?: number; valueText?: string }) => string);
@@ -224,10 +230,8 @@ export interface dxBarGaugeOptions extends BaseWidgetOptions<dxBarGauge> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxBarGauge
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 target:object
+     * @type_function_param1_field component:dxBarGauge
+     * @type_function_param1_field target:object
      * @notUsedInTheme
      * @action
      * @public
@@ -237,10 +241,8 @@ export interface dxBarGaugeOptions extends BaseWidgetOptions<dxBarGauge> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxBarGauge
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 target:object
+     * @type_function_param1_field component:dxBarGauge
+     * @type_function_param1_field target:object
      * @notUsedInTheme
      * @action
      * @public
@@ -249,17 +251,15 @@ export interface dxBarGaugeOptions extends BaseWidgetOptions<dxBarGauge> {
     /**
      * @docid
      * @default "Material"
-     * @type Array<string>|Enums.VizPalette
      * @public
      */
-    palette?: Array<string> | PaletteType;
+    palette?: Array<string> | Palette;
     /**
      * @docid
      * @default 'blend'
-     * @type Enums.VizPaletteExtensionMode
      * @public
      */
-    paletteExtensionMode?: PaletteExtensionModeType;
+    paletteExtensionMode?: PaletteExtensionMode;
     /**
      * @docid
      * @default 0.3
@@ -268,11 +268,10 @@ export interface dxBarGaugeOptions extends BaseWidgetOptions<dxBarGauge> {
     relativeInnerRadius?: number;
     /**
      * @docid
-     * @type Enums.BarGaugeResolveLabelOverlapping
      * @default 'hide'
      * @public
      */
-    resolveLabelOverlapping?: 'hide' | 'none';
+    resolveLabelOverlapping?: LabelOverlap;
     /**
      * @docid
      * @default 0
@@ -348,7 +347,6 @@ export interface dxBarGaugeLoadingIndicator extends BaseWidgetLoadingIndicator {
 export interface dxBarGaugeTooltip extends BaseWidgetTooltip {
     /**
      * @docid dxBarGaugeOptions.tooltip.contentTemplate
-     * @type_function_param1_field1 value:Number
      * @type_function_return string|Element|jQuery
      * @default undefined
      * @public
@@ -357,7 +355,6 @@ export interface dxBarGaugeTooltip extends BaseWidgetTooltip {
     /**
      * @docid dxBarGaugeOptions.tooltip.customizeTooltip
      * @default undefined
-     * @type_function_param1_field1 value:Number
      * @type_function_return object
      * @public
      */

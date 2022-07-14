@@ -24,7 +24,6 @@ SystemJS.config({
 define(function(require, exports, module) {
     const cldrData = [
         require('../../../node_modules/devextreme-cldr-data/ru.json!json'),
-        require('../../../node_modules/devextreme-cldr-data/en.json!json'),
         require('../../../node_modules/devextreme-cldr-data/de.json!json'),
         require('../../../node_modules/devextreme-cldr-data/da.json!json')
     ];
@@ -61,7 +60,7 @@ define(function(require, exports, module) {
     const browser = require('core/utils/browser');
     const dateUtils = require('core/utils/date');
 
-    const sharedTests = require('./sharedParts/localization.shared.js');
+    const sharedTests = require('./sharedParts/localization.shared.js').default;
 
     const NEGATIVE_NUMBERS = [-4.645, -35.855];
     const ROUNDING_CORRECTION = {
@@ -448,11 +447,31 @@ define(function(require, exports, module) {
 
     QUnit.module('Localization currency with Globalize', () => {
 
+        QUnit.test('format currency default after global config change', function(assert) {
+            const originalDefaultCurrency = config().defaultCurrency;
+
+            assert.equal(numberLocalization.format(1.2, { currency: 'default' }), '$1.20');
+
+            config({ defaultCurrency: 'EUR' });
+            assert.equal(numberLocalization.format(12, { currency: 'default' }), '€12.00');
+
+            config({ defaultCurrency: originalDefaultCurrency });
+            assert.equal(numberLocalization.format(1.2, { currency: 'default' }), '$1.20');
+
+        });
+
         QUnit.test('format', function(assert) {
             assert.equal(numberLocalization.format(1.2, { currency: 'default' }), '$1.20');
             assert.equal(numberLocalization.format(12, { currency: 'default' }), '$12.00');
             assert.equal(numberLocalization.format(1, { minimumIntegerDigits: 2, minimumFractionDigits: 0, currency: 'default' }), '$01');
             assert.equal(numberLocalization.format(1, { minimumIntegerDigits: 2, minimumFractionDigits: 0, currency: 'RUB' }), 'RUB' + NBSP + '01');
+        });
+
+        QUnit.test('format currency with sign/style (T1076906)', function(assert) {
+            assert.equal(numberLocalization.format(-1.2, { currency: 'default', style: 'accounting' }), '($1.20)');
+            assert.equal(numberLocalization.format(-1.2, { type: 'currency', useCurrencyAccountingStyle: true }), '($1)');
+            assert.equal(numberLocalization.format(-12, { currency: 'default', style: 'symbol' }), '-$12.00');
+            assert.equal(numberLocalization.format(-12, { type: 'currency', useCurrencyAccountingStyle: false }), '-$12');
         });
 
         QUnit.test('format currency & power in RU locale', function(assert) {

@@ -12,7 +12,7 @@ import notify from '../notify';
 
 import { findItemsByKeys, extendAttributes } from './ui.file_manager.common';
 import FileItemsController from './file_items_controller';
-import { FileManagerCommandManager } from './ui.file_manager.command_manager';
+import { defaultPermissions, FileManagerCommandManager } from './ui.file_manager.command_manager';
 import FileManagerContextMenu from './ui.file_manager.context_menu';
 import FileManagerFilesTreeView from './ui.file_manager.files_tree_view';
 import FileManagerDetailsItemList from './ui.file_manager.item_list.details';
@@ -49,8 +49,9 @@ class FileManager extends Widget {
         super._init();
         this._initActions();
 
-        this._providerUpdateDeferred = new Deferred().resolve();
+        this._providerUpdateDeferred = null;
         this._lockCurrentPathProcessing = false;
+        this._wasRendered = false;
 
         this._controller = new FileItemsController({
             currentPath: this.option('currentPath'),
@@ -75,11 +76,17 @@ class FileManager extends Widget {
         this._lockSelectionProcessing = false;
         this._lockFocusedItemProcessing = false;
         this._itemKeyToFocus = undefined;
+        this._loadedWidgets = [];
 
         this._commandManager = new FileManagerCommandManager(this.option('permissions'));
 
         this.$element().addClass(FILE_MANAGER_CLASS);
 
+        if(this._wasRendered) {
+            this._prepareToLoad();
+        } else {
+            this._wasRendered = true;
+        }
         this._createNotificationControl();
 
         this._initCommandManager();
@@ -158,9 +165,12 @@ class FileManager extends Widget {
 
         this._createBreadcrumbs(this._$itemsPanel);
         this._createItemView(this._$itemsPanel);
-        if(this._commandManager.isCommandAvailable('upload')) {
-            this._editing.setUploaderDropZone(this._$itemsPanel);
-        }
+        this._updateUploadDropZone();
+    }
+
+    _updateUploadDropZone() {
+        const dropZone = this._commandManager.isCommandAvailable('upload') ? this._$itemsPanel : $();
+        this._editing.setUploaderDropZone(dropZone);
     }
 
     _createFilesTreeView(container) {
@@ -175,7 +185,8 @@ class FileManager extends Widget {
             contextMenu: this._filesTreeViewContextMenu,
             getDirectories: this.getDirectories.bind(this),
             getCurrentDirectory: this._getCurrentDirectory.bind(this),
-            onDirectoryClick: ({ itemData }) => this._setCurrentDirectory(itemData)
+            onDirectoryClick: ({ itemData }) => this._setCurrentDirectory(itemData),
+            onItemListDataLoaded: () => this._tryEndLoading(VIEW_AREAS.folders)
         });
 
         this._filesTreeView.updateCurrentDirectory();
@@ -197,6 +208,7 @@ class FileManager extends Widget {
             onFocusedItemChanged: this._onItemViewFocusedItemChanged.bind(this),
             onSelectedItemOpened: this._onSelectedItemOpened.bind(this),
             onContextMenuShowing: e => this._onContextMenuShowing(VIEW_AREAS.items, e),
+            onItemListItemsLoaded: () => this._tryEndLoading(VIEW_AREAS.items),
             getItemThumbnail: this._getItemThumbnailInfo.bind(this),
             customizeDetailColumns: this.option('customizeDetailColumns'),
             detailColumns: this.option('itemView.details.columns')
@@ -279,8 +291,27 @@ class FileManager extends Widget {
     }
 
     _refreshAndShowProgress() {
+        this._prepareToLoad();
         return when(this._notificationControl.tryShowProgressPanel(), this._controller.refresh())
             .then(() => this._filesTreeView.refresh());
+    }
+
+    _isAllWidgetsLoaded() {
+        return this._loadedWidgets.length === 2 &&
+            this._loadedWidgets.indexOf(VIEW_AREAS.folders) !== -1 &&
+            this._loadedWidgets.indexOf(VIEW_AREAS.items) !== -1;
+    }
+
+    _tryEndLoading(area) {
+        this._loadedWidgets.push(area);
+        if(this._isAllWidgetsLoaded()) {
+            this._controller.endSingleLoad();
+        }
+    }
+
+    _prepareToLoad() {
+        this._loadedWidgets = [];
+        this._controller.startSingleLoad();
     }
 
     _updateToolbar(selectedItems) {
@@ -492,15 +523,7 @@ class FileManager extends Widget {
                 chunkSize: 200000
             },
 
-            permissions: {
-                create: false,
-                copy: false,
-                move: false,
-                delete: false,
-                rename: false,
-                upload: false,
-                download: false
-            },
+            permissions: extend({}, defaultPermissions),
 
             notifications: {
                 showPanel: true,
@@ -537,20 +560,24 @@ class FileManager extends Widget {
 
         switch(name) {
             case 'currentPath':
-                this._lockCurrentPathProcessing = true;
-
-                this._providerUpdateDeferred.then(() => {
-                    this._lockCurrentPathProcessing = false;
-                    return this._controller.setCurrentPath(args.value);
-                });
+                {
+                    const updateFunc = () => {
+                        this._lockCurrentPathProcessing = false;
+                        return this._controller.setCurrentPath(args.value);
+                    };
+                    this._lockCurrentPathProcessing = true;
+                    this._providerUpdateDeferred ? this._providerUpdateDeferred.then(updateFunc) : updateFunc();
+                }
                 break;
             case 'currentPathKeys':
-                this._lockCurrentPathProcessing = true;
-
-                this._providerUpdateDeferred.then(() => {
-                    this._lockCurrentPathProcessing = false;
-                    this._controller.setCurrentPathByKeys(args.value);
-                });
+                {
+                    const updateFunc = () => {
+                        this._lockCurrentPathProcessing = false;
+                        return this._controller.setCurrentPathByKeys(args.value);
+                    };
+                    this._lockCurrentPathProcessing = true;
+                    this._providerUpdateDeferred ? this._providerUpdateDeferred.then(updateFunc) : updateFunc();
+                }
                 break;
             case 'selectedItemKeys':
                 if(!this._lockSelectionProcessing && this._itemView) {
@@ -573,7 +600,10 @@ class FileManager extends Widget {
                 const pathKeys = this._lockCurrentPathProcessing ? undefined : this.option('currentPathKeys');
                 this._controller.updateProvider(args.value, pathKeys)
                     .then(() => this._providerUpdateDeferred.resolve())
-                    .then(() => this.repaint());
+                    .always(() => {
+                        this._providerUpdateDeferred = null;
+                        this.repaint();
+                    });
                 break;
             }
             case 'allowedFileExtensions':
@@ -585,6 +615,12 @@ class FileManager extends Widget {
                 this._invalidate();
                 break;
             case 'permissions':
+                this._commandManager.updatePermissions(this.option('permissions'));
+                this._filesTreeViewContextMenu.tryUpdateVisibleContextMenu();
+                this._itemViewContextMenu.tryUpdateVisibleContextMenu();
+                this._toolbar.updateItemPermissions();
+                this._updateUploadDropZone();
+                break;
             case 'selectionMode':
             case 'customizeThumbnail':
             case 'customizeDetailColumns':

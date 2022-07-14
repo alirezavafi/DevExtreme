@@ -1,17 +1,17 @@
 name: Styles tests
 
 concurrency:
-  group: wf-${{github.event.pull_request.number}}-${{github.workflow}}
+  group: wf-${{github.event.pull_request.number || github.sha}}-${{github.workflow}}
   cancel-in-progress: true
 
 on:
   pull_request:
   push:
-    branches: [22_1]
+    branches: [22_2]
 
 jobs:
   Tests:
-    runs-on: shr-ubuntu-c5-docker-cpu2ram4
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
     - name: Get sources
@@ -36,7 +36,7 @@ jobs:
       run: npm run test-styles
 
   notify:
-    runs-on: shr-ubuntu-c5-docker-cpu0d5ram1
+    runs-on: ubuntu-latest
     name: Send notifications
     needs: [Tests]
     if: always() && contains(needs.*.result, 'failure')
@@ -49,4 +49,4 @@ jobs:
           run_id: ${{github.run_id}}
           bearer_token: ${{secrets.GITHUB_TOKEN}}
           specific_repo: DevExpress/DevExtreme
-          specific_branch: 22_1
+          specific_branch: 22_2

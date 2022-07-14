@@ -22,7 +22,6 @@ const TAGBOX_TAG_REMOVE_BUTTON_CLASS = 'dx-tag-remove-button';
 const TAGBOX_SINGLE_LINE_CLASS = 'dx-tagbox-single-line';
 const TAGBOX_DEFAULT_FIELD_TEMPLATE_CLASS = 'dx-tagbox-default-template';
 const TAGBOX_CUSTOM_FIELD_TEMPLATE_CLASS = 'dx-tagbox-custom-template';
-const SKIP_GESTURE_EVENT_CLASS = 'dx-skip-gesture-event';
 const TAGBOX_TEXTEDITOR_INPUT_CONTAINER_CLASS = 'dx-texteditor-input-container';
 const SELECT_ALL_CLASS = 'dx-list-select-all';
 
@@ -53,7 +52,6 @@ QUnit.module('base markup', moduleSetup, () => {
 
         assert.ok($tagBox.hasClass(TAGBOX_CLASS), 'tagbox should have base class');
         assert.notOk($tagBox.hasClass(EMPTY_INPUT_CLASS), 'tag box has no empty class');
-        assert.notOk($tagBox.hasClass(SKIP_GESTURE_EVENT_CLASS), 'tagbox has no skip gesture event class');
 
         const $tagContainer = $tagBox.find('.' + TAGBOX_TAG_CONTAINER_CLASS);
         assert.equal($tagContainer.length, 1, 'tagbox should have tag container');
@@ -91,13 +89,6 @@ QUnit.module('base markup', moduleSetup, () => {
         });
 
         assert.ok($tagBox.hasClass(EMPTY_INPUT_CLASS), 'element has an empty class');
-    });
-
-    QUnit.test('tag container should have native click class', function(assert) {
-        const $tagContainer = $('#tagBox').dxTagBox()
-            .find('.' + TAGBOX_TAG_CONTAINER_CLASS);
-
-        assert.ok($tagContainer.hasClass('dx-native-click'));
     });
 
     QUnit.test('tagBox should render tags with the custom displayExpr for simple items', function(assert) {

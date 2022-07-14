@@ -217,26 +217,6 @@ QUnit.test('Invalid field name when item is defined not as string and not as obj
     assert.equal(form.getEditor('lastName').option('value'), 'Klark', 'editor by lastName field');
 });
 
-QUnit.test('dxshown event fire when visible option changed to true', function(assert) {
-    const form = $('#form').dxForm({
-        formData: { id: 1 }
-    }).dxForm('instance');
-    let dxShownEventCounter = 0;
-
-    $(form.$element())
-        .find('.dx-visibility-change-handler')
-        .first()
-        .on('dxshown', function() {
-            dxShownEventCounter++;
-        });
-
-    form.option('visible', false);
-    assert.equal(dxShownEventCounter, 0, 'dxshown event does not fire');
-
-    form.option('visible', true);
-    assert.equal(dxShownEventCounter, 1, 'dxshown event fired');
-});
-
 QUnit.test('Reset editor\'s value when the formData option is empty object', function(assert) {
     let values = [];
     const form = $('#form').dxForm({
@@ -587,6 +567,22 @@ QUnit.test('From renders editors with the right label, labelMode', function(asse
             });
         });
     });
+});
+
+
+QUnit.test('Check aria-labelledby attribute for editors label', function(assert) {
+    const form = $('#form').dxForm({
+        items: [ { dataField: 'name', editorType: 'dxTextBox' } ],
+        labelMode: 'floating'
+    }).dxForm('instance');
+
+    const $fieldItem = $('#form').find('.' + FIELD_ITEM_CLASS);
+    const itemInputAttr = $fieldItem.find('input').attr('aria-labelledby');
+    const editorLabelID = $fieldItem.find('.' + EDITOR_LABEL_CLASS).attr('id');
+
+    assert.equal(itemInputAttr, editorLabelID, 'input attr value equal editor label id');
+
+    form.dispose();
 });
 
 QUnit.test('field1.required -> form.validate() -> form.option("onFieldDataChanged", "newHandler") -> check form is not re-rendered (T1014577)', function(assert) {
@@ -4177,4 +4173,49 @@ QUnit.test('Form item stylingMode option should rewrite global editorStylingMode
             config({ editorStylingMode: null });
         });
     });
+});
+
+QUnit.test('TagBox.SelectionChanged is raised once if formData is wrapped into a recursive Proxy', function(assert) {
+    function wrapToRecursiveProxy(target) {
+        const handler = {
+            get: function(obj, prop) {
+                const propValue = obj[prop];
+                return (propValue !== null && typeof propValue === 'object') ? new Proxy(propValue, handler) : propValue;
+            },
+        };
+        return new Proxy(target, handler);
+    }
+
+    const $testContainer = $('#form');
+    const formData = { arrayField: ['item1', 'item2'] };
+    const watchCallbacks = [];
+    let onSelectionChangedCounter = 0;
+
+    const form = $testContainer.dxForm({
+        formData: wrapToRecursiveProxy(formData),
+        items: [
+            {
+                dataField: 'arrayField',
+                editorType: 'dxTagBox',
+                editorOptions: { dataSource: ['item1', 'item2'], onSelectionChanged: () => onSelectionChangedCounter++ }
+            }
+        ],
+        integrationOptions: {
+            watchMethod: function(fn, callback, options, __debug) {
+                if(__debug && __debug.createWatcherDataField === 'arrayField') {
+                    watchCallbacks.push(callback);
+                }
+                return function() {};
+            },
+        },
+    }).dxForm('instance');
+
+    onSelectionChangedCounter = 0;
+    form.getEditor('arrayField').option('value', ['item1']);
+
+    watchCallbacks.forEach(callback => callback());
+
+    assert.deepEqual(form.getEditor('arrayField').option('value'), ['item1'], 'tagBox.option(value)');
+    assert.deepEqual(formData, { arrayField: ['item1'] }, 'formData');
+    assert.strictEqual(onSelectionChangedCounter, 1, 'onSelectionChangedCounter');
 });

@@ -1,7 +1,8 @@
+import { Format as PredefinedFormat } from './common';
+
 /**
  * @docid localization.formatDate
  * @publicName formatDate(value, format)
- * @param1 value:date
  * @static
  * @namespace DevExpress.localization
  * @public
@@ -59,7 +60,6 @@ export function locale(locale: string): void;
 /**
  * @docid localization.parseDate
  * @publicName parseDate(text, format)
- * @return date
  * @static
  * @namespace DevExpress.localization
  * @public
@@ -75,7 +75,6 @@ export function parseDate(text: string, format: Format): Date;
  */
 export function parseNumber(text: string, format: Format): number;
 
-type PredefinedFormat = 'billions' | 'currency' | 'day' | 'decimal' | 'exponential' | 'fixedPoint' | 'largeNumber' | 'longDate' | 'longTime' | 'millions' | 'millisecond' | 'month' | 'monthAndDay' | 'monthAndYear' | 'percent' | 'quarter' | 'quarterAndYear' | 'shortDate' | 'shortTime' | 'thousands' | 'trillions' | 'year' | 'dayOfWeek' | 'hour' | 'longDateLongTime' | 'minute' | 'second' | 'shortDateShortTime';
 export interface FormatObject {
     /**
      * @docid Format.currency
@@ -83,15 +82,20 @@ export interface FormatObject {
      */
    currency?: string;
    /**
+     * @docid Format.useCurrencyAccountingStyle
+     * @type boolean
+     * @default true
+     * @public
+     */
+    useCurrencyAccountingStyle?: boolean;
+   /**
     * @docid Format.formatter
     * @public
-    * @type_function_param1 value:number|date
     */
    formatter?: ((value: number | Date) => string);
    /**
     * @docid Format.parser
     * @public
-    * @type_function_return number|date
     */
    parser?: ((value: string) => number | Date);
    /**
@@ -102,7 +106,6 @@ export interface FormatObject {
    /**
     * @docid Format.type
     * @public
-    * @type Enums.Format|string
     */
    type?: PredefinedFormat | string;
 }
@@ -111,7 +114,6 @@ type ExternalFormat = never;
 /**
  * @docid
  * @type Object|Enums.Format|string|function
- * @type_function_param1 value:number|date
  * @default undefined
  * @section Common
  * @namespace DevExpress.ui

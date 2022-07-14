@@ -6,14 +6,13 @@ import domAdapter from '../../core/dom_adapter';
 import { getPublicElement } from '../../core/element';
 import $ from '../../core/renderer';
 import { EmptyTemplate } from '../../core/templates/empty_template';
-import { inArray } from '../../core/utils/array';
 import { noop } from '../../core/utils/common';
 import { Deferred } from '../../core/utils/deferred';
 import { contains, resetActiveElement } from '../../core/utils/dom';
 import { extend } from '../../core/utils/extend';
 import { each } from '../../core/utils/iterator';
 import readyCallbacks from '../../core/utils/ready_callbacks';
-import { isFunction, isObject } from '../../core/utils/type';
+import { isFunction, isObject, isWindow } from '../../core/utils/type';
 import { changeCallback } from '../../core/utils/view_port';
 import { getWindow, hasWindow } from '../../core/utils/window';
 import errors from '../../core/errors';
@@ -27,7 +26,6 @@ import { addNamespace, isCommandKeyPressed, normalizeKeyName } from '../../event
 import { triggerHidingEvent, triggerResizeEvent, triggerShownEvent } from '../../events/visibility_change';
 import { hideCallback as hideTopOverlayCallback } from '../../mobile/hide_callback';
 import { tabbable } from '../widget/selectors';
-import swatch from '../widget/swatch_container';
 import Widget from '../widget/ui.widget';
 import browser from '../../core/utils/browser';
 import * as zIndexPool from './z_index';
@@ -40,7 +38,6 @@ const OVERLAY_CLASS = 'dx-overlay';
 const OVERLAY_WRAPPER_CLASS = 'dx-overlay-wrapper';
 const OVERLAY_CONTENT_CLASS = 'dx-overlay-content';
 const OVERLAY_SHADER_CLASS = 'dx-overlay-shader';
-const OVERLAY_MODAL_CLASS = 'dx-overlay-modal';
 const INNER_OVERLAY_CLASS = 'dx-inner-overlay';
 const INVISIBLE_STATE_CLASS = 'dx-state-invisible';
 
@@ -134,6 +131,8 @@ const Overlay = Widget.inherit({
 
             _ignoreCopyRootClassesToWrapperDeprecation: false,
 
+            _ignoreElementAttrDeprecation: false,
+
             onShowing: null,
 
             onShown: null,
@@ -149,6 +148,8 @@ const Overlay = Widget.inherit({
             restorePosition: true,
 
             container: undefined,
+
+            visualContainer: undefined,
 
             // NOTE: private options
             hideTopOverlayHandler: () => { this.hide(); },
@@ -194,23 +195,34 @@ const Overlay = Widget.inherit({
     _setDeprecatedOptions() {
         this.callBase();
         extend(this._deprecatedOptions, {
-            'elementAttr': { since: '21.2', message: 'Use the "wrapperAttr" option instead' },
-            'closeOnOutsideClick': { since: '22.2', alias: 'hideOnOutsideClick' }
+            'closeOnOutsideClick': { since: '22.1', alias: 'hideOnOutsideClick' }
         });
     },
 
     ctor: function(element, options) {
         this.callBase(element, options);
 
-        if(options && options.copyRootClassesToWrapper && !options._ignoreCopyRootClassesToWrapperDeprecation) {
-            errors.log('W0001', this.NAME, 'copyRootClassesToWrapper', '21.2', 'Use the "wrapperAttr" option instead');
+        function createWrapperAttrDeprecationInfo() {
+            return {
+                since: '21.2',
+                message: 'Use the "wrapperAttr" option instead'
+            };
+        }
+
+        if(options) {
+            if(options.copyRootClassesToWrapper && !options._ignoreCopyRootClassesToWrapperDeprecation) {
+                this._logDeprecatedOptionWarning('copyRootClassesToWrapper', createWrapperAttrDeprecationInfo());
+            }
+            if(options.elementAttr && !options._ignoreElementAttrDeprecation) {
+                this._logDeprecatedOptionWarning('elementAttr', createWrapperAttrDeprecationInfo());
+            }
         }
     },
 
     _init: function() {
         this.callBase();
         this._initActions();
-        this._initCloseOnOutsideClickHandler();
+        this._initHideOnOutsideClickHandler();
         this._initTabTerminatorHandler();
 
         this._customWrapperClass = null;
@@ -229,7 +241,7 @@ const Overlay = Widget.inherit({
         this._toggleViewPortSubscription(true);
         this._initHideTopOverlayHandler(this.option('hideTopOverlayHandler'));
         this._parentsScrollSubscriptionInfo = {
-            handler: e => { this._targetParentsScrollHandler(e); }
+            handler: e => { this._hideOnParentsScrollHandler(e); }
         };
 
         this.warnPositionAsFunction();
@@ -264,7 +276,7 @@ const Overlay = Widget.inherit({
         });
     },
 
-    _initCloseOnOutsideClickHandler: function() {
+    _initHideOnOutsideClickHandler: function() {
         this._proxiedDocumentDownHandler = (...args) => {
             return this._documentDownHandler(...args);
         };
@@ -306,15 +318,13 @@ const Overlay = Widget.inherit({
     },
 
     _shouldHideOnOutsideClick: function(e) {
-        const { closeOnOutsideClick, hideOnOutsideClick } = this.option();
+        const { hideOnOutsideClick } = this.option();
 
         if(isFunction(hideOnOutsideClick)) {
             return hideOnOutsideClick(e);
-        } else if(isFunction(closeOnOutsideClick)) {
-            return closeOnOutsideClick(e);
-        } else {
-            return hideOnOutsideClick || closeOnOutsideClick;
         }
+
+        return hideOnOutsideClick;
     },
 
     _outsideClickHandler(e) {
@@ -624,7 +634,7 @@ const Overlay = Widget.inherit({
 
     _updateZIndexStackPosition: function(pushToStack) {
         const overlayStack = this._overlayStack();
-        const index = inArray(this, overlayStack);
+        const index = overlayStack.indexOf(this);
 
         if(pushToStack) {
             if(index === -1) {
@@ -642,7 +652,6 @@ const Overlay = Widget.inherit({
     },
 
     _toggleShading: function(visible) {
-        this._$wrapper.toggleClass(OVERLAY_MODAL_CLASS, this.option('shading') && !this.option('container'));
         this._$wrapper.toggleClass(OVERLAY_SHADER_CLASS, visible && this.option('shading'));
 
         this._$wrapper.css('backgroundColor', this.option('shading') ? this.option('shadingColor') : '');
@@ -717,7 +726,7 @@ const Overlay = Widget.inherit({
     _toggleSubscriptions: function(enabled) {
         if(hasWindow()) {
             this._toggleHideTopOverlayCallback(enabled);
-            this._toggleParentsScrollSubscription(enabled);
+            this._toggleHideOnParentsScrollSubscription(enabled);
         }
     },
 
@@ -733,7 +742,7 @@ const Overlay = Widget.inherit({
         }
     },
 
-    _toggleParentsScrollSubscription: function(needSubscribe) {
+    _toggleHideOnParentsScrollSubscription: function(needSubscribe) {
         const scrollEvent = addNamespace('scroll', this.NAME);
         const { prevTargets, handler } = this._parentsScrollSubscriptionInfo ?? {};
 
@@ -741,7 +750,7 @@ const Overlay = Widget.inherit({
 
         const closeOnScroll = this.option('hideOnParentScroll');
         if(needSubscribe && closeOnScroll) {
-            let $parents = this._$wrapper.parents();
+            let $parents = this._hideOnParentScrollTarget().parents();
             if(devices.real().deviceType === 'desktop') {
                 $parents = $parents.add(window);
             }
@@ -750,7 +759,7 @@ const Overlay = Widget.inherit({
         }
     },
 
-    _targetParentsScrollHandler: function(e) {
+    _hideOnParentsScrollHandler: function(e) {
         let closeHandled = false;
         const closeOnScroll = this.option('hideOnParentScroll');
         if(isFunction(closeOnScroll)) {
@@ -760,6 +769,10 @@ const Overlay = Widget.inherit({
         if(!closeHandled && !this._showAnimationProcessing) {
             this.hide();
         }
+    },
+
+    _hideOnParentScrollTarget: function() {
+        return this._$wrapper;
     },
 
     _render: function() {
@@ -848,11 +861,12 @@ const Overlay = Widget.inherit({
     },
 
     _getPositionControllerConfig() {
-        const { container, _fixWrapperPosition, restorePosition } = this.option();
+        const { container, visualContainer, _fixWrapperPosition, restorePosition } = this.option();
         // NOTE: position is passed to controller in renderGeometry to prevent window field using in server side mode
 
         return {
             container,
+            visualContainer,
             $root: this.$element(),
             $content: this._$content,
             $wrapper: this._$wrapper,
@@ -913,21 +927,8 @@ const Overlay = Widget.inherit({
     },
 
     _moveToContainer: function() {
-        this._attachWrapperToContainer();
-
+        this._$wrapper.appendTo(this._positionController.$container);
         this._$content.appendTo(this._$wrapper);
-    },
-
-    _attachWrapperToContainer: function() {
-        const $element = this.$element();
-        const containerDefined = this.option('container') !== undefined;
-        let renderContainer = containerDefined ? this._positionController.$container : swatch.getSwatchContainer($element);
-
-        if(renderContainer && renderContainer[0] === $element.parent()[0]) {
-            renderContainer = $element;
-        }
-
-        this._$wrapper.appendTo(renderContainer);
     },
 
     _renderGeometry: function(options) {
@@ -951,7 +952,7 @@ const Overlay = Widget.inherit({
     },
 
     _isAllWindowCovered: function() {
-        return this._positionController.isAllWindowCoveredByWrapper() && this.option('shading');
+        return isWindow(this._positionController.$visualContainer.get(0)) && this.option('shading');
     },
 
     _toggleSafariScrolling: function() {
@@ -986,18 +987,12 @@ const Overlay = Widget.inherit({
     },
 
     _renderWrapperDimensions: function() {
-        let wrapperWidth;
-        let wrapperHeight;
-        const $container = this._positionController._$wrapperCoveredElement;
-
-        if(!$container) {
-            return;
-        }
-
-        const isWindow = this._positionController.isAllWindowCoveredByWrapper();
+        const $visualContainer = this._positionController.$visualContainer;
         const documentElement = domAdapter.getDocumentElement();
-        wrapperWidth = isWindow ? documentElement.clientWidth : getOuterWidth($container),
-        wrapperHeight = isWindow ? window.innerHeight : getOuterHeight($container);
+        const isVisualContainerWindow = isWindow($visualContainer.get(0));
+
+        const wrapperWidth = isVisualContainerWindow ? documentElement.clientWidth : getOuterWidth($visualContainer);
+        const wrapperHeight = isVisualContainerWindow ? window.innerHeight : getOuterHeight($visualContainer);
 
         this._$wrapper.css({
             width: wrapperWidth,
@@ -1092,7 +1087,7 @@ const Overlay = Widget.inherit({
         this.callBase();
 
         this._toggleSafariScrolling();
-        zIndexPool.remove(this._zIndex);
+        this.option('visible') && zIndexPool.remove(this._zIndex);
         this._$wrapper.remove();
         this._$content.remove();
     },
@@ -1104,7 +1099,7 @@ const Overlay = Widget.inherit({
     _optionChanged: function(args) {
         const value = args.value;
 
-        if(inArray(args.name, this._getActionsList()) > -1) {
+        if(this._getActionsList().includes(args.name)) {
             this._initActions();
             return;
         }
@@ -1149,6 +1144,11 @@ const Overlay = Widget.inherit({
                 this._invalidate();
                 this._toggleSafariScrolling();
                 break;
+            case 'visualContainer':
+                this._positionController.updateVisualContainer(value);
+                this._renderWrapper();
+                this._toggleSafariScrolling();
+                break;
             case 'innerOverlay':
                 this._initInnerOverlayClass();
                 break;
@@ -1164,7 +1164,7 @@ const Overlay = Widget.inherit({
                 this._toggleHideTopOverlayCallback(this.option('visible'));
                 break;
             case 'hideOnParentScroll':
-                this._toggleParentsScrollSubscription(this.option('visible'));
+                this._toggleHideOnParentsScrollSubscription(this.option('visible'));
                 break;
             case 'closeOnOutsideClick':
             case 'hideOnOutsideClick':

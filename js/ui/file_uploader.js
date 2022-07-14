@@ -8,7 +8,6 @@ import Callbacks from '../core/utils/callbacks';
 import { isDefined, isFunction, isNumeric } from '../core/utils/type';
 import { each } from '../core/utils/iterator';
 import { extend } from '../core/utils/extend';
-import { inArray } from '../core/utils/array';
 import { Deferred, fromPromise } from '../core/utils/deferred';
 import ajax from '../core/utils/ajax';
 import Editor from './editor/editor';
@@ -444,7 +443,12 @@ class FileUploader extends Editor {
 
     _validateFileExtension(file) {
         const allowedExtensions = this.option('allowedFileExtensions');
+        const accept = this.option('accept');
+        const allowedTypes = this._getAllowedFileTypes(accept);
         const fileExtension = file.value.name.substring(file.value.name.lastIndexOf('.')).toLowerCase();
+        if(accept.length !== 0 && !this._isFileTypeAllowed(file.value, allowedTypes)) {
+            return false;
+        }
         if(allowedExtensions.length === 0) {
             return true;
         }
@@ -692,10 +696,10 @@ class FileUploader extends Editor {
     _removeFile(file) {
         file.$file?.parent().remove();
 
-        this._files.splice(inArray(file, this._files), 1);
+        this._files.splice(this._files.indexOf(file), 1);
 
         const value = this.option('value').slice();
-        value.splice(inArray(file.value, value), 1);
+        value.splice(value.indexOf(file.value), 1);
 
         this._preventRecreatingFiles = true;
         this.option('value', value);
@@ -999,7 +1003,7 @@ class FileUploader extends Editor {
             return;
         }
 
-        this._changeValue(this._filterFiles(files));
+        this._changeValue(files);
 
         if(this.option('uploadMode') === 'instantly') {
             this._uploadFiles();
@@ -1011,29 +1015,6 @@ class FileUploader extends Editor {
         if(areAllFilesLoaded) {
             this._filesUploadedAction();
         }
-    }
-
-    _filterFiles(files) {
-        if(!files.length) {
-            return files;
-        }
-
-        const accept = this.option('accept');
-
-        if(!accept.length) {
-            return files;
-        }
-
-        const result = [];
-        const allowedTypes = this._getAllowedFileTypes(accept);
-
-        for(let i = 0, n = files.length; i < n; i++) {
-            if(this._isFileTypeAllowed(files[i], allowedTypes)) {
-                result.push(files[i]);
-            }
-        }
-
-        return result;
     }
 
     _getAllowedFileTypes(acceptSting) {
@@ -1323,6 +1304,10 @@ class FileUploader extends Editor {
                 break;
             case 'readOnly':
                 this._updateReadOnlyState();
+                super._optionChanged(args);
+                break;
+            case 'disabled':
+                this._updateInputLabelText();
                 super._optionChanged(args);
                 break;
             case 'selectButtonText':
@@ -1888,7 +1873,7 @@ class CustomWholeFileUploadStrategy extends WholeFileUploadStrategyBase {
         const progressCallback = loadedBytes => {
             const arg = {
                 loaded: loadedBytes,
-                total: file.size
+                total: file.value.size
             };
             this._handleProgress(file, arg);
         };

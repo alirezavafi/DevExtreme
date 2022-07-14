@@ -5,7 +5,6 @@ import ArrayStore from '../../data/array_store';
 import { name as clickEventName } from '../../events/click';
 import { noop } from '../../core/utils/common';
 import { isDefined } from '../../core/utils/type';
-import { inArray } from '../../core/utils/array';
 import { extend } from '../../core/utils/extend';
 import { each, map } from '../../core/utils/iterator';
 import localizationMessage from '../../localization/message';
@@ -56,8 +55,11 @@ const processItems = function(groupItems, field) {
             item.children = null;
         }
 
-        updateHeaderFilterItemSelectionState(item, item.key && inArray(preparedFilterValueByText, filterValues) > -1 || inArray(preparedFilterValue, filterValues) > -1, isExcludeFilterType);
-
+        updateHeaderFilterItemSelectionState(
+            item,
+            item.key && filterValues.includes(preparedFilterValueByText) || filterValues.includes(preparedFilterValue),
+            isExcludeFilterType
+        );
     });
 };
 
@@ -255,7 +257,6 @@ const FieldChooserBase = Widget.inherit(columnStateMixin).inherit(sortingMixin).
             },
             useIndicator: true,
             onChanged: function(e) {
-                const dataSource = that._dataSource;
                 const field = e.sourceElement.data('field');
 
                 e.removeSourceElement = !!e.sourceGroup;
@@ -263,9 +264,25 @@ const FieldChooserBase = Widget.inherit(columnStateMixin).inherit(sortingMixin).
                 that._adjustSortableOnChangedArgs(e);
 
                 if(field) {
-                    that._applyChanges([getMainGroupField(dataSource, field)], {
+                    const targetIndex = e.targetIndex;
+                    let mainGroupField;
+                    let invisibleFieldsIndexOffset = 0;
+
+                    that._processDemandState((dataSource) => {
+                        const fields = dataSource.getAreaFields(field.area, true);
+                        mainGroupField = getMainGroupField(dataSource, field);
+
+                        const visibleFields = fields.filter(f => f.visible !== false);
+                        const fieldBeforeTarget = visibleFields[targetIndex - 1];
+
+                        if(fieldBeforeTarget) {
+                            invisibleFieldsIndexOffset = fields.filter(f => f.visible === false && f.areaIndex <= fieldBeforeTarget.areaIndex).length;
+                        }
+                    });
+
+                    that._applyChanges([mainGroupField], {
                         area: e.targetGroup,
-                        areaIndex: e.targetIndex
+                        areaIndex: targetIndex + invisibleFieldsIndexOffset
                     });
                 }
             }

@@ -12,7 +12,7 @@ import { GroupPanel } from './group_panel/group_panel';
 import { AllDayPanelLayout } from './date_table/all_day_panel/layout';
 import { HeaderPanelEmptyCell } from './header_panel_empty_cell';
 import { MainLayoutProps } from './main_layout_props';
-import { Semaphore } from '../../semaphore';
+import { ScrollSemaphore } from '../../utils/semaphore/scrollSemaphore';
 import { ScrollEventArgs } from '../../../scroll_view/common/types';
 import { TimePanelTableLayout } from './time_panel/layout';
 import { MonthDateTableLayout } from '../month/date_table/layout';
@@ -86,7 +86,8 @@ export const viewFunction = ({
         <div className="dx-scheduler-header-tables-container">
           <Scrollable
             ref={headerScrollableRef}
-            className="dx-scheduler-header-scrollable"
+            // https://trello.com/c/NeBr48AZ/3019-angular-props-are-not-spreaded-via-restattributes-classname-for-scrollable
+            classes="dx-scheduler-header-scrollable"
             useKeyboard={false}
             showScrollbar="never"
             direction="horizontal"
@@ -126,7 +127,8 @@ export const viewFunction = ({
       <div className="dx-scheduler-work-space-flex-container">
         <Scrollable
           ref={sideBarScrollableRef}
-          className="dx-scheduler-sidebar-scrollable"
+          // https://trello.com/c/NeBr48AZ/3019-angular-props-are-not-spreaded-via-restattributes-classname-for-scrollable
+          classes="dx-scheduler-sidebar-scrollable"
           useKeyboard={false}
           showScrollbar="never"
           direction="vertical"
@@ -163,7 +165,8 @@ export const viewFunction = ({
           useKeyboard={false}
           bounceEnabled={false}
           direction="both"
-          className="dx-scheduler-date-table-scrollable"
+          // https://trello.com/c/NeBr48AZ/3019-angular-props-are-not-spreaded-via-restattributes-classname-for-scrollable
+          classes="dx-scheduler-date-table-scrollable"
           onScroll={onDateTableScroll}
         >
           <div className="dx-scheduler-date-table-scrollable-content">
@@ -198,18 +201,18 @@ MainLayoutProps, 'headerPanelTemplate' | 'dateTableTemplate' | 'dateHeaderData' 
   @Ref() sideBarScrollableRef!: RefObject<Scrollable>;
 
   // eslint-disable-next-line class-methods-use-this
-  get dateTableSemaphore(): Semaphore {
-    return new Semaphore();
+  get dateTableSemaphore(): ScrollSemaphore {
+    return new ScrollSemaphore();
   }
 
   // eslint-disable-next-line class-methods-use-this
-  get headerSemaphore(): Semaphore {
-    return new Semaphore();
+  get headerSemaphore(): ScrollSemaphore {
+    return new ScrollSemaphore();
   }
 
   // eslint-disable-next-line class-methods-use-this
-  get sideBarSemaphore(): Semaphore {
-    return new Semaphore();
+  get sideBarSemaphore(): ScrollSemaphore {
+    return new ScrollSemaphore();
   }
 
   get headerStyles(): CSSAttributes {
@@ -223,13 +226,13 @@ MainLayoutProps, 'headerPanelTemplate' | 'dateTableTemplate' | 'dateHeaderData' 
   }
 
   onDateTableScroll(e: ScrollEventArgs): void {
-    this.dateTableSemaphore.take();
+    this.dateTableSemaphore.take(e.scrollOffset);
 
-    this.sideBarSemaphore.isFree() && this.sideBarScrollableRef.current!.scrollTo({
+    this.sideBarSemaphore.isFree(e.scrollOffset) && this.sideBarScrollableRef.current!.scrollTo({
       top: e.scrollOffset.top,
     });
 
-    this.headerSemaphore.isFree() && this.headerScrollableRef.current!.scrollTo({
+    this.headerSemaphore.isFree(e.scrollOffset) && this.headerScrollableRef.current!.scrollTo({
       left: e.scrollOffset.left,
     });
 
@@ -239,21 +242,23 @@ MainLayoutProps, 'headerPanelTemplate' | 'dateTableTemplate' | 'dateHeaderData' 
   }
 
   onHeaderScroll(e: ScrollEventArgs): void {
-    this.headerSemaphore.take();
+    this.headerSemaphore.take(e.scrollOffset);
 
-    this.dateTableSemaphore.isFree() && this.dateTableScrollableRef.current!.scrollTo({
-      left: e.scrollOffset.left,
-    });
+    this.dateTableSemaphore.isFree(e.scrollOffset)
+      && this.dateTableScrollableRef.current!.scrollTo({
+        left: e.scrollOffset.left,
+      });
 
     this.headerSemaphore.release();
   }
 
   onSideBarScroll(e: ScrollEventArgs): void {
-    this.sideBarSemaphore.take();
+    this.sideBarSemaphore.take(e.scrollOffset);
 
-    this.dateTableSemaphore.isFree() && this.dateTableScrollableRef.current!.scrollTo({
-      top: e.scrollOffset.top,
-    });
+    this.dateTableSemaphore.isFree(e.scrollOffset)
+      && this.dateTableScrollableRef.current!.scrollTo({
+        top: e.scrollOffset.top,
+      });
 
     this.sideBarSemaphore.release();
   }

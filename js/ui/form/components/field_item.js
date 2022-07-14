@@ -33,7 +33,6 @@ export function renderFieldItem({
     rootElementCssClassList,
     formOrLayoutManager,
     createComponentCallback,
-    useFlexLayout,
 
     labelOptions, // TODO: move to 'item' ?
     labelNeedBaselineAlign, labelLocation, needRenderLabel, // TODO: move to 'labelOptions' ?
@@ -51,7 +50,7 @@ export function renderFieldItem({
         .appendTo($parent);
 
     $rootElement.addClass(isRequired ? FIELD_ITEM_REQUIRED_CLASS : FIELD_ITEM_OPTIONAL_CLASS);
-    if(isSimpleItem && useFlexLayout) {
+    if(isSimpleItem) {
         $rootElement.addClass(FLEX_LAYOUT_CLASS);
     }
     if(isSimpleItem && labelNeedBaselineAlign) {
@@ -121,7 +120,7 @@ export function renderFieldItem({
         try {
             widgetInstance = createComponentCallback($div, item.editorType, editorOptions);
             widgetInstance.setAria('describedby', helpID);
-            widgetInstance.setAria('labelledby', labelID);
+            if(labelID) widgetInstance.setAria('labelledby', labelID);
             widgetInstance.setAria('required', isRequired);
         } catch(e) {
             errors.log('E1035', e.message);

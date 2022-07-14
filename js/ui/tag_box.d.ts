@@ -33,6 +33,11 @@ import dxSelectBox, {
     CustomItemCreatingInfo,
 } from './select_box';
 
+import {
+    ApplyValueMode,
+    SelectAllMode,
+} from '../common';
+
 /** @public */
 export type ChangeEvent = NativeEventInfo<dxTagBox, Event>;
 
@@ -61,7 +66,7 @@ export type FocusOutEvent = NativeEventInfo<dxTagBox, FocusEvent>;
 export type InitializedEvent = InitializedEventInfo<dxTagBox>;
 
 /** @public */
-export type InputEvent = NativeEventInfo<dxTagBox, UIEvent>;
+export type InputEvent = NativeEventInfo<dxTagBox, UIEvent & { target: HTMLInputElement }>;
 
 /** @public */
 export type ItemClickEvent = NativeEventInfo<dxTagBox> & ItemInfo;
@@ -106,14 +111,13 @@ export type DropDownButtonTemplateData = DropDownButtonTemplateDataModel;
  * @deprecated use Properties instead
  * @namespace DevExpress.ui
  */
- export interface dxTagBoxOptions extends Pick<dxSelectBoxOptions<dxTagBox>, Exclude<keyof dxSelectBoxOptions<dxTagBox>, 'onSelectionChanged'>> {
+export interface dxTagBoxOptions extends Pick<dxSelectBoxOptions<dxTagBox>, Exclude<keyof dxSelectBoxOptions<dxTagBox>, 'onSelectionChanged'>> {
     /**
      * @docid
-     * @type Enums.EditorApplyValueMode
      * @default "instantly"
      * @public
      */
-    applyValueMode?: 'instantly' | 'useButtons';
+    applyValueMode?: ApplyValueMode;
     /**
      * @docid
      * @default false
@@ -136,13 +140,8 @@ export type DropDownButtonTemplateData = DropDownButtonTemplateDataModel;
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 multiTagElement:DxElement
-     * @type_function_param1_field5 selectedItems:Array<string,number,Object>
-     * @type_function_param1_field6 text:string
-     * @type_function_param1_field7 cancel:boolean
-     * @type_function_param1_field1 component:dxTagBox
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxTagBox
+     * @type_function_param1_field selectedItems:Array<string,number,Object>
      * @action
      * @public
      */
@@ -151,10 +150,7 @@ export type DropDownButtonTemplateData = DropDownButtonTemplateDataModel;
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 value:boolean
-     * @type_function_param1_field1 component:dxTagBox
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field component:dxTagBox
      * @action
      * @public
      */
@@ -163,22 +159,19 @@ export type DropDownButtonTemplateData = DropDownButtonTemplateDataModel;
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field4 addedItems:Array<string,number,Object>
-     * @type_function_param1_field5 removedItems:Array<string,number,Object>
-     * @type_function_param1_field1 component:dxTagBox
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
+     * @type_function_param1_field addedItems:Array<string,number,Object>
+     * @type_function_param1_field removedItems:Array<string,number,Object>
+     * @type_function_param1_field component:dxTagBox
      * @action
      * @public
      */
     onSelectionChanged?: ((e: SelectionChangedEvent) => void);
     /**
      * @docid
-     * @type Enums.SelectAllMode
      * @default 'page'
      * @public
      */
-    selectAllMode?: 'allPages' | 'page';
+    selectAllMode?: SelectAllMode;
     /**
      * @docid
      * @readonly

@@ -23,6 +23,22 @@ import {
     Format,
 } from '../localization';
 
+import {
+    DataType,
+} from '../common';
+
+export {
+    DataType,
+};
+
+export {
+    FilterOperation,
+} from '../common/grids';
+
+export type FilterBuilderOperation = '=' | '<>' | '<' | '<=' | '>' | '>=' | 'contains' | 'endswith' | 'isblank' | 'isnotblank' | 'notcontains' | 'startswith' | 'between';
+/** @public */
+export type GroupOperation = 'and' | 'or' | 'notAnd' | 'notOr';
+
 /** @public */
 export type ContentReadyEvent = EventInfo<dxFilterBuilder>;
 
@@ -211,11 +227,10 @@ export interface dxFilterBuilderOptions extends WidgetOptions<dxFilterBuilder> {
     };
     /**
      * @docid
-     * @type Array<Enums.FilterBuilderGroupOperations>
      * @default ['and', 'or', 'notAnd', 'notOr']
      * @public
      */
-    groupOperations?: Array<'and' | 'or' | 'notAnd' | 'notOr'>;
+    groupOperations?: Array<GroupOperation>;
     /**
      * @docid
      * @default undefined
@@ -225,20 +240,8 @@ export interface dxFilterBuilderOptions extends WidgetOptions<dxFilterBuilder> {
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxFilterBuilder
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 value:any
-     * @type_function_param1_field5 setValue(newValue):any
-     * @type_function_param1_field6 editorElement:DxElement
-     * @type_function_param1_field7 editorName:string
-     * @type_function_param1_field8 dataField:string
-     * @type_function_param1_field9 filterOperation:string
-     * @type_function_param1_field10 updateValueTimeout:number
-     * @type_function_param1_field11 width:number
-     * @type_function_param1_field12 readOnly:boolean
-     * @type_function_param1_field13 disabled:boolean
-     * @type_function_param1_field14 rtlEnabled:boolean
+     * @type_function_param1_field component:dxFilterBuilder
+     * @type_function_param1_field setValue(newValue):any
      * @default null
      * @action
      * @public
@@ -247,22 +250,9 @@ export interface dxFilterBuilderOptions extends WidgetOptions<dxFilterBuilder> {
     /**
      * @docid
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxFilterBuilder
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 value:any
-     * @type_function_param1_field5 setValue(newValue):any
-     * @type_function_param1_field6 cancel:boolean
-     * @type_function_param1_field7 editorElement:DxElement
-     * @type_function_param1_field8 editorName:string
-     * @type_function_param1_field9 editorOptions:object
-     * @type_function_param1_field10 dataField:string
-     * @type_function_param1_field11 filterOperation:string
-     * @type_function_param1_field12 updateValueTimeout:number
-     * @type_function_param1_field13 width:number
-     * @type_function_param1_field14 readOnly:boolean
-     * @type_function_param1_field15 disabled:boolean
-     * @type_function_param1_field16 rtlEnabled:boolean
+     * @type_function_param1_field component:dxFilterBuilder
+     * @type_function_param1_field setValue(newValue):any
+     * @type_function_param1_field editorOptions:object
      * @default null
      * @action
      * @public
@@ -272,11 +262,9 @@ export interface dxFilterBuilderOptions extends WidgetOptions<dxFilterBuilder> {
      * @docid
      * @default null
      * @type_function_param1 e:object
-     * @type_function_param1_field1 component:dxFilterBuilder
-     * @type_function_param1_field2 element:DxElement
-     * @type_function_param1_field3 model:any
-     * @type_function_param1_field4 value:object
-     * @type_function_param1_field5 previousValue:object
+     * @type_function_param1_field component:dxFilterBuilder
+     * @type_function_param1_field value:object
+     * @type_function_param1_field previousValue:object
      * @action
      * @public
      */
@@ -331,26 +319,20 @@ export interface dxFilterBuilderCustomOperation {
     caption?: string;
     /**
      * @docid
-     * @type_function_param1_field1 value:string|number|Date:optional
-     * @type_function_param1_field2 valueText:string:optional
-     * @type_function_param1_field3 field:dxFilterBuilderField:optional
-     * @type_function_param1_field1 value:string|number|date
+     * @type_function_param1_field field:dxFilterBuilderField:optional
      * @public
      */
     customizeText?: ((fieldInfo: { value?: string | number | Date; valueText?: string; field?: Field }) => string);
     /**
      * @docid
-     * @type Array<Enums.FilterBuilderFieldDataType>
      * @default undefined
      * @public
      */
-    dataTypes?: Array<'string' | 'number' | 'date' | 'boolean' | 'object' | 'datetime'>;
+    dataTypes?: Array<DataType>;
     /**
      * @docid
      * @type_function_param1 conditionInfo:object
-     * @type_function_param1_field1 value:string|number|date
-     * @type_function_param1_field2 field:dxFilterBuilderField
-     * @type_function_param1_field3 setValue:function
+     * @type_function_param1_field field:dxFilterBuilderField
      * @type_function_return string|Element|jQuery
      * @public
      */
@@ -401,7 +383,6 @@ export interface dxFilterBuilderField {
     caption?: string;
     /**
      * @docid
-     * @type_function_param1_field1 value:string|number|date
      * @public
      */
     customizeText?: ((fieldInfo: { value?: string | number | Date; valueText?: string }) => string);
@@ -413,11 +394,10 @@ export interface dxFilterBuilderField {
     dataField?: string;
     /**
      * @docid
-     * @type Enums.FilterBuilderFieldDataType
      * @default "string"
      * @public
      */
-    dataType?: 'string' | 'number' | 'date' | 'boolean' | 'object' | 'datetime';
+    dataType?: DataType;
     /**
      * @docid
      * @public
@@ -426,10 +406,7 @@ export interface dxFilterBuilderField {
     /**
      * @docid
      * @type_function_param1 conditionInfo:object
-     * @type_function_param1_field1 value:string|number|date
-     * @type_function_param1_field2 filterOperation:string
-     * @type_function_param1_field3 field:dxFilterBuilderField
-     * @type_function_param1_field4 setValue:function
+     * @type_function_param1_field field:dxFilterBuilderField
      * @type_function_return string|Element|jQuery
      * @public
      */
@@ -442,11 +419,10 @@ export interface dxFilterBuilderField {
     falseText?: string;
     /**
      * @docid
-     * @type Array<Enums.FilterBuilderFieldFilterOperations, string>
      * @default undefined
      * @public
      */
-    filterOperations?: Array<'=' | '<>' | '<' | '<=' | '>' | '>=' | 'contains' | 'endswith' | 'isblank' | 'isnotblank' | 'notcontains' | 'startswith' | 'between' | string>;
+    filterOperations?: Array<FilterBuilderOperation | string>;
     /**
      * @docid
      * @default ""

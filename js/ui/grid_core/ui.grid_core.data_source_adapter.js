@@ -77,8 +77,15 @@ export default gridCore.Controller.inherit((function() {
             const skip = options.skip ?? storeLoadOptions.skip ?? 0;
             for(let i = 0; i < take; i++) {
                 const localIndex = fromEnd ? take - 1 - i : i;
-                const cacheItem = cachedItems[localIndex + skip];
+                const cacheItemIndex = localIndex + skip;
+                const cacheItem = cachedItems[cacheItemIndex];
+
+                if(cacheItem === undefined && cacheItemIndex in cachedItems) {
+                    return true;
+                }
+
                 const item = getItemFromCache(options, cacheItem, groupCount, localIndex, take);
+
                 if(item) {
                     items.push(item);
                 } else {
@@ -120,7 +127,9 @@ export default gridCore.Controller.inherit((function() {
                 }
                 for(let i = 0; take === undefined ? items[i + skip] : i < take; i++) {
                     const childCacheItem = items[i + skip];
-                    const item = getGroupItemFromCache(childCacheItem, groupCount - 1, skips.slice(1), takes.slice(1));
+                    const isLast = i + 1 === take;
+                    const item = getGroupItemFromCache(childCacheItem, groupCount - 1, i === 0 ? skips.slice(1) : [], isLast ? takes.slice(1) : []);
+
                     if(item !== undefined) {
                         result.items.push(item);
                     } else {
@@ -350,7 +359,9 @@ export default gridCore.Controller.inherit((function() {
             const dataSource = this._dataSource;
             const groupCount = gridCore.normalizeSortingInfo(this.group()).length;
             const totalCount = this.totalCount();
+            const isReshapeMode = this.option('editing.refreshMode') === 'reshape';
             const isVirtualMode = this.option('scrolling.mode') === 'virtual';
+            const isLegacyMode = this.option('scrolling.legacyMode');
 
             changes = changes.filter(function(change) {
                 return !dataSource.paginate() || change.type !== 'insert' || change.index !== undefined;
@@ -375,7 +386,14 @@ export default gridCore.Controller.inherit((function() {
                 useInsertIndex: true
             });
 
-            if(this._currentTotalCount > 0 || isVirtualMode && totalCount === oldItemCount) {
+            const needUpdateTotalCountCorrection =
+                this._currentTotalCount > 0 || (
+                    !isReshapeMode &&
+                    isVirtualMode &&
+                    (!isLegacyMode || totalCount === oldItemCount)
+                );
+
+            if(needUpdateTotalCountCorrection) {
                 this._totalCountCorrection += getItemCount() - oldItemCount;
             }
 
@@ -402,7 +420,8 @@ export default gridCore.Controller.inherit((function() {
 
             if((options.storeLoadOptions.filter && !options.remoteOperations.filtering) || (options.storeLoadOptions.sort && !options.remoteOperations.sorting)) {
                 options.remoteOperations = {
-                    filtering: options.remoteOperations.filtering
+                    filtering: options.remoteOperations.filtering,
+                    summary: options.remoteOperations.summary,
                 };
             }
 
@@ -442,7 +461,9 @@ export default gridCore.Controller.inherit((function() {
         },
         _handleCustomizeStoreLoadOptions(options) {
             this._handleDataLoading(options);
-            options.data = getPageDataFromCache(options, true) || options.cachedStoreData;
+            if(!(options.data?.length === 0)) {
+                options.data = getPageDataFromCache(options, true) || options.cachedStoreData;
+            }
         },
         _handleDataLoading: function(options) {
             const dataSource = this._dataSource;
@@ -640,12 +661,16 @@ export default gridCore.Controller.inherit((function() {
             let currentTotalCount;
             const dataSource = this._dataSource;
             let isLoading = false;
+            const isDataLoading = !args || isDefined(args.changeType);
+
             const itemsCount = this.itemsCount();
 
-            this._isLastPage = !itemsCount || !this._loadPageSize() || itemsCount < this._loadPageSize();
+            if(isDataLoading) {
+                this._isLastPage = !itemsCount || !this._loadPageSize() || itemsCount < this._loadPageSize();
 
-            if(this._isLastPage) {
-                this._hasLastPage = true;
+                if(this._isLastPage) {
+                    this._hasLastPage = true;
+                }
             }
 
             if(dataSource.totalCount() >= 0) {
@@ -656,11 +681,13 @@ export default gridCore.Controller.inherit((function() {
                     dataSource.load();
                     isLoading = true;
                 }
-            } else if(!args || isDefined(args.changeType)) {
+            } else if(isDataLoading) {
                 currentTotalCount = dataSource.pageIndex() * this.pageSize() + itemsCount;
                 if(currentTotalCount > this._currentTotalCount) {
                     this._currentTotalCount = currentTotalCount;
-                    this._totalCountCorrection = 0;
+                    if(dataSource.pageIndex() === 0 || !this.option('scrolling.legacyMode')) {
+                        this._totalCountCorrection = 0;
+                    }
                 }
                 if(itemsCount === 0 && dataSource.pageIndex() >= this.pageCount()) {
                     dataSource.pageIndex(this.pageCount() - 1);
@@ -700,8 +727,11 @@ export default gridCore.Controller.inherit((function() {
         isLastPage: function() {
             return this._isLastPage;
         },
+        _dataSourceTotalCount: function() {
+            return this._dataSource.totalCount();
+        },
         totalCount: function() {
-            return parseInt((this._currentTotalCount || this._dataSource.totalCount()) + this._totalCountCorrection);
+            return parseInt((this._currentTotalCount || this._dataSourceTotalCount()) + this._totalCountCorrection);
         },
         totalCountCorrection: function() {
             return this._totalCountCorrection;

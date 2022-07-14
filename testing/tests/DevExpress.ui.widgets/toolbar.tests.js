@@ -1,5 +1,3 @@
-import 'ui/action_sheet';
-import 'ui/drop_down_menu';
 import errors from 'core/errors';
 
 import $ from 'jquery';
@@ -8,17 +6,13 @@ import ToolbarBase from 'ui/toolbar/ui.toolbar.base';
 import fx from 'animation/fx';
 import resizeCallbacks from 'core/utils/resize_callbacks';
 import themes from 'ui/themes';
-import eventsEngine from 'events/core/events_engine';
 import { deferUpdate } from 'core/utils/common';
 import { getHeight } from 'core/utils/size';
 import domAdapter from 'core/dom_adapter';
 import devices from 'core/devices';
 
-import 'ui/button_group';
 import 'ui/text_box';
-
 import 'generic_light.css!';
-import 'ui/button';
 import 'ui/drop_down_button';
 import 'ui/tabs';
 
@@ -46,7 +40,6 @@ const TOOLBAR_AFTER_CONTAINER_CLASS = 'dx-toolbar-after';
 const TOOLBAR_CENTER_CONTAINER_CLASS = 'dx-toolbar-center';
 const INVISIBLE_STATE_CLASS = 'dx-state-invisible';
 const TOOLBAR_LABEL_CLASS = 'dx-toolbar-label';
-const TOOLBAR_MENU_BUTTON_CLASS = 'dx-toolbar-menu-button';
 const TOOLBAR_MENU_SECTION_CLASS = 'dx-toolbar-menu-section';
 const LIST_ITEM_CLASS = 'dx-list-item';
 const BUTTON_GROUP_CLASS = 'dx-buttongroup';
@@ -103,8 +96,7 @@ QUnit.module('render', {
 
         const maxLabelWidth = this.$element.width() - beforeSectionWidth - afterSectionWidth;
 
-        assert.ok(parseFloat($label.css('max-width')) <= maxLabelWidth);
-
+        assert.roughEqual(parseFloat($label.css('max-width')), maxLabelWidth, 0.1);
     });
 
     QUnit.test('items - long custom html', function(assert) {
@@ -132,7 +124,7 @@ QUnit.module('render', {
 
         const maxLabelWidth = this.$element.width() - beforeSectionWidth - afterSectionWidth;
 
-        assert.ok(parseFloat($label.css('max-width')) <= maxLabelWidth);
+        assert.roughEqual(parseFloat($label.css('max-width')), maxLabelWidth, 0.1);
     });
 
     QUnit.test('Center element has correct margin with RTL', function(assert) {
@@ -481,315 +473,141 @@ QUnit.module('toolbar with menu', {
         this.$element = $('#toolbar');
         this.instance = this.$element.dxToolbar().dxToolbar('instance');
 
+        this.overflowMenu = {
+            $element: () => {
+                return this.$element.find(`.${DROP_DOWN_MENU_CLASS}`);
+            },
+            click() {
+                this.$element().trigger('dxclick');
+            },
+            instance() {
+                return this.$element().dxDropDownMenu('instance');
+            }
+        };
+
         fx.off = true;
     },
     afterEach: function() {
         fx.off = false;
     }
 }, () => {
-    ['actionSheet', 'dropDownMenu'].forEach((submenuType) => {
-        QUnit.test(`submenuType: ${submenuType}, dropDownMenu not exist, set toolbar.overflowMenuVisible = true, does not fire any errors`, function(assert) {
-            this.$element.dxToolbar({
-                items: [
-                    { locateInMenu: 'never', text: 'item2' }
-                ],
-                submenuType
-            });
+    QUnit.test('dropDownMenu not exist, set toolbar.overflowMenuVisible = true, does not fire any errors', function(assert) {
+        this.instance.option('items', [
+            { locateInMenu: 'never', text: 'item2' }
+        ]);
 
-            try {
-                this.instance.option('overflowMenuVisible', true);
-            } catch(e) {
-                assert.ok(false, e);
-            } finally {
-                assert.ok(true, 'no errors has been raised');
-            }
-        });
-
-        QUnit.test(`submenuType: ${submenuType}, syncronize toolbar.overflowMenuVisible option by menuButton click`, function(assert) {
-            this.$element.dxToolbar({
-                items: [
-                    { locateInMenu: 'always', text: 'item2' }
-                ],
-                submenuType
-            });
-
-            assert.equal(this.instance.option('overflowMenuVisible'), false);
-
-            const $button = this.$element.find(submenuType === 'dropDownMenu' ? `.${DROP_DOWN_MENU_CLASS}` : `.${TOOLBAR_MENU_BUTTON_CLASS}`);
-            $button.trigger('dxclick');
-
-            assert.equal(this.instance.option('overflowMenuVisible'), true);
-
-            $button.trigger('dxclick');
-
-            assert.equal(this.instance.option('overflowMenuVisible'), false);
-        });
+        try {
+            this.instance.option('overflowMenuVisible', true);
+        } catch(e) {
+            assert.ok(false, e);
+        } finally {
+            assert.ok(true, 'no errors has been raised');
+        }
     });
 
-    QUnit.test('submenuType: dropDownMenu, open menu by set toolbar.overflowMenuVisible = true', function(assert) {
-        this.$element.dxToolbar({
-            items: [
-                { locateInMenu: 'always', text: 'item2' }
-            ],
-            submenuType: 'dropDownMenu'
-        });
+    QUnit.test('syncronize toolbar.overflowMenuVisible option by menuButton click', function(assert) {
+        this.instance.option('items', [
+            { locateInMenu: 'always', text: 'item2' }
+        ]);
+
+        assert.equal(this.instance.option('overflowMenuVisible'), false);
+
+        this.overflowMenu.click();
+
+        assert.equal(this.instance.option('overflowMenuVisible'), true);
+
+        this.overflowMenu.click();
+
+        assert.equal(this.instance.option('overflowMenuVisible'), false);
+    });
+
+    QUnit.test('open menu by set toolbar.overflowMenuVisible = true', function(assert) {
+        this.instance.option('items', [
+            { locateInMenu: 'always', text: 'item2' }
+        ]);
 
         this.instance.option('overflowMenuVisible', true);
 
-        const $button = this.$element.find(`.${DROP_DOWN_MENU_CLASS}`);
-        const menu = $button.dxDropDownMenu('instance');
-
-        assert.equal(menu.option('opened'), true);
+        assert.equal(this.overflowMenu.instance().option('opened'), true);
     });
 
-    QUnit.test('submenuType: actionSheet, open menu by set toolbar.overflowMenuVisible = true', function(assert) {
-        this.$element.dxToolbar({
-            items: [
-                { locateInMenu: 'always', text: 'item2' }
-            ],
-            submenuType: 'actionSheet'
-        });
 
-        this.instance.option('overflowMenuVisible', true);
+    QUnit.test('open menu by menuButton click -> set toolbar.overflowMenuVisible = false', function(assert) {
+        this.instance.option('items', [
+            { locateInMenu: 'always', text: 'item2' }
+        ]);
 
-        const $button = this.$element.find('.dx-actionsheet');
-        const menu = $button.dxActionSheet('instance');
+        this.overflowMenu.click();
 
-        assert.equal(menu.option('visible'), true);
-    });
-
-    QUnit.test('submenuType: dropDownMenu, open menu by menuButton click -> set toolbar.overflowMenuVisible = false', function(assert) {
-        this.$element.dxToolbar({
-            items: [
-                { locateInMenu: 'always', text: 'item2' }
-            ],
-            submenuType: 'dropDownMenu'
-        });
-
-        const $button = this.$element.find(`.${DROP_DOWN_MENU_CLASS}`);
-        $button.trigger('dxclick');
-
-        const menu = $button.dxDropDownMenu('instance');
-        assert.equal(menu.option('opened'), true);
+        assert.equal(this.overflowMenu.instance().option('opened'), true);
 
         this.instance.option('overflowMenuVisible', false);
-        assert.equal(menu.option('opened'), false);
+
+        assert.equal(this.overflowMenu.instance().option('opened'), false);
     });
 
-    QUnit.test('submenuType: actionSheet, open menu by menuButton click -> set toolbar.overflowMenuVisible = false', function(assert) {
-        this.$element.dxToolbar({
-            items: [
-                { locateInMenu: 'always', text: 'item2' }
-            ],
-            submenuType: 'actionSheet'
-        });
 
-        const $button = this.$element.find(`.${TOOLBAR_MENU_BUTTON_CLASS}`);
-        $button.trigger('dxclick');
-
-        const menu = this.$element.find('.dx-actionsheet').dxActionSheet('instance');
-        assert.equal(menu.option('visible'), true);
-
-        this.instance.option('overflowMenuVisible', false);
-        assert.equal(menu.option('visible'), false);
-    });
-
-    QUnit.test('submenuType: dropDownMenu, syncronize toolbar.overflowMenuVisible, dropDownMenu.open() -> dropDownMenu.close() ', function(assert) {
-        this.$element.dxToolbar({
-            items: [
-                { locateInMenu: 'always', text: 'item2' }
-            ],
-            submenuType: 'dropDownMenu'
-        });
+    QUnit.test('syncronize toolbar.overflowMenuVisible, dropDownMenu.open() -> dropDownMenu.close() ', function(assert) {
+        this.instance.option('items', [
+            { locateInMenu: 'always', text: 'item2' }
+        ]);
 
         assert.equal(this.instance.option('overflowMenuVisible'), false);
 
-        const $button = this.$element.find(`.${DROP_DOWN_MENU_CLASS}`);
+        this.overflowMenu.instance().open();
 
-        $button.dxDropDownMenu('open');
         assert.equal(this.instance.option('overflowMenuVisible'), true);
 
-        $button.dxDropDownMenu('close');
-        assert.equal(this.instance.option('overflowMenuVisible'), false);
-    });
+        this.overflowMenu.instance().close();
 
-    QUnit.test('submenuType: actionSheet, syncronize toolbar.overflowMenuVisible, actionSheet.show() -> actionSheet.hide() ', function(assert) {
-        this.$element.dxToolbar({
-            items: [
-                { locateInMenu: 'always', text: 'item2' }
-            ],
-            submenuType: 'actionSheet'
-        });
-
-        assert.equal(this.instance.option('overflowMenuVisible'), false);
-
-        const menu = this.$element.find('.dx-actionsheet').dxActionSheet('instance');
-
-        menu.show();
-        assert.equal(this.instance.option('overflowMenuVisible'), true);
-
-        menu.hide();
         assert.equal(this.instance.option('overflowMenuVisible'), false);
     });
 
     QUnit.test('menu button click doesn\'t dispatch action', function(assert) {
-        let count = 0;
-        this.$element.dxToolbar({
-            onItemClick: function() {
-                count++;
-            },
+        const onItemClickHandler = sinon.spy();
+
+        this.instance.option({
+            onItemClick: onItemClickHandler,
             items: [
                 { locateInMenu: 'always', text: 'item2' }
             ],
-            submenuType: 'dropDownMenu'
         });
 
-        const button = this.$element.find('.' + TOOLBAR_MENU_BUTTON_CLASS).get(0);
-        $(button).trigger('dxclick');
-        assert.equal(count, 0, 'onItemClick was not executed');
+        this.overflowMenu.click();
+
+        assert.equal(onItemClickHandler.callCount, 0, 'onItemClick was not executed');
     });
 
     QUnit.test('windowResize should not show/hide menu that doesn\'t created', function(assert) {
-        this.$element.dxToolbar({
-            submenuType: 'actionSheet',
-            items: [],
-        });
+        this.instance.option('items', []);
 
         resizeCallbacks.fire();
         assert.ok(true);
     });
 
     QUnit.test('option visible for menu items', function(assert) {
-        const instance = this.$element.dxToolbar({
-            submenuType: 'dropDownMenu',
+        this.instance.option({
             items: [
                 { locateInMenu: 'always', text: 'a', visible: true }
             ],
-        }).dxToolbar('instance');
+        });
 
-        assert.strictEqual(this.$element.find('.' + DROP_DOWN_MENU_CLASS).length, 1, 'dropdown was rendered');
+        assert.strictEqual(this.overflowMenu.$element().length, 1, 'overflow menu was rendered');
 
-        instance.option('items', [{ locateInMenu: 'always', text: 'a', visible: false }]);
-        assert.strictEqual(this.$element.find('.' + DROP_DOWN_MENU_CLASS).length, 0, 'dropdown was not rendered');
+        this.instance.option('items', [{ locateInMenu: 'always', text: 'a', visible: false }]);
+        assert.strictEqual(this.overflowMenu.$element().length, 0, 'overflow menu was not rendered');
     });
 
     QUnit.test('changing field of item in submenu', function(assert) {
-        this.$element.dxToolbar({
-            items: [
-                { locateInMenu: 'always', disabled: true }
-            ],
-            submenuType: 'actionSheet'
-        });
+        this.instance.option('items', [
+            { locateInMenu: 'always', disabled: true }
+        ]);
 
-        const $button = this.$element.find('.' + TOOLBAR_MENU_BUTTON_CLASS);
-        $($button).trigger('dxclick');
-        this.$element.dxToolbar('option', 'items[0].disabled', false);
+        this.overflowMenu.click();
+
+        this.instance.option('items[0].disabled', false);
+
         assert.equal($('.dx-state-disabled').length, 0, 'disabled state changed');
-    });
-
-    QUnit.test('dropdown menu should have correct position', function(assert) {
-        this.$element.dxToolbar({
-            items: [
-                { locateInMenu: 'always', disabled: true }
-            ],
-            submenuType: 'dropDownMenu'
-        });
-
-        const $button = this.$element.find('.' + DROP_DOWN_MENU_CLASS);
-        const ddMenu = $button.dxDropDownMenu('instance');
-        const position = ddMenu.option('popupPosition');
-
-        assert.equal(position.at, 'bottom right', 'at position is correct');
-        assert.equal(position.my, 'top right', 'my position is correct');
-    });
-});
-
-QUnit.module('disabled state', () => {
-    [true, false, undefined, 'not declared'].forEach((isToolbarDisabled) => {
-        [true, false, undefined, 'not declared'].forEach((isButtonDisabled) => {
-
-            const checkClickHandlers = (assert, itemClickHandler, buttonClickHandler, buttonDisabled, toolbarDisabled, locateInMenu) => {
-                if(locateInMenu !== 'never') {
-                    return;
-                }
-
-                assert.strictEqual(itemClickHandler.callCount, toolbarDisabled ? 0 : 1, `onItemClick ${itemClickHandler.callCount}`);
-                assert.strictEqual(buttonClickHandler.callCount, buttonDisabled || toolbarDisabled ? 0 : 1, `onButtonClick ${buttonClickHandler.callCount}`);
-            };
-
-            const checkDisabledState = (assert, $button, $toolbar, expectedButtonDisabled, expectedToolbarDisabled) => {
-                assert.strictEqual($button.dxButton('option', 'disabled'), expectedButtonDisabled, `button.disabled ${expectedButtonDisabled}`);
-                assert.strictEqual($toolbar.dxToolbar('option', 'disabled'), expectedToolbarDisabled, `toolbar.disabled ${expectedToolbarDisabled}`);
-            };
-
-            [true, false, undefined].forEach((isToolbarDisabledNew) => {
-                [true, false, undefined].forEach((isButtonDisabledNew) => {
-                    [true, false].forEach((changeDisabledOrder) => {
-                        ['never', 'always'].forEach((locateInMenu) => {
-                            QUnit.test(`new dxToolbar({
-                                    toolbar.disabled: ${isToolbarDisabled},
-                                    button.disabled: ${isButtonDisabled}),
-                                    toolbar.disabled new: ${isToolbarDisabledNew},
-                                    button.disabled new: ${isButtonDisabledNew},
-                                    changeDisableOrder: ${changeDisabledOrder},
-                                    locateInMenu: ${locateInMenu}`,
-                            function(assert) {
-                                const itemClickHandler = sinon.spy();
-                                const buttonClickHandler = sinon.spy();
-                                const toolbarOptions = {
-                                    onItemClick: itemClickHandler,
-                                    items: [{
-                                        location: 'after',
-                                        locateInMenu: locateInMenu,
-                                        widget: 'dxButton',
-                                        options: {
-                                            onClick: buttonClickHandler
-                                        }
-                                    }]
-                                };
-
-                                if(isToolbarDisabled !== 'not declared') {
-                                    toolbarOptions.disabled = isToolbarDisabled;
-                                }
-                                if(isButtonDisabled !== 'not declared') {
-                                    toolbarOptions.items[0].options.disabled = isButtonDisabled;
-                                }
-
-                                const $element = $('#toolbar');
-                                $element.dxToolbar(toolbarOptions);
-
-                                const $button = locateInMenu === 'never' ? $element.find(`.${TOOLBAR_ITEM_CLASS} .dx-button`).eq(0) : $element.find(`.${DROP_DOWN_MENU_CLASS}`).eq(0);
-
-                                const expectedToolbarValue = isToolbarDisabled !== 'not declared' ? isToolbarDisabled : false;
-                                const expectedButtonValue = isButtonDisabled !== 'not declared' ? isButtonDisabled : false;
-
-                                checkDisabledState(assert, $button, $element, locateInMenu === 'never' ? expectedButtonValue : false, expectedToolbarValue);
-
-                                eventsEngine.trigger($button, 'dxclick');
-                                checkClickHandlers(assert, itemClickHandler, buttonClickHandler, expectedButtonValue, expectedToolbarValue, locateInMenu);
-
-                                itemClickHandler.reset();
-                                buttonClickHandler.reset();
-
-                                if(changeDisabledOrder) {
-                                    $button.dxButton('option', 'disabled', isButtonDisabledNew);
-                                    $element.dxToolbar('option', 'disabled', isToolbarDisabledNew);
-                                } else {
-                                    $element.dxToolbar('option', 'disabled', isToolbarDisabledNew);
-                                    checkDisabledState(assert, $button, $element, locateInMenu === 'never' ? expectedButtonValue : false, isToolbarDisabledNew);
-                                    $button.dxButton('option', 'disabled', isButtonDisabledNew);
-                                }
-
-                                checkDisabledState(assert, $button, $element, isButtonDisabledNew, isToolbarDisabledNew);
-
-                                eventsEngine.trigger($button, 'dxclick');
-                                checkClickHandlers(assert, itemClickHandler, buttonClickHandler, isButtonDisabledNew, isToolbarDisabledNew, locateInMenu);
-                            });
-                        });
-                    });
-                });
-            });
-        });
     });
 });
 
@@ -1301,7 +1119,6 @@ QUnit.module('adaptivity', {
             items: [
                 { location: 'center', locateInMenu: 'auto', widget: 'dxButton', options: {} }
             ],
-            submenuType: 'actionSheet',
             width: 100
         });
 
@@ -1327,7 +1144,6 @@ QUnit.module('adaptivity', {
             items: [
                 { location: 'center', locateInMenu: 'auto', text: 'test' }
             ],
-            submenuType: 'actionSheet',
             width: 100
         });
 

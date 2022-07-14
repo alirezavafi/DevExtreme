@@ -12,7 +12,6 @@ import { normalizeIndexes } from '../../core/utils/array';
 import { compileGetter } from '../../core/utils/data';
 import { removeEvent } from '../../events/remove';
 import messageLocalization from '../../localization/message';
-import { styleProp } from '../../core/utils/style';
 import Widget from '../widget/ui.widget';
 import ResponsiveBox from '../responsive_box';
 import {
@@ -41,9 +40,6 @@ const LAYOUT_MANAGER_FIRST_ROW_CLASS = 'dx-first-row';
 const LAYOUT_MANAGER_LAST_ROW_CLASS = 'dx-last-row';
 const LAYOUT_MANAGER_FIRST_COL_CLASS = 'dx-first-col';
 const LAYOUT_MANAGER_LAST_COL_CLASS = 'dx-last-col';
-
-const LAYOUT_STRATEGY_FLEX = 'flex';
-const LAYOUT_STRATEGY_FALLBACK = 'fallback';
 
 const LayoutManager = Widget.inherit({
     _getDefaultOptions: function() {
@@ -300,10 +296,6 @@ const LayoutManager = Widget.inherit({
         this._renderResponsiveBox();
     },
 
-    _hasBrowserFlex: function() { // TODO: name '_hasBrowserFlex' used in tests
-        return styleProp(LAYOUT_STRATEGY_FLEX) === LAYOUT_STRATEGY_FLEX;
-    },
-
     _renderResponsiveBox: function() {
         const that = this;
         const templatesInfo = [];
@@ -349,7 +341,6 @@ const LayoutManager = Widget.inherit({
 
         return {
             onItemStateChanged: this._itemStateChangedHandler.bind(this),
-            _layoutStrategy: that._hasBrowserFlex() ? LAYOUT_STRATEGY_FLEX : LAYOUT_STRATEGY_FALLBACK,
             onLayoutChanged: function() {
                 const onLayoutChanged = that.option('onLayoutChanged');
                 const isSingleColumnMode = that.isSingleColumnMode();
@@ -579,7 +570,6 @@ const LayoutManager = Widget.inherit({
             canAssignUndefinedValueToEditor,
             formOrLayoutManager: this._getFormOrThis(),
             createComponentCallback: this._createComponent.bind(this),
-            useFlexLayout: this._hasBrowserFlex(),
             formLabelLocation: this.option('labelLocation'),
             requiredMessageTemplate: this.option('requiredMessage'),
             validationGroup: this.option('validationGroup'),
@@ -592,6 +582,8 @@ const LayoutManager = Widget.inherit({
             managerMarkOptions: this._getMarkOptions(),
             labelMode: this.option('labelMode'),
         }));
+
+        this.option('onFieldItemRendered')?.();
 
         if(widgetInstance && item.dataField) {
             // TODO: move to renderFieldItem ?
@@ -630,6 +622,18 @@ const LayoutManager = Widget.inherit({
     },
 
     _createWatcher: function(editorInstance, $container, dataField) {
+        function compareArrays(array1, array2) {
+            if(!Array.isArray(array1) || !Array.isArray(array2) || (array1.length !== array2.length)) {
+                return false;
+            }
+            for(let i = 0; i < array1.length; i++) {
+                if(array1[i] !== array2[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         const that = this;
         const watch = that._getWatch();
 
@@ -642,12 +646,23 @@ const LayoutManager = Widget.inherit({
                 return that._getDataByField(dataField);
             },
             function() {
-                editorInstance.option('value', that._getDataByField(dataField));
+                const fieldValue = that._getDataByField(dataField);
+                if(editorInstance.NAME === 'dxTagBox') {
+                    const editorValue = editorInstance.option('value');
+                    if((fieldValue !== editorValue) && compareArrays(fieldValue, editorValue)) {
+                        // handle array only, it can be wrapped into Proxy (T1020953)
+                        return;
+                    }
+                }
+                editorInstance.option('value', fieldValue);
             },
             {
                 deep: true,
                 skipImmediate: true
-            }
+            },
+            ///#DEBUG
+            { createWatcherDataField: dataField }
+            ///#ENDDEBUG
         );
 
         eventsEngine.on($container, removeEvent, dispose);

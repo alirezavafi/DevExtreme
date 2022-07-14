@@ -525,7 +525,7 @@ test.skip('New virtual mode. Virtual rows should not be in view port', async (t)
     const $rows = $((window as any).widget.element()).find('.dx-data-row');
 
     $rows.each((_, el) => {
-      result += $(el).height();
+      result += $(el).height() ?? 0;
     });
 
     return result;
@@ -686,6 +686,216 @@ test('New row should be rendered at the top when grid is scrolled in virtual scr
   });
 });
 
+test('New mode. Rows should be rendered properly when rowRenderingMode is virtual and max height (T1054920)', async (t) => {
+  const dataGrid = new DataGrid('#container');
+
+  await t
+    .resizeWindow(800, 700);
+
+  let visibleRows = await dataGrid.apiGetVisibleRows();
+
+  // assert
+  await t
+    .expect(visibleRows.length)
+    .eql(10);
+
+  // act
+  await t
+    .click(dataGrid.getPager().getPageSize(1).element);
+
+  visibleRows = await dataGrid.apiGetVisibleRows();
+
+  // assert
+  await t
+    .expect(visibleRows.length > 0)
+    .ok();
+
+  await dataGrid.scrollTo({ top: 2000 });
+
+  // act
+  await t
+    .expect(dataGrid.isVirtualRowIntersectViewport())
+    .notOk();
+
+  visibleRows = await dataGrid.apiGetVisibleRows();
+
+  // assert
+  await t
+    .expect(visibleRows.length)
+    .eql(18);
+
+  // act
+  await t
+    .click(dataGrid.getPager().getPageSize(0).element);
+
+  // act
+  await t
+    .expect(dataGrid.isVirtualRowIntersectViewport())
+    .notOk();
+
+  visibleRows = await dataGrid.apiGetVisibleRows();
+
+  // assert
+  await t
+    .expect(visibleRows.length)
+    .eql(10);
+}).before(async () => {
+  const setMaxHeight = ClientFunction(() => {
+    $('#container').css('max-height', '600px');
+  });
+
+  const getItems = (): any[] => {
+    const items: any[] = [];
+    for (let i = 0; i < 100; i += 1) {
+      items.push({
+        id: i + 1,
+        name: `Name ${i + 1}`,
+      });
+    }
+
+    return items;
+  };
+
+  await setMaxHeight();
+
+  return createWidget('dxDataGrid', {
+    dataSource: getItems(),
+    keyExpr: 'id',
+    showBorders: true,
+    remoteOperations: true,
+    scrolling: {
+      rowRenderingMode: 'virtual',
+      useNative: false,
+    },
+    paging: {
+      pageSize: 10,
+    },
+    pager: {
+      visible: true,
+      allowedPageSizes: [10, 'all'],
+      showPageSizeSelector: true,
+    },
+  });
+});
+
+test('Rows are rendered properly when window content is scrolled (T1070388)', async (t) => {
+  const dataGrid = new DataGrid('#container');
+  const scrollWindowTo = async (position: number) => {
+    await ClientFunction(() => {
+      (window as any).scroll({ top: position });
+    },
+    {
+      dependencies: {
+        position,
+      },
+    })();
+  };
+  const getWindowScrollPosition = ClientFunction(() => (window as any).scrollY);
+
+  let visibleRows = await dataGrid.apiGetVisibleRows();
+
+  await t
+    .resizeWindow(800, 800);
+
+  // assert
+  await t
+    .expect(visibleRows.length > 0)
+    .ok();
+
+  // act
+  await scrollWindowTo(3000);
+
+  // assert
+  await t
+    .expect(getWindowScrollPosition())
+    .eql(3000);
+
+  visibleRows = await dataGrid.apiGetVisibleRows();
+
+  // assert
+  await t
+    .expect(visibleRows.length)
+    .eql(26)
+    .expect(visibleRows[0].key > 30)
+    .ok()
+    .expect(visibleRows[25].key > 55)
+    .ok();
+
+  // act
+  await scrollWindowTo(6000);
+
+  // assert
+  await t
+    .expect(getWindowScrollPosition())
+    .eql(6000);
+
+  // act
+  await scrollWindowTo(3000);
+
+  // assert
+  await t
+    .expect(getWindowScrollPosition())
+    .eql(3000);
+
+  visibleRows = await dataGrid.apiGetVisibleRows();
+
+  // assert
+  await t
+    .expect(visibleRows.length)
+    .eql(26)
+    .expect(visibleRows[0].key > 30)
+    .ok()
+    .expect(visibleRows[25].key > 55)
+    .ok();
+
+  // act
+  await scrollWindowTo(0);
+
+  // assert
+  await t
+    .expect(getWindowScrollPosition())
+    .eql(0);
+
+  visibleRows = await dataGrid.apiGetVisibleRows();
+
+  // assert
+  await t
+    .expect(visibleRows.length > 0)
+    .ok();
+}).before(async () => {
+  const renderContent = ClientFunction(() => {
+    for (let i = 0; i < 100; i += 1) {
+      $('body').prepend('<br/>');
+    }
+    for (let i = 0; i < 100; i += 1) {
+      $('body').append('<br/>');
+    }
+  });
+
+  const getItems = (): any[] => {
+    const items: any[] = [];
+    for (let i = 0; i < 100; i += 1) {
+      items.push({
+        id: i + 1,
+        name: `Name ${i + 1}`,
+      });
+    }
+
+    return items;
+  };
+
+  await renderContent();
+
+  return createWidget('dxDataGrid', {
+    dataSource: getItems(),
+    keyExpr: 'id',
+    showBorders: true,
+    scrolling: {
+      mode: 'virtual',
+    },
+  });
+});
+
 fixture`Remote Scrolling`
   .page(url(__dirname, '../containerAspNetData.html'));
 
@@ -713,7 +923,7 @@ test('Scroll to the bottom after expand several group', async (t) => {
   const visibleRows = await dataGrid.apiGetVisibleRows();
   await t
     .expect(visibleRows[0].key)
-    .eql(939302);
+    .eql(932043);
 })
   .before(async () => createWidget('dxDataGrid', () => ({
     width: 1000,
@@ -831,5 +1041,137 @@ test('New virtual mode. Virtual rows should not be in view port after scrolling 
     scrolling: {
       mode: 'virtual',
     },
+  });
+});
+
+// TODO: this scenario works incorrect for renovated scrollable
+test.skip('New virtual mode. Navigation to the last row if new row is added (T1069849)', async (t) => {
+  const dataGrid = new DataGrid('#container');
+
+  const addRowButton = dataGrid.getHeaderPanel().getAddRowButton();
+
+  await t.click(addRowButton);
+  await t.pressKey('Tab');
+  await t.pressKey('Tab');
+  await t.pressKey('Tab');
+  await t.pressKey('Tab');
+
+  const lastCell = dataGrid.getDataCell(3, 0);
+
+  // assert
+  await t
+    .expect(lastCell.element.textContent)
+    .eql('4');
+
+  await t
+    .expect(lastCell.isFocused)
+    .ok();
+}).before(async () => createWidget('dxDataGrid', {
+  height: 150,
+  keyExpr: 'id',
+  dataSource: [
+    { id: 1 },
+    { id: 2 },
+    { id: 3 },
+    { id: 4 },
+  ],
+  editing: {
+    mode: 'batch',
+    allowAdding: true,
+  },
+  columns: ['id'],
+  scrolling: {
+    mode: 'virtual',
+  },
+}));
+
+[false, true].forEach((useNative) => {
+  if (!useNative) {
+    // TODO: this scenario works incorrect for renovated scrollable
+    return;
+  }
+
+  test(`New virtual mode. Virtual rows should not be in view port after switching to the last page with row numbers less than page size (useNative = ${useNative}) (T1085775)`, async (t) => {
+    const dataGrid = new DataGrid('#container');
+
+    // assert
+    await t
+      .expect(dataGrid.isVirtualRowIntersectViewport())
+      .notOk();
+
+    for (let i = 0; i < 3; i += 1) {
+    // act
+      await t
+        .click(dataGrid.getPager().getNavPage('4').element)
+        .wait(3500);
+
+      const visibleRows = await dataGrid.apiGetVisibleRows();
+
+      // assert
+      await t
+        .expect(dataGrid.isVirtualRowIntersectViewport())
+        .notOk()
+        .expect(dataGrid.getPager().getNavPage('3').selected)
+        .ok()
+        .expect(visibleRows.length >= 12)
+        .ok()
+        .expect(visibleRows[0].key <= 54)
+        .ok()
+        .expect(visibleRows[visibleRows.length - 1].key)
+        .eql(65);
+    }
+  }).before(async () => {
+    const initStore = ClientFunction(() => {
+      const getItems = (): Record<string, unknown>[] => {
+        const items: Record<string, unknown>[] = [];
+        for (let i = 0; i < 65; i += 1) {
+          items.push({
+            ID: i + 1,
+            Name: `Name ${i + 1}`,
+          });
+        }
+        return items;
+      };
+
+      (window as any).myStore = new (window as any).DevExpress.data.ArrayStore({
+        key: 'ID',
+        data: getItems(),
+      });
+    });
+
+    await initStore();
+
+    return createWidget('dxDataGrid', {
+      dataSource: {
+        key: 'ID',
+        load(loadOptions) {
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              (window as any).myStore.load(loadOptions).done((data) => {
+                resolve(data);
+              });
+            }, 500);
+          });
+        },
+        totalCount(loadOptions) {
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              (window as any).myStore.totalCount(loadOptions).done((count) => {
+                resolve(count);
+              });
+            }, 500);
+          });
+        },
+      },
+      height: 500,
+      remoteOperations: true,
+      scrolling: {
+        mode: 'virtual',
+        useNative,
+      },
+      pager: {
+        visible: true,
+      },
+    });
   });
 });

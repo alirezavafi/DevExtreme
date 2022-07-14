@@ -196,8 +196,6 @@ export const ListBase = CollectionWidget.inherit({
 
             _swipeEnabled: true,
 
-            _revertPageOnEmptyLoad: false,
-
             showChevronExpr: function(data) { return data ? data.showChevron : undefined; },
             badgeExpr: function(data) { return data ? data.badge : undefined; }
         });
@@ -327,18 +325,9 @@ export const ListBase = CollectionWidget.inherit({
         return true;
     },
 
-    _resetDataSourcePageIndex: function() {
-        const currentDataSource = this.getDataSource();
-
-        if(currentDataSource && currentDataSource.pageIndex() !== 0) {
-            currentDataSource.pageIndex(0);
-            currentDataSource.load();
-        }
-    },
-
     _init: function() {
         this.callBase();
-        this._resetDataSourcePageIndex();
+        this._dataController.resetDataSourcePageIndex();
         this._$container = this.$element();
 
         this._initScrollView();
@@ -379,16 +368,14 @@ export const ListBase = CollectionWidget.inherit({
     _initScrollView: function() {
         const scrollingEnabled = this.option('scrollingEnabled');
         const pullRefreshEnabled = scrollingEnabled && this.option('pullRefreshEnabled');
-        const autoPagingEnabled = scrollingEnabled && this._scrollBottomMode() && !!this._dataSource;
+        const autoPagingEnabled = scrollingEnabled && this._scrollBottomMode() && !!this._dataController.getDataSource();
 
         this._scrollView = this._createComponent(this.$element(), getScrollView(), {
             height: this.option('height'),
             width: this.option('width'),
             disabled: this.option('disabled') || !scrollingEnabled,
             onScroll: this._scrollHandler.bind(this),
-            pullDownEnabled: pullRefreshEnabled,
             onPullDown: pullRefreshEnabled ? this._pullDownHandler.bind(this) : null,
-            reachBottomEnabled: autoPagingEnabled,
             onReachBottom: autoPagingEnabled ? this._scrollBottomHandler.bind(this) : null,
             showScrollbar: this.option('showScrollbar'),
             useNative: this.option('useNativeScrolling'),
@@ -454,22 +441,20 @@ export const ListBase = CollectionWidget.inherit({
     },
 
     _updateLoadingState: function(tryLoadMore) {
-        const isDataLoaded = !tryLoadMore || this._isLastPage();
-        const scrollBottomMode = this._scrollBottomMode();
-        const stopLoading = isDataLoaded || !scrollBottomMode;
-        const hideLoadIndicator = stopLoading && !this._isDataSourceLoading();
+        const dataController = this._dataController;
+        const shouldLoadNextPage = this._scrollBottomMode() && tryLoadMore && !dataController.isLoading() && !this._isLastPage();
 
-        if(stopLoading || this._scrollViewIsFull()) {
-            this._scrollView.release(hideLoadIndicator);
+        if(this._shouldContinueLoading(shouldLoadNextPage)) {
+            this._infiniteDataLoading();
+        } else {
+            this._scrollView.release(!shouldLoadNextPage && !dataController.isLoading());
             this._toggleNextButton(this._shouldRenderNextButton() && !this._isLastPage());
             this._loadIndicationSuppressed(false);
-        } else {
-            this._infiniteDataLoading();
         }
     },
 
     _shouldRenderNextButton: function() {
-        return this._nextButtonMode() && this._dataSource && this._dataSource.isLoaded();
+        return this._nextButtonMode() && this._dataController.isLoaded();
     },
 
     _isDataSourceFirstLoadCompleted: function(newValue) {
@@ -537,43 +522,40 @@ export const ListBase = CollectionWidget.inherit({
 
     _pullDownHandler: function(e) {
         this._pullRefreshAction(e);
+        const dataController = this._dataController;
 
-        if(this._dataSource && !this._isDataSourceLoading()) {
+        if(dataController.getDataSource() && !dataController.isLoading()) {
             this._clearSelectedItems();
-            this._dataSource.pageIndex(0);
-            this._dataSource.reload();
+            dataController.pageIndex(0);
+            dataController.reload();
         } else {
             this._updateLoadingState();
         }
     },
 
+    _shouldContinueLoading: function(shouldLoadNextPage) {
+        const isBottomReached = getHeight(this._scrollView.content()) - getHeight(this._scrollView.container()) < (this._scrollView.scrollOffset()?.top ?? 0);
+
+        return shouldLoadNextPage && (!this._scrollViewIsFull() || isBottomReached);
+    },
+
     _infiniteDataLoading: function() {
         const isElementVisible = this.$element().is(':visible');
 
-        if(isElementVisible && !this._scrollViewIsFull() && !this._isDataSourceLoading() && !this._isLastPage()) {
+        if(isElementVisible) {
             clearTimeout(this._loadNextPageTimer);
+
             this._loadNextPageTimer = setTimeout(() => {
-                this._loadNextPage().done(this._setPreviousPageIfNewIsEmpty.bind(this));
+                this._loadNextPage();
             });
-        }
-    },
-
-    _setPreviousPageIfNewIsEmpty: function(result) {
-        if(this.option('_revertPageOnEmptyLoad')) {
-            const dataSource = this.getDataSource();
-            const pageIndex = dataSource?.pageIndex();
-
-            if(result?.length === 0 && pageIndex > 0) {
-                this._fireContentReadyAction();
-                dataSource.pageIndex(pageIndex - 1);
-            }
         }
     },
 
     _scrollBottomHandler: function(e) {
         this._pageLoadingAction(e);
+        const dataController = this._dataController;
 
-        if(!this._isDataSourceLoading() && !this._isLastPage()) {
+        if(!dataController.isLoading() && !this._isLastPage()) {
             this._loadNextPage();
         } else {
             this._updateLoadingState();
@@ -730,8 +712,8 @@ export const ListBase = CollectionWidget.inherit({
     _nextButtonHandler: function(e) {
         this._pageLoadingAction(e);
 
-        const source = this._dataSource;
-        if(source && !source.isLoading()) {
+        const dataController = this._dataController;
+        if(dataController.getDataSource() && !dataController.isLoading()) {
             this._scrollView.toggleLoading(true);
             this._$nextButton.detach();
             this._loadIndicationSuppressed(true);
@@ -834,12 +816,12 @@ export const ListBase = CollectionWidget.inherit({
     },
 
     _toggleNextButton: function(value) {
-        const dataSource = this._dataSource;
+        const dataController = this._dataController;
         const $nextButton = this._getNextButton();
 
         this.$element().toggleClass(LIST_HAS_NEXT_CLASS, value);
 
-        if(value && dataSource && dataSource.isLoaded()) {
+        if(value && dataController.isLoaded()) {
             $nextButton.appendTo(this._itemContainer());
         }
 
@@ -958,7 +940,6 @@ export const ListBase = CollectionWidget.inherit({
                 this._invalidate();
                 break;
             case '_swipeEnabled':
-            case '_revertPageOnEmptyLoad':
                 break;
             case '_listAttributes':
                 break;

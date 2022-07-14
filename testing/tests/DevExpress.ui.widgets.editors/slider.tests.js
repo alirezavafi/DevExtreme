@@ -36,6 +36,7 @@ const SLIDER_LABEL_CLASS = SLIDER_CLASS + '-label';
 
 const ACTIVE_STATE_CLASS = 'dx-state-active';
 const HOVER_STATE_CLASS = 'dx-state-hover';
+const DISABLED_STATE_CLASS = 'dx-state-disabled';
 const FEEDBACK_SHOW_TIMEOUT = 30;
 const FEEDBACK_HIDE_TIMEOUT = 400;
 const SLIDER_HANDLE_WIDTH = 14;
@@ -344,6 +345,24 @@ module('render', moduleOptions, () => {
 
         assert.equal(handlePositionAgainstTrackBar($handle).left, 500, 'handle is positioned at the max');
         assert.equal($range.width(), 500, 'the width of the range doesn\'t exceed the maximum');
+    });
+
+    [false, true].forEach((isDisabled) => {
+        function checkDisabledState($element, assert, isDisabled) {
+            const assertType = isDisabled ? 'ok' : 'notOk';
+
+            assert[assertType]($element.hasClass(DISABLED_STATE_CLASS), 'root class');
+            assert[assertType]($element.find(`.${SLIDER_HANDLE_CLASS}`).hasClass(DISABLED_STATE_CLASS), 'handle class');
+        }
+
+        test(`update disabled state from ${isDisabled} to ${!isDisabled}`, function(assert) {
+            const $element = $('#widget').dxSlider({ disabled: isDisabled });
+            const widget = $element.dxSlider('instance');
+
+            checkDisabledState($element, assert, isDisabled);
+            widget.option('disabled', !isDisabled);
+            checkDisabledState($element, assert, !isDisabled);
+        });
     });
 });
 
@@ -1704,5 +1723,41 @@ module('tooltip integration', {
             const $popupContent = this.$tooltip.find(`.${POPUP_CONTENT_CLASS}`);
             assert.ok($tooltipContent.width() >= $popupContent.width());
         });
+    });
+});
+
+module('if only the single value is possible', moduleOptions, () => {
+    test('click on slider should not change value either handle position', function(assert) {
+        const value = 1;
+        const $slider = $('#slider').dxSlider({
+            min: value,
+            max: value,
+            value
+        });
+        const slider = $slider.dxSlider('instance');
+        const $handle = $slider.find(`.${SLIDER_HANDLE_CLASS}`);
+        const handleX = $handle.offset().left;
+
+        pointerMock($slider).down();
+
+        assert.strictEqual($handle.offset().left, handleX, 'handle position was not changed');
+        assert.strictEqual(slider.option('value'), value, 'value was not changed');
+    });
+
+    test('handle move should not change value either handle position', function(assert) {
+        const value = 3;
+        const $slider = $('#slider').dxSlider({
+            min: value,
+            max: value,
+            value
+        });
+        const slider = $slider.dxSlider('instance');
+        const $handle = $slider.find(`.${SLIDER_HANDLE_CLASS}`);
+        const handleX = $handle.offset().left;
+
+        pointerMock($handle).start().down().move(-100).up();
+
+        assert.strictEqual($handle.offset().left, handleX, 'handle position was not changed');
+        assert.strictEqual(slider.option('value'), value, 'value was not changed');
     });
 });

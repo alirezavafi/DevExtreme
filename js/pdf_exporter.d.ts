@@ -1,59 +1,146 @@
 import { DxPromise } from './core/utils/deferred';
-import dxDataGrid, { Column } from './ui/data_grid';
+import dxDataGrid from './ui/data_grid';
 import { ExportLoadPanel } from './exporter/export_load_panel';
-import dxGantt from './ui/gantt';
+import dxGantt, {
+  GanttPdfExportMode,
+  GanttPdfExportDateRange,
+} from './ui/gantt';
+import {
+  DataGridCell as ExcelCell,
+} from './excel_exporter';
 
 /**
- * @docid
+ * @public
  * @namespace DevExpress.pdfExporter
- * @type object
  */
-export interface PdfDataGridCell {
+export type DataGridCell = PdfDataGridCell;
+
+ /**
+  * @namespace DevExpress.pdfExporter
+  * @deprecated Use DataGridCell instead
+  */
+export interface PdfDataGridCell extends ExcelCell {}
+
+/**
+ * @public
+ * @docid PdfCell
+ * @namespace DevExpress.pdfExporter
+ */
+export interface Cell {
+  /**
+   * @docid PdfCell.backgroundColor
+   * @default '#FFFFFF'
+   * @public
+   */
+  backgroundColor?: string;
+  /**
+   * @docid PdfCell.borderColor
+   * @default '#979797'
+   * @public
+   */
+  borderColor?: string;
+  /**
+   * @docid PdfCell.borderWidth
+   * @default 0.5
+   * @public
+   */
+  borderWidth?: number;
+  /**
+   * @docid PdfCell.drawLeftBorder
+   * @public
+   */
+  drawLeftBorder?: boolean;
+  /**
+   * @docid PdfCell.drawTopBorder
+   * @public
+   */
+  drawTopBorder?: boolean;
+  /**
+   * @docid PdfCell.drawRightBorder
+   * @public
+   */
+  drawRightBorder?: boolean;
+  /**
+   * @docid PdfCell.drawBottomBorder
+   * @public
+   */
+  drawBottomBorder?: boolean;
+  /**
+   * @docid PdfCell.font
+   * @public
+   */
+  font?: {
     /**
-     * @docid
+     * @docid PdfCell.font.size
+     * @default 10
      * @public
-     * @type dxDataGridColumn
      */
-    column?: Column;
+    size?: number;
     /**
-     * @docid
+     * @docid PdfCell.font.name
      * @public
      */
-    data?: any;
+    name?: string;
     /**
-     * @docid
+     * @docid PdfCell.font.style
+     * @default 'normal'
      * @public
      */
-    groupIndex?: number;
+    style?: 'normal' | 'bold' | 'italic';
+  };
+  /**
+   * @docid PdfCell.horizontalAlign
+   * @public
+   */
+  horizontalAlign?: 'left' | 'center' | 'right';
+  /**
+   * @docid PdfCell.padding
+   * @public
+   */
+  padding?: {
     /**
-     * @docid
+     * @docid PdfCell.padding.top
      * @public
      */
-    groupSummaryItems?: Array<{
-      /**
-       * @docid
-       */
-      name?: string;
-      /**
-       * @docid
-       */
-      value?: any;
-    }>;
+    top?: number;
     /**
-     * @docid
+     * @docid PdfCell.padding.left
      * @public
      */
-    rowType?: string;
+    left?: number;
     /**
-     * @docid
-     * @public
-     */
-    totalSummaryItemName?: string;
+      * @docid PdfCell.padding.right
+      * @public
+      */
+    right?: number;
     /**
-     * @docid
-     * @public
-     */
-    value?: any;
+      * @docid PdfCell.padding.bottom
+      * @public
+      */
+    bottom?: number;
+  };
+  /**
+   * @docid PdfCell.text
+   * @public
+   */
+  text?: string;
+  /**
+   * @docid PdfCell.textColor
+   * @default '#000000'
+   * @public
+   */
+  textColor?: string;
+  /**
+   * @docid PdfCell.verticalAlign
+   * @default 'middle'
+   * @public
+   */
+  verticalAlign?: 'top' | 'middle' | 'bottom';
+  /**
+   * @docid PdfCell.wordWrapEnabled
+   * @public
+   */
+  wordWrapEnabled?: boolean;
 }
 
 /**
@@ -72,13 +159,69 @@ export interface PdfExportDataGridProps {
      * @default undefined
      * @public
      */
-    autoTableOptions?: object;
+    component?: dxDataGrid;
+    /**
+     * @docid
+     * @public
+     */
+    topLeft?: {
+      /**
+       * @docid
+       * @default 0
+       * @public
+       */
+      x?: number;
+      /**
+       * @docid
+       * @default 0
+       * @public
+       */
+      y?: number;
+    };
     /**
      * @docid
      * @default undefined
      * @public
      */
-    component?: dxDataGrid;
+    columnWidths?: Array<number>;
+    /**
+     * @docid
+     * @default 0
+     * @public
+     */
+    indent?: number;
+    /**
+     * @docid
+     * @public
+     */
+    margin?: {
+      /**
+       * @docid
+       * @public
+       */
+      top?: number;
+      /**
+       * @docid
+       * @public
+       */
+      left?: number;
+      /**
+        * @docid
+        * @public
+        */
+      right?: number;
+      /**
+        * @docid
+        * @public
+        */
+      bottom?: number;
+    };
+    /**
+     * @docid
+     * @default true
+     * @public
+     */
+    repeatHeaders?: boolean;
     /**
      * @docid
      * @default false
@@ -86,18 +229,26 @@ export interface PdfExportDataGridProps {
      */
     selectedRowsOnly?: boolean;
     /**
-     * @docid
-     * @default true
-     * @public
-     */
-    keepColumnWidths?: boolean;
+      * @docid
+      * @type_function_param1_field gridCell:PdfDataGridCell
+      * @type_function_param1_field pdfCell:PdfCell
+      * @type_function_param1_field doc:object
+      * @public
+      */
+    customDrawCell?: ((options: { gridCell?: DataGridCell; pdfCell?: Cell; doc?: any; rect?: { x: number; y: number; h: number; w: number }; cancel?: boolean }) => void);
     /**
      * @docid
-     * @type_function_param1 options:Object
-     * @type_function_param1_field2 pdfCell:Object
+     * @type_function_param1_field gridCell:PdfDataGridCell
+     * @type_function_param1_field pdfCell:PdfCell
      * @public
      */
-    customizeCell?: ((options: { gridCell?: PdfDataGridCell; pdfCell?: any }) => void);
+    customizeCell?: ((options: { gridCell?: DataGridCell; pdfCell?: Cell }) => void);
+    /**
+     * @docid
+     * @type_function_param1_field rowCells:Array<PdfCell>
+     * @public
+     */
+    onRowExporting?: ((options: { rowCells?: Array<Cell>; rowHeight?: number }) => void);
     /**
      * @docid
      * @public
@@ -119,7 +270,7 @@ export function exportDataGrid(options: PdfExportDataGridProps): DxPromise<void>
  * @docid
  * @namespace DevExpress.pdfExporter
  */
- export interface PdfExportGanttProps {
+export interface PdfExportGanttProps {
   /**
    * @docid
    * @type_function_param1 options:object
@@ -164,16 +315,15 @@ export function exportDataGrid(options: PdfExportDataGridProps): DxPromise<void>
   margins?: object;
   /**
    * @docid
-   * @type Enums.GanttPdfExportMode
+   * @default 'all'
    * @public
    */
-  exportMode?: 'all' | 'treeList' | 'chart';
+  exportMode?: GanttPdfExportMode;
   /**
    * @docid
-   * @type Enums.GanttPdfExportDateRange|object
    * @public
    */
-  dateRange?: 'all' | 'visible' | object;
+  dateRange?: GanttPdfExportDateRange | object;
   /**
   * @docid
   * @public
@@ -196,13 +346,15 @@ export interface PdfExportGanttFont {
   name: string;
   /**
   * @docid
-  * @default undefined
+  * @default 'normal'
+  * @acceptValues "bold" | "normal" | "italic"
   * @public
   */
   style?: string;
   /**
   * @docid
   * @default undefined
+  * @acceptValues  "normal" | "bold" | 400 | 700
   * @public
   */
   weight?: string | number;
@@ -216,4 +368,4 @@ export interface PdfExportGanttFont {
  * @static
  * @public
  */
- export function exportGantt(options: PdfExportGanttProps): DxPromise<any>;
+export function exportGantt(options: PdfExportGanttProps): DxPromise<any>;

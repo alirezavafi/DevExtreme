@@ -47,8 +47,12 @@ export const dataControllerModule = {
                             that.option('paging.' + optionName, value);
                             that._skipProcessingPagingChange = false;
                             const pageIndex = dataSource.pageIndex();
+                            that._isPaging = optionName === 'pageIndex';
                             return dataSource[optionName === 'pageIndex' ? 'load' : 'reload']()
-                                .done(() => that.pageChanged.fire(pageIndex));
+                                .done(() => {
+                                    that._isPaging = false;
+                                    that.pageChanged.fire(pageIndex);
+                                });
                         }
                         return Deferred().resolve().promise();
                     }
@@ -65,6 +69,7 @@ export const dataControllerModule = {
                     that._cachedProcessedItems = null;
                     that._columnsController = that.getController('columns');
 
+                    that._isPaging = false;
                     that._currentOperationTypes = null;
                     that._dataChangedHandler = (e) => {
                         that._currentOperationTypes = this._dataSource.operationTypes();
@@ -132,6 +137,31 @@ export const dataControllerModule = {
                     this._items = [];
                     this._refreshDataSource();
                 },
+                _handleDataSourceChange(args) {
+                    if(args.value === args.previousValue || (
+                        this.option('columns') &&
+                        Array.isArray(args.value) &&
+                        Array.isArray(args.previousValue)
+                    )) {
+                        const isValueChanged = args.value !== args.previousValue;
+                        if(isValueChanged) {
+                            const store = this.store();
+                            if(store) {
+                                store._array = args.value;
+                            }
+                        }
+
+                        if(this.needToRefreshOnDataSourceChange(args)) {
+                            this.refresh(this.option('repaintChangesOnly'));
+                        }
+                        return true;
+                    }
+
+                    return false;
+                },
+                needToRefreshOnDataSourceChange: function(args) {
+                    return true;
+                },
                 optionChanged: function(args) {
                     const that = this;
                     let dataSource;
@@ -140,15 +170,10 @@ export const dataControllerModule = {
                         args.handled = true;
                     }
 
-                    if(args.name === 'dataSource' && args.name === args.fullName && (args.value === args.previousValue || (that.option('columns') && Array.isArray(args.value) && Array.isArray(args.previousValue)))) {
-                        if(args.value !== args.previousValue) {
-                            const store = that.store();
-                            if(store) {
-                                store._array = args.value;
-                            }
-                        }
+                    if(args.name === 'dataSource'
+                        && args.name === args.fullName
+                        && this._handleDataSourceChange(args)) {
                         handled();
-                        that.refresh(that.option('repaintChangesOnly'));
                         return;
                     }
 
@@ -252,6 +277,12 @@ export const dataControllerModule = {
 
                     storeLoadOptions.filter = this.combinedFilter(storeLoadOptions.filter);
 
+                    if(storeLoadOptions.filter?.length === 1 && storeLoadOptions.filter[0] === '!') {
+                        e.data = [];
+                        e.extra = e.extra || {};
+                        e.extra.totalCount = 0;
+                    }
+
                     if(!columnsController.isDataSourceApplied()) {
                         columnsController.updateColumnDataTypes(dataSource);
                     }
@@ -277,10 +308,11 @@ export const dataControllerModule = {
                     let filterApplied;
 
                     // B255430
-                    const updateItemsHandler = function() {
+                    const updateItemsHandler = function(change) {
                         that._columnsController.columnsChanged.remove(updateItemsHandler);
                         that.updateItems({
-                            virtualColumnsScrolling: e.changeTypes.virtualColumnsScrolling
+                            repaintChangesOnly: false,
+                            virtualColumnsScrolling: change?.changeTypes?.virtualColumnsScrolling
                         });
                     };
 
@@ -713,6 +745,7 @@ export const dataControllerModule = {
                     const changeTypes = [];
                     const items = [];
                     const newIndexByKey = {};
+                    const isLiveUpdate = change?.isLiveUpdate ?? true;
 
                     function getRowKey(row) {
                         if(row) {
@@ -759,7 +792,7 @@ export const dataControllerModule = {
                                 const index = change.index;
                                 const newItem = change.data;
                                 const oldItem = change.oldItem;
-                                const changedColumnIndices = this._partialUpdateRow(oldItem, newItem, index, true);
+                                const changedColumnIndices = this._partialUpdateRow(oldItem, newItem, index, isLiveUpdate);
 
                                 rowIndices.push(index);
                                 changeTypes.push('update');
@@ -879,7 +912,7 @@ export const dataControllerModule = {
                     const that = this;
 
                     if(that._repaintChangesOnly !== undefined) {
-                        change.repaintChangesOnly = that._repaintChangesOnly;
+                        change.repaintChangesOnly = change.repaintChangesOnly ?? that._repaintChangesOnly;
                         change.needUpdateDimensions = change.needUpdateDimensions || that._needUpdateDimensions;
                     } else if(change.changes) {
                         change.repaintChangesOnly = that.option('repaintChangesOnly');
@@ -893,7 +926,7 @@ export const dataControllerModule = {
                         }
                     }
 
-                    if(that._updateLockCount) {
+                    if(that._updateLockCount && !change.cancel) {
                         that._changes.push(change);
                         return;
                     }
@@ -928,15 +961,24 @@ export const dataControllerModule = {
                     return null;
                 },
                 _applyFilter: function() {
-                    const that = this;
-                    const dataSource = that._dataSource;
+                    const dataSource = this._dataSource;
 
                     if(dataSource) {
                         dataSource.pageIndex(0);
+                        this._isFilterApplying = true;
 
-                        return that.reload().done(that.pageChanged.fire.bind(that.pageChanged));
+                        return this.reload().done(() => {
+                            if(this._isFilterApplying) {
+                                this.pageChanged.fire();
+                            }
+                        });
                     }
                 },
+
+                resetFilterApplying: function() {
+                    this._isFilterApplying = false;
+                },
+
                 filter: function(filterExpr) {
                     const dataSource = this._dataSource;
                     const filter = dataSource && dataSource.filter();

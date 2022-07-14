@@ -16,6 +16,7 @@ export class GanttView extends Widget {
         this._onScroll = this._createActionByOption('onScroll');
         this._onDialogShowing = this._createActionByOption('onDialogShowing');
         this._onPopupMenuShowing = this._createActionByOption('onPopupMenuShowing');
+        this._onPopupMenuHiding = this._createActionByOption('onPopupMenuHiding');
         this._expandAll = this._createActionByOption('onExpandAll');
         this._collapseAll = this._createActionByOption('onCollapseAll');
         this._taskClick = this._createActionByOption('onTaskClick');
@@ -68,13 +69,16 @@ export class GanttView extends Widget {
         this._ganttViewCore.changeTaskExpanded(id, value);
     }
     updateView() {
-        this._ganttViewCore.updateView();
+        this._ganttViewCore?.updateView();
     }
     updateBarItemsState() {
         this._ganttViewCore.barManager.updateItemsState([]);
     }
     setWidth(value) {
         this._ganttViewCore.setWidth(value);
+    }
+    _onDimensionChanged() {
+        this._ganttViewCore.onBrowserWindowResize();
     }
 
     _selectTask(id) {
@@ -92,7 +96,10 @@ export class GanttView extends Widget {
             abbrDayNames: dateLocalization.getDayNames('abbreviated'),
             quarterNames: this._getQuarterNames(),
             amText: dateLocalization.getPeriodNames()[0],
-            pmText: dateLocalization.getPeriodNames()[1]
+            pmText: dateLocalization.getPeriodNames()[1],
+            start: messageLocalization.format('dxGantt-dialogStartTitle'),
+            end: messageLocalization.format('dxGantt-dialogEndTitle'),
+            progress: messageLocalization.format('dxGantt-dialogProgressTitle')
         };
     }
     _getQuarterNames() {
@@ -123,6 +130,8 @@ export class GanttView extends Widget {
                 return 0;
             case 'hours':
                 return 1;
+            case 'sixHours':
+                return 2;
             case 'days':
                 return 3;
             case 'weeks':
@@ -276,7 +285,7 @@ export class GanttView extends Widget {
         return this.option('resourceAssignments');
     }
     getGanttWorkTimeRules() {
-        return {};
+        return null;
     }
     getExternalTaskAreaContainer(element) {
         if(!this._taskAreaContainer) {
@@ -311,6 +320,9 @@ export class GanttView extends Widget {
     }
     showPopupMenu(info) {
         this._onPopupMenuShowing(info);
+    }
+    hidePopupMenu(info) {
+        this._onPopupMenuHiding(info);
     }
     getMainElement() {
         return this.option('mainElement').get(0);
@@ -349,6 +361,13 @@ export class GanttView extends Widget {
     destroyTemplate(container) {
         $(container).empty();
     }
+    onTaskAreaSizeChanged(info) {
+        const scrollView = this._taskAreaContainer._scrollView;
+        if(isDefined(info?.height)) {
+            const direction = info?.height > this._taskAreaContainer.getHeight() ? 'both' : 'horizontal';
+            scrollView.option('direction', direction);
+        }
+    }
     // export
     getTreeListTableStyle() {
         return this.callExportHelperMethod('getTreeListTableStyle');
@@ -359,8 +378,8 @@ export class GanttView extends Widget {
     getTreeListHeaderInfo(colIndex) {
         return this.callExportHelperMethod('getTreeListHeaderInfo', colIndex);
     }
-    getTreeListCellInfo(rowIndex, colIndex) {
-        return this.callExportHelperMethod('getTreeListCellInfo', rowIndex, colIndex);
+    getTreeListCellInfo(rowIndex, colIndex, key) {
+        return this.callExportHelperMethod('getTreeListCellInfo', key, colIndex);
     }
     callExportHelperMethod(methodName, ...args) {
         const helper = this.option('exportHelper');

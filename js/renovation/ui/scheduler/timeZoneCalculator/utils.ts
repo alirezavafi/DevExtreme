@@ -1,11 +1,11 @@
 import { isDefined } from '../../../../core/utils/type';
 import dateUtils from '../../../../core/utils/date';
 import {
-  DateType,
-  PathTimeZoneConversion,
-  TimeZoneCalculatorOptions,
-  TimeZoneOffsetsType,
+  DateType, PathTimeZoneConversion, TimeZoneCalculatorOptions, TimeZoneOffsetsType,
 } from './types';
+
+const MS_IN_MINUTE = 60000;
+const MS_IN_HOUR = 60 * MS_IN_MINUTE;
 
 export class TimeZoneCalculator {
   options: TimeZoneCalculatorOptions;
@@ -62,9 +62,31 @@ export class TimeZoneCalculator {
       ? -1
       : 1;
 
-    const utcDate = date.getTime() - direction * clientOffset * dateUtils.dateToMilliseconds('hour');
+    const resultDate = new Date(date);
 
-    return new Date(utcDate + direction * targetOffset * dateUtils.dateToMilliseconds('hour'));
+    resultDate.setMinutes(resultDate.getMinutes() - direction * (60 * clientOffset));
+    resultDate.setMinutes(resultDate.getMinutes() + direction * (60 * targetOffset));
+
+    return new Date(resultDate);
+
+    // TODO Previous date calculation engine. Engine was be changed after fix T1078292.
+    // TODO This code block commented and placed for history.
+    // eslint-disable-next-line max-len
+    // const utcDate = date.getTime() - direction * clientOffset * dateUtils.dateToMilliseconds('hour');
+    // return new Date(utcDate + direction * targetOffset * dateUtils.dateToMilliseconds('hour'));
+  }
+
+  getOriginStartDateOffsetInMs(date: Date, timezone: string, isUTCDate: boolean): number {
+    if (!timezone) {
+      return 0;
+    }
+
+    const { client, appointment, common } = this.getOffsets(date, timezone);
+    const offsetInHours = isUTCDate
+      ? appointment - client
+      : appointment - common;
+
+    return offsetInHours * MS_IN_HOUR;
   }
 
   protected getClientOffset(date: Date): number {

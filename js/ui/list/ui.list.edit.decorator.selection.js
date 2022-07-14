@@ -162,24 +162,21 @@ registerDecorator(
 
             const isSelectedAll = this._selectAllCheckBox.option('value');
 
-            const result = this._list._createActionByOption('onSelectAllValueChanged')({ value: isSelectedAll });
-            if(result === false) {
-                return;
-            }
-
             e.event && this._list._saveSelectionChangeEvent(e.event);
             if(isSelectedAll === true) {
                 this._selectAllItems();
             } else if(isSelectedAll === false) {
                 this._unselectAllItems();
             }
+
+            this._list._createActionByOption('onSelectAllValueChanged')({ value: isSelectedAll });
         },
 
         _checkSelectAllCapability: function() {
             const list = this._list;
-            const dataSource = list.getDataSource();
+            const dataController = list._dataController;
 
-            if(list.option('selectAllMode') === 'allPages' && list.option('grouped') && (!dataSource || !dataSource.group())) {
+            if(list.option('selectAllMode') === 'allPages' && list.option('grouped') && !dataController.group()) {
                 errors.log('W1010');
                 return false;
             }

@@ -636,7 +636,7 @@ export class SchedulerTestWrapper extends ElementWrapper {
                 rect.height = cell.outerHeight();
                 rect.width = cell.outerWidth();
 
-                if(this.instance.option('currentView') === 'month') {
+                if(this.instance.currentView === 'month') {
                     const monthNum = cell.find('div').eq(0);
                     if(monthNum.length > 0) {
                         rect.top += monthNum.outerHeight();
@@ -697,18 +697,6 @@ export class SchedulerTestWrapper extends ElementWrapper {
         };
 
         this.viewSwitcher = {
-            getElement: () => $('.dx-dropdownmenu-popup-wrapper.dx-position-bottom'),
-            show: () => {
-                $('.dx-scheduler-view-switcher').trigger('dxclick');
-            },
-            click: (name) => {
-                this.viewSwitcher.getElement().find('.dx-list-item').filter((index, element) => {
-                    return $(element).find('.dx-dropdownmenu-item-text').text() === name;
-                }).trigger('dxclick');
-            },
-            getSelectedViewName: () => {
-                return this.viewSwitcher.getElement().find('.dx-list-item-selected .dx-dropdownmenu-item-text').text();
-            },
             getLabel: () => $('.dx-scheduler-view-switcher-label')
         },
 

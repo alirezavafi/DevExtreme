@@ -6,7 +6,7 @@ import { isDefined, isString, isNumeric, isFunction, isObject, isPlainObject, ty
 import { each, map } from '../../core/utils/iterator';
 import { getDefaultAlignment } from '../../core/utils/position';
 import { extend } from '../../core/utils/extend';
-import { inArray, normalizeIndexes } from '../../core/utils/array';
+import { normalizeIndexes } from '../../core/utils/array';
 import config from '../../core/config';
 import { orderEach, deepExtendArraySafe } from '../../core/utils/object';
 import errors from '../widget/ui.errors';
@@ -21,6 +21,7 @@ import { when, Deferred } from '../../core/utils/deferred';
 import Store from '../../data/abstract_store';
 import { DataSource } from '../../data/data_source/data_source';
 import { normalizeDataSourceOptions } from '../../data/data_source/utils';
+import { equalByValue } from '../../core/utils/common';
 import filterUtils from '../shared/filtering';
 
 const USER_STATE_FIELD_NAMES_15_1 = ['filterValues', 'filterType', 'fixed', 'fixedPosition'];
@@ -516,11 +517,11 @@ export const columnsControllerModule = {
                     for(let index = 0; index < USER_STATE_FIELD_NAMES.length; index++) {
                         const fieldName = USER_STATE_FIELD_NAMES[index];
 
-                        if(inArray(fieldName, ignoreColumnOptionNames) >= 0) continue;
+                        if(ignoreColumnOptionNames.includes(fieldName)) continue;
 
                         if(fieldName === 'dataType') {
                             column[fieldName] = column[fieldName] || userStateColumn[fieldName];
-                        } else if(inArray(fieldName, USER_STATE_FIELD_NAMES_15_1) >= 0) {
+                        } else if(USER_STATE_FIELD_NAMES_15_1.includes(fieldName)) {
                             if(fieldName in userStateColumn) {
                                 column[fieldName] = userStateColumn[fieldName];
                             }
@@ -712,7 +713,7 @@ export const columnsControllerModule = {
                     return optionGetter(column, { functionsAsIs: true });
                 }
                 const prevValue = optionGetter(column, { functionsAsIs: true });
-                if(prevValue !== value) {
+                if(!equalByValue(prevValue, value)) {
                     if(optionName === 'groupIndex' || optionName === 'calculateGroupValue') {
                         changeType = 'grouping';
                         updateSortOrderWhenGrouping(that, column, value, prevValue);
@@ -735,20 +736,13 @@ export const columnsControllerModule = {
                         that._checkColumns();
                     }
 
-                    fullOptionName && fireOptionChanged(that, {
-                        fullOptionName: fullOptionName,
-                        optionName: optionName,
-                        value: value,
-                        prevValue: prevValue
-                    });
-
                     if(!isDefined(prevValue) && !isDefined(value) && optionName.indexOf('buffer') !== 0) {
                         notFireEvent = true;
                     }
 
                     if(!notFireEvent) {
                         // T346972
-                        if(inArray(optionName, USER_STATE_FIELD_NAMES) < 0 && optionName !== 'visibleWidth') {
+                        if(!USER_STATE_FIELD_NAMES.includes(optionName) && optionName !== 'visibleWidth') {
                             columns = that.option('columns');
                             initialColumn = that.getColumnByPath(fullOptionName, columns);
                             if(isString(initialColumn)) {
@@ -762,6 +756,13 @@ export const columnsControllerModule = {
                     } else {
                         resetColumnsCache(that);
                     }
+
+                    fullOptionName && fireOptionChanged(that, {
+                        fullOptionName: fullOptionName,
+                        optionName: optionName,
+                        value: value,
+                        prevValue: prevValue
+                    });
                 }
             };
 
@@ -977,7 +978,7 @@ export const columnsControllerModule = {
             };
 
             const strictParseNumber = function(text, format) {
-                const parsedValue = numberLocalization.parse(text, format);
+                const parsedValue = numberLocalization.parse(text);
 
                 if(isNumeric(parsedValue)) {
                     const formattedValue = numberLocalization.format(parsedValue, format);
@@ -1191,6 +1192,7 @@ export const columnsControllerModule = {
                             return that.updateColumns(dataSource, forceApplying);
                         } else {
                             that._dataSourceApplied = false;
+                            updateIndexes(that);
                         }
                     } else if(isDataSourceLoaded && !that.isAllDataTypesDefined(true) && that.updateColumnDataTypes(dataSource)) {
                         updateColumnChanges(that, 'columns');
@@ -1404,6 +1406,7 @@ export const columnsControllerModule = {
                     const firstGroupColumn = expandColumns.filter((column) => column.groupIndex === 0)[0];
                     const isFixedFirstGroupColumn = firstGroupColumn && firstGroupColumn.fixed;
                     const isColumnFixing = this._isColumnFixing();
+                    const rtlEnabled = this.option('rtlEnabled');
 
                     if(expandColumns.length) {
                         expandColumn = this.columnOption('command:expand');
@@ -1416,6 +1419,7 @@ export const columnsControllerModule = {
                             cellTemplate: !isDefined(column.groupIndex) ? column.cellTemplate : null,
                             headerCellTemplate: null,
                             fixed: !isDefined(column.groupIndex) || !isFixedFirstGroupColumn ? isColumnFixing : true,
+                            fixedPosition: rtlEnabled ? 'right' : 'left',
                         }, expandColumn, {
                             index: column.index,
                             type: column.type || GROUP_COMMAND_COLUMN_NAME
@@ -1848,7 +1852,7 @@ export const columnsControllerModule = {
                             setFilterOperationsAsDefaultValues(column);
                         }
                         column.defaultFilterOperation = column.filterOperations && column.filterOperations[0] || '=';
-                        column.showEditorAlways = isDefined(column.showEditorAlways) ? column.showEditorAlways : (dataType === 'boolean' && !column.cellTemplate);
+                        column.showEditorAlways = isDefined(column.showEditorAlways) ? column.showEditorAlways : (dataType === 'boolean' && !column.cellTemplate && !column.lookup);
                     }
                 },
                 updateColumnDataTypes: function(dataSource) {
@@ -2031,7 +2035,9 @@ export const columnsControllerModule = {
                                 that._columns.push(group.selector);
                             });
                             each(sortParameters, function(index, sort) {
-                                that._columns.push(sort.selector);
+                                if(!isFunction(sort.selector)) {
+                                    that._columns.push(sort.selector);
+                                }
                             });
                             assignColumns(that, createColumnsFromOptions(that, that._columns));
                         }

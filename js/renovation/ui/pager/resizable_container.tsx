@@ -32,23 +32,23 @@ export const viewFunction = ({
   />
 );
 interface ChildElements<T> { pageSizes: T; pages: T; info: T }
+interface MainElements<T> { parent: T; pageSizes: T; pages: T }
 interface AllElements<T> extends ChildElements<T> { parent: T }
-interface ChildElementProps {
-  infoTextVisible: boolean;
-  isLargeDisplayMode: boolean;
+
+export function calculateLargeDisplayMode({
+  parent: parentWidth,
+  pageSizes: pageSizesWidth,
+  pages: pagesWidth,
+}: MainElements<number>): boolean {
+  return parentWidth - (pageSizesWidth + pagesWidth) > 0;
 }
 
-export function calculateAdaptivityProps({
+export function calculateInfoTextVisible({
   parent: parentWidth, pageSizes: pageSizesWidth,
   pages: pagesWidth, info: infoWidth,
-}: AllElements<number>): ChildElementProps {
+}: AllElements<number>): boolean {
   const minimalWidth = pageSizesWidth + pagesWidth + infoWidth;
-  const infoTextVisible = parentWidth - minimalWidth > 0;
-  const isLargeDisplayMode = parentWidth - (pageSizesWidth + pagesWidth) > 0;
-  return {
-    infoTextVisible,
-    isLargeDisplayMode,
-  };
+  return parentWidth - minimalWidth > 0;
 }
 
 function getElementsWidth({
@@ -91,17 +91,20 @@ export class ResizableContainer extends JSXComponent<ResizableContainerProps, 'p
 
   @Mutable() elementsWidth!: ChildElements<number>;
 
-  @Mutable() actualAdaptivityProps!: { infoTextVisible: boolean; isLargeDisplayMode: boolean };
+  @Mutable() actualIsLargeDisplayMode = true;
+
+  @Mutable() actualInfoTextVisible = true;
 
   @Effect() subscribeToResize(): DisposeEffectReturn {
-    const callback = (): void => { this.updateAdaptivityProps(); };
+    const callback = (): void => {
+      this.parentWidth > 0 && this.updateAdaptivityProps();
+    };
     resizeCallbacks.add(callback);
     return (): void => { resizeCallbacks.remove(callback); };
   }
 
   @Effect({ run: 'always' }) effectUpdateChildProps(): void {
-    const parentWidth = this.parentRef.current ? getElementWidth(this.parentRef.current) : 0;
-    if (parentWidth > 0) {
+    if (this.parentWidth > 0) {
       this.updateAdaptivityProps();
     }
   }
@@ -162,6 +165,10 @@ export class ResizableContainer extends JSXComponent<ResizableContainerProps, 'p
     };
   }
 
+  get parentWidth(): number {
+    return this.parentRef.current ? getElementWidth(this.parentRef.current) : 0;
+  }
+
   updateAdaptivityProps(): void {
     const currentElementsWidth = getElementsWidth({
       parent: this.parentRef.current,
@@ -169,11 +176,11 @@ export class ResizableContainer extends JSXComponent<ResizableContainerProps, 'p
       info: this.infoTextRef.current,
       pages: this.pagesRef.current,
     });
-    if (isDefined(this.actualAdaptivityProps)
-      && (this.actualAdaptivityProps.infoTextVisible !== this.infoTextVisible
-        || this.actualAdaptivityProps.isLargeDisplayMode !== this.isLargeDisplayMode)) {
+    if (this.actualInfoTextVisible !== this.infoTextVisible
+      || this.actualIsLargeDisplayMode !== this.isLargeDisplayMode) {
       return;
     }
+
     const isEmpty = !isDefined(this.elementsWidth);
     if (isEmpty) {
       this.elementsWidth = {} as ChildElements<number>;
@@ -185,11 +192,18 @@ export class ResizableContainer extends JSXComponent<ResizableContainerProps, 'p
     if (isEmpty || this.infoTextVisible) {
       this.elementsWidth.info = currentElementsWidth.info;
     }
-    this.actualAdaptivityProps = calculateAdaptivityProps({
+
+    this.actualIsLargeDisplayMode = calculateLargeDisplayMode({
       parent: currentElementsWidth.parent,
-      ...this.elementsWidth,
+      ...{ pageSizes: this.elementsWidth.pageSizes, pages: this.elementsWidth.pages },
     });
-    this.infoTextVisible = this.actualAdaptivityProps.infoTextVisible;
-    this.isLargeDisplayMode = this.actualAdaptivityProps.isLargeDisplayMode;
+
+    this.actualInfoTextVisible = calculateInfoTextVisible({
+      ...currentElementsWidth,
+      info: this.elementsWidth.info,
+    });
+
+    this.infoTextVisible = this.actualInfoTextVisible;
+    this.isLargeDisplayMode = this.actualIsLargeDisplayMode;
   }
 }

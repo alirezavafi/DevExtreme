@@ -11,7 +11,6 @@ const getNestedOptionValue = require('core/options/utils').getNestedOptionValue;
 
 const ActionSheet = require('ui/action_sheet');
 const Accordion = require('ui/accordion');
-const Box = require('ui/box');
 const Button = require('ui/button');
 const ColorBox = require('ui/color_box');
 const DataGrid = require('ui/data_grid');
@@ -21,7 +20,7 @@ const DropDownEditor = require('ui/drop_down_editor/ui.drop_down_editor');
 const DropDownBox = require('ui/drop_down_box');
 const DropDownButton = require('ui/drop_down_button');
 const DropDownList = require('ui/drop_down_editor/ui.drop_down_list');
-const DropDownMenu = require('ui/drop_down_menu');
+const DropDownMenu = require('ui/toolbar/drop_down_menu');
 const TextEditor = require('ui/text_box/ui.text_editor');
 const Gallery = require('ui/gallery');
 const Lookup = require('ui/lookup');
@@ -37,18 +36,19 @@ const Widget = require('ui/widget/ui.widget');
 const Popup = require('ui/popup');
 const Popover = require('ui/popover');
 const RadioGroup = require('ui/radio_group');
+const Resizable = require('ui/resizable');
 const Scheduler = require('ui/scheduler/ui.scheduler');
 const Scrollable = require('ui/scroll_view/ui.scrollable');
 const ScrollView = require('ui/scroll_view');
 const SelectBox = require('ui/select_box');
 const SliderHandle = require('ui/slider/ui.slider_handle');
-const SliderTooltip = require('ui/slider/ui.slider_tooltip');
 const Tabs = require('ui/tabs');
 const TabPanel = require('ui/tab_panel');
 const TagBox = require('ui/tag_box');
 const Toast = require('ui/toast');
 const TreeList = require('ui/tree_list');
 const TreeView = require('ui/tree_view');
+const TileView = require('ui/tile_view');
 const FileUploader = require('ui/file_uploader');
 const Form = require('ui/form');
 const ValidationMessage = require('ui/validation_message');
@@ -165,19 +165,6 @@ testComponentDefaults(DateBox,
 );
 
 testComponentDefaults(DateBox,
-    { platform: 'android' },
-    { pickerType: 'rollers' },
-    function() {
-        this._origDevice = devices.real();
-        const deviceConfig = { platform: 'android', android: true, version: [4, 3] };
-        devices.real(deviceConfig);
-    },
-    function() {
-        devices.real(this._origDevice);
-    }
-);
-
-testComponentDefaults(DateBox,
     [
         { platform: 'generic', deviceType: 'desktop' },
     ],
@@ -190,11 +177,6 @@ testComponentDefaults(DateBox,
     function() {
         devices.real(this._origDevice);
     }
-);
-
-testComponentDefaults(Box,
-    {},
-    { _layoutStrategy: 'flex' },
 );
 
 testComponentDefaults(ValidationMessage,
@@ -338,6 +320,30 @@ testComponentDefaults(List,
 testComponentDefaults(TreeView,
     {},
     { useNativeScrolling: false },
+    function() {
+        this._supportNativeScrolling = support.nativeScrolling;
+        support.nativeScrolling = false;
+    },
+    function() {
+        support.nativeScrolling = this._supportNativeScrolling;
+    }
+);
+
+testComponentDefaults(TileView,
+    {},
+    { showScrollbar: 'onScroll' },
+    function() {
+        this._supportNativeScrolling = support.nativeScrolling;
+        support.nativeScrolling = true;
+    },
+    function() {
+        support.nativeScrolling = this._supportNativeScrolling;
+    }
+);
+
+testComponentDefaults(TileView,
+    {},
+    { showScrollbar: 'never' },
     function() {
         this._supportNativeScrolling = support.nativeScrolling;
         support.nativeScrolling = false;
@@ -581,23 +587,6 @@ testComponentDefaults(Widget,
     }
 );
 
-testComponentDefaults(Widget,
-    {},
-    {
-        useResizeObserver: false
-    },
-    function() {
-        this.originalRealDevice = devices.real();
-        devices.real({
-            platform: 'android',
-            version: '4.4.4'
-        });
-    },
-    function() {
-        devices.real(this.originalRealDevice);
-    }
-);
-
 testComponentDefaults(Popover,
     {},
     {
@@ -624,6 +613,11 @@ testComponentDefaults(Popover,
 testComponentDefaults(RadioGroup,
     { tablet: true },
     { layout: 'horizontal' }
+);
+
+testComponentDefaults(Resizable,
+    { },
+    { keepAspectRatio: true }
 );
 
 testComponentDefaults(Gallery,
@@ -999,22 +993,6 @@ testComponentDefaults(SliderHandle, {},
     }
 );
 
-testComponentDefaults(SliderTooltip, {},
-    {
-        visible: false,
-        position: 'top',
-        hideOnOutsideClick: false,
-        hideTopOverlayHandler: null,
-        hideOnParentScroll: false,
-        animation: null,
-        templatesRenderAsynchronously: false,
-        _fixWrapperPosition: false,
-        useResizeObserver: false,
-        showMode: 'onHover',
-        value: 0
-    }
-);
-
 testComponentDefaults(Tabs,
     { },
     {
@@ -1177,7 +1155,6 @@ testComponentDefaults(Scheduler,
         _appointmentTooltipOffset: { x: 0, y: 11 },
         _appointmentTooltipButtonsPosition: 'top',
         _appointmentTooltipOpenButtonText: null,
-        _dropDownButtonIcon: 'chevrondown',
         _appointmentCountPerCell: 1,
         _collectorOffset: 20,
         _appointmentOffset: 30
